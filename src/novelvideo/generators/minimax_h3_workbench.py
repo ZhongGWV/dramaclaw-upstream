@@ -34,8 +34,10 @@ class MiniMaxH3WorkbenchError(RuntimeError):
 
 
 _H3_RATIO_OPTIONS = {"auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"}
-_H3_RESOLUTION_OPTIONS = {"768p", "2k"}
+_H3_RESOLUTION_OPTIONS = {"544p", "480p", "768p", "2k"}
 _H3_QUALITY_VALUES = {"high": 1, "balanced": 2, "fast": 3}
+_H3_DEFAULT_LORA = "minimax_h3_fl2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors"
+_H3_ALLOWED_LORAS = {_H3_DEFAULT_LORA}
 _H3_REFERENCE_MODEL_FILES = {
     "ref2va": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
     "fl2va": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
@@ -63,6 +65,8 @@ class MiniMaxH3SubmissionParameters:
     inference_steps: int
     model_mode: str
     seed: int
+    loras: tuple[str, ...]
+    lora_strength: float
 
     def stable_api_dict(self) -> dict[str, Any]:
         return {
@@ -73,7 +77,10 @@ class MiniMaxH3SubmissionParameters:
             "inference_steps": self.inference_steps,
             "model_mode": self.model_mode,
             "seed": self.seed,
-            "loras": [],
+            "loras": [
+                {"name": name, "strength": self.lora_strength}
+                for name in self.loras
+            ],
         }
 
 
@@ -143,9 +150,10 @@ def minimax_h3_dimensions(
         if ratio >= 1:
             return 2048, _multiple_of_32(2048 / ratio)
         return _multiple_of_32(2048 * ratio), 2048
+    short_edge = {"544p": 544, "480p": 480, "768p": 768}[resolution_text]
     if ratio >= 1:
-        return _multiple_of_32(768 * ratio), 768
-    return 768, _multiple_of_32(768 / ratio)
+        return _multiple_of_32(short_edge * ratio), short_edge
+    return short_edge, _multiple_of_32(short_edge / ratio)
 
 
 def _integer_parameter(
@@ -172,7 +180,13 @@ def minimax_h3_submission_parameters(
 ) -> MiniMaxH3SubmissionParameters:
     """Validate UI values once so stable and QuickUI payloads cannot drift."""
 
-    allowed_keys = {"quality_mode", "inference_steps", "seed"}
+    allowed_keys = {
+        "quality_mode",
+        "inference_steps",
+        "seed",
+        "loras",
+        "lora_strength",
+    }
     if mode == "all_reference":
         allowed_keys.add("model_mode")
     unknown = set(model_params) - allowed_keys
@@ -189,13 +203,13 @@ def minimax_h3_submission_parameters(
     ):
         raise MiniMaxH3WorkbenchError("Invalid H3 duration")
 
-    quality_mode = model_params.get("quality_mode", "fast")
+    quality_mode = model_params.get("quality_mode", "balanced")
     if quality_mode not in _H3_QUALITY_VALUES:
         raise MiniMaxH3WorkbenchError("Invalid H3 parameter: quality_mode")
     inference_steps = _integer_parameter(
         model_params,
         "inference_steps",
-        4,
+        8,
         1,
         50,
     )
@@ -206,6 +220,25 @@ def minimax_h3_submission_parameters(
         -1,
         2_147_483_647,
     )
+    raw_loras = model_params.get("loras", [_H3_DEFAULT_LORA])
+    if (
+        not isinstance(raw_loras, list)
+        or len(raw_loras) > 1
+        or any(
+            not isinstance(name, str) or name not in _H3_ALLOWED_LORAS
+            for name in raw_loras
+        )
+    ):
+        raise MiniMaxH3WorkbenchError("Invalid H3 parameter: loras")
+    lora_strength = model_params.get("lora_strength", 1)
+    if (
+        isinstance(lora_strength, bool)
+        or not isinstance(lora_strength, (int, float))
+        or not math.isfinite(float(lora_strength))
+        or float(lora_strength) < 0
+        or float(lora_strength) > 2
+    ):
+        raise MiniMaxH3WorkbenchError("Invalid H3 parameter: lora_strength")
 
     if mode == "text_to_video":
         model_mode = "high_quality"
@@ -214,7 +247,7 @@ def minimax_h3_submission_parameters(
     elif mode == "image_reference":
         model_mode = "ref2va"
     elif mode == "all_reference":
-        requested_model_mode = model_params.get("model_mode", "ref2va")
+        requested_model_mode = model_params.get("model_mode", "fl2va")
         if requested_model_mode not in _H3_REFERENCE_MODEL_FILES:
             raise MiniMaxH3WorkbenchError("Invalid H3 parameter: model_mode")
         model_mode = str(requested_model_mode)
@@ -234,6 +267,8 @@ def minimax_h3_submission_parameters(
         inference_steps=inference_steps,
         model_mode=model_mode,
         seed=seed,
+        loras=tuple(raw_loras),
+        lora_strength=float(lora_strength),
     )
 
 
@@ -316,7 +351,7 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("MINIMAX_H3_WORKBENCH_URL must be an HTTP(S) URL")
         self.base_url = str(base_url).rstrip("/") + "/"
-        self.resolution = str(resolution or "768p")
+        self.resolution = str(resolution or "544p")
         self.model_params = dict(model_params or {})
         self.request_schema = dict(request_schema or {})
         self.generate_audio = bool(generate_audio)
@@ -536,6 +571,8 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
         inference_steps: int,
         model_mode: str,
         seed: int,
+        loras: tuple[str, ...],
+        lora_strength: float,
         poll_interval: float,
         max_polls: int,
         on_progress: Callable[[float], None] | None,
@@ -590,7 +627,10 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
             "frameInterpolationEnabled": False,
             "frameInterpolationMultiplier": 2,
             "refImageSize": "match",
-            "loras": [],
+            "loras": [
+                {"name": name, "strength": lora_strength}
+                for name in loras
+            ],
             "mode": transport,
             "prompt": prompt,
             "firstFrame": uploaded["image"][0] if transport == "i2v" else None,
@@ -757,6 +797,8 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
                     inference_steps=parameters.inference_steps,
                     model_mode=parameters.model_mode,
                     seed=parameters.seed,
+                    loras=parameters.loras,
+                    lora_strength=parameters.lora_strength,
                     poll_interval=poll_interval,
                     max_polls=max_polls,
                     on_progress=on_progress,

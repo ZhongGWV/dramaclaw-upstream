@@ -199,7 +199,7 @@ export const VIDEO_MODELS: ModelOption[] = [
 // hydrates the live list via /freezone/video/models, but this id is what the
 // canvas store uses on first node creation before that fetch resolves (and
 // when no previously-picked model has been remembered).
-export const DEFAULT_VIDEO_MODEL_ID = 'newapi_seedance-2.0';
+export const DEFAULT_VIDEO_MODEL_ID = 'MiniMax-H3';
 
 export type ProviderModelDomain = 'image' | 'video';
 

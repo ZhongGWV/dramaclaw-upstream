@@ -474,6 +474,7 @@ async def _start_or_enqueue_freezone_video_gen(
         and str(item.get("path") or "").strip()
     ]
     video_duration_bounds = _catalog_reference_duration_bounds(capabilities, "video")
+    normalized_mode = str(gen_mode or "").strip()
     measured_video_durations: list[tuple[str, float]] | None = None
     try:
         if video_input_paths and any(value is not None for value in video_duration_bounds):
@@ -487,6 +488,19 @@ async def _start_or_enqueue_freezone_video_gen(
                 )
             ]
             input_video_duration_seconds = sum(video_seconds)
+        elif normalized_mode == "video_edit":
+            input_video_duration_seconds = await probe_total_video_duration_seconds(
+                video_input_paths
+            )
+        elif (
+            normalized_mode == "all_reference"
+            and str(catalog_id or model_id or backend or "").strip().lower()
+            == "minimax-h3"
+        ):
+            # MiniMax H3 all-reference requests have no source-duration
+            # constraints or local billing requirement. Avoid requiring ffprobe
+            # for this path; other reference models keep their duration probe.
+            input_video_duration_seconds = 0.0
         else:
             input_video_duration_seconds = await probe_total_video_duration_seconds(
                 video_input_paths
@@ -507,7 +521,6 @@ async def _start_or_enqueue_freezone_video_gen(
             )
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-    normalized_mode = str(gen_mode or "").strip()
     if normalized_mode == "video_edit":
         if not video_input_paths or input_video_duration_seconds <= 0:
             raise HTTPException(400, "video editing requires a readable source video")
