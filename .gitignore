@@ -12,6 +12,8 @@ __pycache__/
 # User-provided local API-key attachment.  Runtime secrets belong in
 # .dramaclaw-local/secrets, never in tracked source.
 /硅基流动
+/密钥.txt
+/config/local/krea2_identity_edit_api.json
 /.venv/
 /.playwright-mcp
 /.nicegui
