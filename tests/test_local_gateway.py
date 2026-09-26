@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -276,6 +277,33 @@ def test_bootstrap_copies_all_reviewed_workflows_and_keeps_secrets_local(
     assert config.krea_edit_workflow.is_file()
     assert config.router_token_file.read_text(encoding="utf-8") == "test-router-token"
     assert config.siliconflow_key_file.read_text(encoding="utf-8") == "sk-test"
+
+
+def test_bootstrap_preserves_custom_krea_fp8_workflows(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    originals = {}
+    for path in (config.krea_t2i_workflow, config.krea_edit_workflow):
+        workflow = json.loads(Path("config/local", path.name).read_text(encoding="utf-8"))
+        for node in workflow.values():
+            if node["class_type"] == "UNETLoader":
+                node["inputs"]["unet_name"] = "krea2_turbo_fp8_scaled.safetensors"
+            if node["class_type"] == "SaveImage":
+                node["inputs"]["filename_prefix"] = "my-custom-output"
+        originals[path] = json.dumps(workflow).encode()
+        path.write_bytes(originals[path])
+
+    local_gateway.bootstrap_local_config(config)
+    local_gateway.bootstrap_local_config(config)
+
+    for path, original in originals.items():
+        assert path.read_bytes() == original
+    workflow, model = local_gateway._prepare_t2i_workflow(
+        {"model": local_gateway.KREA_IMAGE_MODEL, "prompt": "a frog", "seed": 42},
+        config,
+    )
+    assert model == local_gateway.KREA_IMAGE_MODEL
+    assert workflow["1"]["inputs"]["unet_name"] == "krea2_turbo_fp8_scaled.safetensors"
+    assert workflow["4"]["inputs"]["text"] == "a frog"
 
 
 def test_local_launcher_uses_an_ignored_machine_config_instead_of_author_paths() -> None:

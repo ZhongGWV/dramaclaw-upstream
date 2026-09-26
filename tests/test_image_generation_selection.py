@@ -35,7 +35,7 @@ def test_local_krea2_turbo_is_an_explicit_catalog_selection():
     )
 
     assert IMAGE_GENERATION_SELECTIONS["newapi_krea2_local"]["label"] == (
-        "Krea 2 Turbo（本地 Int8，Mac 实验）"
+        "Krea 2 Turbo（本地 ComfyUI）"
     )
     assert IMAGE_GENERATION_SELECTIONS["newapi_krea2_local"]["model"] == (
         "Krea-2-Turbo-local"

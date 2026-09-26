@@ -963,15 +963,20 @@ IMAGE_GENERATION_SELECTIONS: dict[str, dict[str, str]] = {
         "model": LOCAL_QWEN_IMAGE_MODEL,
     },
     "newapi_krea2_local": {
-        "label": "Krea 2 Turbo（本地 Int8，Mac 实验）",
+        "label": "Krea 2 Turbo（本地 ComfyUI）",
         "provider": "newapi",
         "model": LOCAL_KREA_IMAGE_MODEL,
+    },
+    "newapi_krea2_edit_local": {
+        "label": "编辑",
+        "provider": "newapi",
+        "model": "Krea-2-Identity-Edit-local",
     },
 }
 
 _LOCAL_MODELS_ONLY = os.environ.get("DRAMACLAW_LOCAL_MODELS_ONLY", "").strip().lower()
 VISIBLE_IMAGE_GENERATION_SELECTION_KEYS = (
-    ("newapi_qwen_image_local", "newapi_krea2_local")
+    ("newapi_qwen_image_local", "newapi_krea2_local", "newapi_krea2_edit_local")
     if _LOCAL_MODELS_ONLY in {"1", "true", "yes", "on"}
     else (
         "newapi_gpt_image2",

@@ -43,6 +43,7 @@ DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
 DEFAULT_TTS_MODEL = "FunAudioLLM/CosyVoice2-0.5B"
 QWEN_IMAGE_MODEL = "Qwen-Image-local"
 KREA_IMAGE_MODEL = "Krea-2-Turbo-local"
+KREA_IDENTITY_EDIT_MODEL = "Krea-2-Identity-Edit-local"
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,10 @@ class RouterConfig:
     @property
     def krea_edit_workflow(self) -> Path:
         return self.workflows_dir / "krea2_turbo_edit_api.json"
+
+    @property
+    def krea_identity_edit_workflow(self) -> Path:
+        return self.workflows_dir / "krea2_identity_edit_api.json"
 
     @property
     def public_base_url(self) -> str:
@@ -321,6 +326,8 @@ def _prepare_t2i_workflow(
 ) -> tuple[dict[str, Any], str]:
     """Load and fill one of the local text-to-image API workflows."""
     model = str(payload.get("model") or QWEN_IMAGE_MODEL).strip()
+    if model == KREA_IDENTITY_EDIT_MODEL:
+        raise HTTPException(status_code=400, detail="identity edit requires a reference image")
     if model == KREA_IMAGE_MODEL:
         workflow = _load_workflow(config.krea_t2i_workflow)
         prompt_node, latent_node, sampler_node = "4", "6", "7"
@@ -396,6 +403,43 @@ def _prepare_krea_edit_workflow(
     except (TypeError, ValueError):
         steps_value = int(os.environ.get("KREA_T2I_STEPS", "8"))
     workflow["23"]["inputs"]["steps"] = max(1, min(30, steps_value))
+    return workflow
+
+
+def _prepare_krea_identity_edit_workflow(
+    form: Any, uploaded: list[str], config: RouterConfig
+) -> dict[str, Any]:
+    """Keep identity editing separate from the existing Qwen/Krea refinement path."""
+    if not 1 <= len(uploaded) <= 2:
+        raise HTTPException(status_code=400, detail="identity edit requires one or two images")
+    workflow = _load_workflow(config.krea_identity_edit_workflow)
+    workflow["72"]["inputs"]["image"] = uploaded[0]
+    workflow["84"]["inputs"]["prompt"] = str(form.get("prompt") or "")
+    workflow["85"]["inputs"]["prompt"] = str(form.get("negative_prompt") or "")
+    width, height = _parse_generation_dimensions(
+        {"width": form.get("width"), "height": form.get("height")}
+    )
+    workflow["82"]["inputs"].update({"width": width, "height": height})
+    workflow["53"]["inputs"]["seed"] = _safe_seed(form.get("seed"))
+    # ComfyUI's model enumeration uses the host OS's path separator.
+    workflow["71"]["inputs"]["lora_name"] = (
+        workflow["71"]["inputs"]["lora_name"].replace("\\", "/").replace("/", os.sep)
+    )
+    if len(uploaded) == 2:
+        # The installed LoRA was trained with scene first, subject second.
+        workflow["90"]["inputs"]["image"] = uploaded[1]
+        workflow["79"]["inputs"].update(
+            {"source_latent_b": ["92", 0], "source_image_b": ["90", 0]}
+        )
+        for node_id in ("84", "85"):
+            workflow[node_id]["inputs"]["image_b"] = ["90", 0]
+    else:
+        for key in ("source_latent_b", "source_image_b"):
+            workflow["79"]["inputs"].pop(key, None)
+        for node_id in ("84", "85"):
+            workflow[node_id]["inputs"].pop("image_b", None)
+        workflow.pop("90", None)
+        workflow.pop("92", None)
     return workflow
 
 
@@ -558,9 +602,13 @@ def create_app(config: RouterConfig | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail="at least one image is required")
         if len(uploads) > 3:
             raise HTTPException(status_code=400, detail="local image edit supports at most three images")
-        uploaded = [await _upload_to_comfy(item, config) for item in uploads]
         model = str(form.get("model") or QWEN_IMAGE_MODEL).strip()
-        if model == KREA_IMAGE_MODEL:
+        if model == KREA_IDENTITY_EDIT_MODEL and len(uploads) > 2:
+            raise HTTPException(status_code=400, detail="identity edit supports at most two images")
+        uploaded = [await _upload_to_comfy(item, config) for item in uploads]
+        if model == KREA_IDENTITY_EDIT_MODEL:
+            workflow = _prepare_krea_identity_edit_workflow(form, uploaded, config)
+        elif model == KREA_IMAGE_MODEL:
             workflow = _prepare_krea_edit_workflow(form, uploaded, config)
         else:
             workflow = _load_workflow(config.qwen_edit_workflow)
@@ -620,24 +668,24 @@ def bootstrap_local_config(config: RouterConfig) -> None:
         )
         config.qwen_edit_workflow.chmod(0o600)
     krea_template = _package_workflow_template("krea2_turbo_t2i_api.json")
-    if not config.krea_t2i_workflow.exists() or (
-        "krea2_turbo_fp8_scaled.safetensors"
-        in config.krea_t2i_workflow.read_text(encoding="utf-8")
-    ) or (
-        "ModelSamplingFlux" not in config.krea_t2i_workflow.read_text(encoding="utf-8")
-    ):
+    # Local workflows describe the user's installed models and custom nodes.
+    # In particular, FP8 is valid on CUDA and must not be migrated to INT8.
+    if not config.krea_t2i_workflow.exists():
         shutil.copyfile(krea_template, config.krea_t2i_workflow)
         config.krea_t2i_workflow.chmod(0o600)
     krea_edit_template = _package_workflow_template("krea2_turbo_edit_api.json")
-    if not config.krea_edit_workflow.exists() or (
-        "krea2_turbo_fp8_scaled.safetensors"
-        in config.krea_edit_workflow.read_text(encoding="utf-8")
-    ) or (
-        "DramaClaw/Krea-2-Turbo-ShortDrama"
-        not in config.krea_edit_workflow.read_text(encoding="utf-8")
-    ):
+    if not config.krea_edit_workflow.exists():
         shutil.copyfile(krea_edit_template, config.krea_edit_workflow)
         config.krea_edit_workflow.chmod(0o600)
+    # Identity Edit is an optional, locally supplied workflow, not a required
+    # repository asset. A fresh checkout must still start without that JSON.
+    identity_template = _package_workflow_template("krea2_identity_edit_api.json")
+    if not config.krea_identity_edit_workflow.exists() and identity_template.is_file():
+        shutil.copyfile(
+            identity_template,
+            config.krea_identity_edit_workflow,
+        )
+        config.krea_identity_edit_workflow.chmod(0o600)
     if not config.siliconflow_key_file.exists():
         raise RuntimeError(
             f"copy your SiliconFlow key to {config.siliconflow_key_file} before starting"
@@ -685,7 +733,7 @@ def configure_cli_runtime(config: RouterConfig) -> None:
             "provider": "newapi",
             "upstreamModel": KREA_IMAGE_MODEL,
             "mediaType": "image",
-            "label": "Krea 2 Turbo（本地 Int8，Mac 实验）",
+            "label": "Krea 2 Turbo（本地 ComfyUI）",
             "enabled": True,
             "sortOrder": 2,
             "config": {
@@ -697,8 +745,29 @@ def configure_cli_runtime(config: RouterConfig) -> None:
     elif media_models[KREA_IMAGE_MODEL].get("label") in {
         "Krea 2 Turbo（本地 FP8）",
         "Krea 2 Turbo（本地 Int8 / MPS）",
+        "Krea 2 Turbo（本地 Int8，Mac 实验）",
     }:
-        media_models[KREA_IMAGE_MODEL]["label"] = "Krea 2 Turbo（本地 Int8，Mac 实验）"
+        media_models[KREA_IMAGE_MODEL]["label"] = "Krea 2 Turbo（本地 ComfyUI）"
+        save_newapi_media_model_mappings(media_models)
+
+    if (
+        KREA_IDENTITY_EDIT_MODEL not in media_models
+        and config.krea_identity_edit_workflow.is_file()
+    ):
+        media_models[KREA_IDENTITY_EDIT_MODEL] = {
+            "provider": "newapi",
+            "upstreamModel": KREA_IDENTITY_EDIT_MODEL,
+            "mediaType": "image",
+            "label": "编辑",
+            "enabled": True,
+            "sortOrder": 3,
+            "config": {
+                "request": {"endpoint": "images/generations", "parameters": []},
+                "referenceImageMax": 2,
+                "description": "Krea2 Identity Edit · 单图编辑；双图：场景在前、角色在后",
+                "ratioOptions": ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"],
+            },
+        }
         save_newapi_media_model_mappings(media_models)
 
 
