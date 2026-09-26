@@ -1,0 +1,56 @@
+version = 1
+slug = "liblib-tv-director-discovery"
+ledger = "docs/agent/tasks/liblib-tv-director-discovery.md"
+baseline = "e7b1fbce7ee814fb3fd7343b74f68d331f24ec70"
+
+[[claims]]
+path = "docs/agent/STATE.md"
+mode = "coordination"
+reason = "Register research lifecycle without changing other workstreams."
+
+[[claims]]
+path = "docs/agent/tasks/liblib-tv-director-discovery.md"
+mode = "coordination"
+reason = "Research plan and handoff."
+
+[[claims]]
+path = "docs/agent/claims/liblib-tv-director-discovery.toml"
+mode = "coordination"
+reason = "Precise scope."
+
+[[claims]]
+path = "docs/guides/liblib-tv-director-analysis.md"
+mode = "exclusive"
+reason = "Button-level evidence report."
+
+[[claims]]
+path = "docs/guides/liblib-tv-director-development.md"
+mode = "shared"
+shared_with = ["tv-director-implementation"]
+reason = "Historical design; implementation line serially aligns it with the fusion v2 contracts."
+
+[[claims]]
+path = "output/playwright/liblib-tv-director/**"
+mode = "exclusive"
+reason = "Ignored local browser evidence only."
+
+[[claims]]
+path = "docs/guides/tv-director-liblib-gap-validation.md"
+mode = "exclusive"
+reason = "Observed N01-N10 subcase evidence and limitations."
+
+[[claims]]
+path = "docs/guides/tv-director/acceptance-contracts.md"
+mode = "shared"
+shared_with = ["tv-director-implementation"]
+reason = "Serially update observed N01-N10 status and evidence links only."
+
+[[claims]]
+path = "docs/agent/tasks/tv-director-implementation.md"
+mode = "coordination"
+reason = "Record acceptance evidence sharing and research handoff."
+
+[[claims]]
+path = "docs/agent/claims/tv-director-implementation.toml"
+mode = "coordination"
+reason = "Symmetric sharing for the acceptance evidence table."
