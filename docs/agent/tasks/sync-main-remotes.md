@@ -1,7 +1,7 @@
 # 同步 origin/main 与 zhonggwv/main
 
 **状态**：已阻塞
-**最后更新**：2026-09-24
+**最后更新**：2026-09-25
 **基线**：`a2418a65`（已验证合并提交）；原两个 main 均为其祖先，上游 review 前不提前移动 fork main
 **认领者**：`codex/sync-main-remotes-20260924`
 **相关文档**：`docs/agent/README.md`
@@ -57,6 +57,8 @@
 - **本地已有改动**：隔离 worktree 无业务 diff；主工作区本地资料不进入本次合并。
 - **远端重复实现**：两边不是简单重复。fork 含 H3、音频动作、LibTV、Depth、story/local stack；上游含付款、引用校验、媒体归档与视频续写。本轮使用真实 merge 保留两边提交，不挑一边整文件覆盖。
 - **共享文件顺序**：已有工作线提交在前；本线是唯一最终集成者，只解决三方合并报告的 4 个冲突。`VideoNode.tsx` 必须同时保留 Mixed 顺序和上游引用校验/续写；home-node 测试以合并后真实路由表为准；翻译只按 key 合并。
+- **2026-09-25 窄 follow-up**：`minimax-h3-canvas-defaults` 获准在已合并基线上只改 `official_media_models.json` 的 MiniMax-H3 参数默认值；该线不得改写其余 origin/main 导入内容，本文件的精确 claim 已与 follow-up 互认共享范围。
+- **2026-09-26 后续记录**：H3 视频参考时长探测修复由 `minimax-h3-canvas-defaults` 独立跟进，范围只覆盖“无时长边界、非视频编辑”分支；本同步线仍将合并后的 `freezone.py` 作为只读基线，其余导入语义保持原样。
 
 ## 实施方案
 

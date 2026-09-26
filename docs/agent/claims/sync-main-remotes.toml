@@ -442,7 +442,7 @@ reason = "Import the exact origin/main result through Git's automatic three-way 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "read-only"
-reason = "Import the exact origin/main result through Git's automatic three-way merge; no manual edits."
+reason = "This sync workstream imports the merged route unchanged; the H3 follow-up is tracked separately."
 
 [[claims]]
 path = "src/novelvideo/api/routes/generation.py"
@@ -541,8 +541,9 @@ reason = "Import the exact origin/main result through Git's automatic three-way 
 
 [[claims]]
 path = "src/novelvideo/official_media_models.json"
-mode = "read-only"
-reason = "Import the exact origin/main result through Git's automatic three-way merge; no manual edits."
+mode = "shared"
+shared_with = ["minimax-h3-canvas-defaults", "minimax-h3-liblib-parity"]
+reason = "Import origin/main unchanged except for the separately claimed MiniMax-H3 default-parameter hunk."
 
 [[claims]]
 path = "src/novelvideo/ports/__init__.py"

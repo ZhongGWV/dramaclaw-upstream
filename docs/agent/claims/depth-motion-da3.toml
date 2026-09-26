@@ -36,7 +36,7 @@ reason = "Model inference and deterministic depth-video export."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "liblib-canvas-parity", "local-stack"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "text-node-liblib-visual-parity"]
 reason = "Depth, breakdown, and LibTV endpoints share the freezone adapter."
 
 [[claims]]
@@ -48,13 +48,13 @@ reason = "Task-center labels for both analysis task types share one mapping."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth and breakdown request contracts live in the shared API schema module."
 
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth and breakdown leaf classification share the runner."
 
 [[claims]]
@@ -72,7 +72,7 @@ reason = "Depth job persistence fields share the canvas node contract."
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth and breakdown API clients share the operations module."
 
 [[claims]]

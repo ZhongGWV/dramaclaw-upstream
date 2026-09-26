@@ -53,6 +53,8 @@ LibTV 画布导入不再丢节点语义，视频节点工具条按实测规格�
 
 ## 协调与冲突
 
+- 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 Freezone route：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
+
 - `origin/feat/canvas-video-reshoot-breakdown` 已有重拍、续写、breakdown、depth capture、工具条与大量生命周期测试，
   至少 24 个文件和当前本地脏文件重叠。该分支的 UI 选择（例如合并下拉）还与本线实测后决定的“重拍平铺”不同，
   属于需要明确取舍的产品冲突，不是机械合并。

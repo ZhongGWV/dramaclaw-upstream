@@ -37,6 +37,8 @@
 
 ## 协调与冲突
 
+- 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 API schema, Freezone route, task runner and ops client：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
+
 - depth-motion 与本线共同修改 `freezone.py` 和 `runners/freezone.py`，且动态维度本身由 depth 台账负责；
   本线只拥有三维度编排与分镜 / 音乐产物，不应复制 DA3 实现。
 - `origin/feat/canvas-video-reshoot-breakdown` 已有 video breakdown 后端、前端节点、生命周期和计费测试，

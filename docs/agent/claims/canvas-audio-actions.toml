@@ -69,7 +69,7 @@ reason = "Persist typed audio derivation metadata."
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "shot-breakdown"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Add the audio transform API client and result task type."
 
 [[claims]]
@@ -98,19 +98,19 @@ reason = "Local ffmpeg audio trim and pitch-preserving speed transform."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "shot-breakdown"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Add the audio transform request schema."
 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Validate, enqueue, and expose audio transform results."
 
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["depth-motion-da3", "shot-breakdown"]
+shared_with = ["depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Register the local audio transform leaf and runner."
 
 [[claims]]

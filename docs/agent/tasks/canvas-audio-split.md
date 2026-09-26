@@ -51,6 +51,8 @@
 
 ## 协调与冲突
 
+- 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 API schema, Freezone route and ops client：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
+
 - **相关工作线**：`canvas-audio-actions`、`liblib-canvas-parity`、`shot-breakdown`、
   `depth-motion-da3`、`local-stack`。
 - **本地已有改动**：目标业务文件在开工前无 diff；三类未跟踪本地资料不属于本线且禁止触碰。

@@ -38,6 +38,8 @@
 
 ## 协调与冲突
 
+- 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 API schema, Freezone route, task runner and ops client：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
+
 - shot-breakdown 同时修改 `src/novelvideo/api/routes/freezone.py` 与
   `src/novelvideo/task_backend/runners/freezone.py`；接口与 leaf 分类应先确定共同 schema，再串行落代码。
 - `origin/feat/canvas-video-reshoot-breakdown` 已包含另一套前端 depth capture，并改同一批 API / runner / VideoNode。

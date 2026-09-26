@@ -55,8 +55,9 @@ reason = "Vietnamese H3 mode-disabled messages; merge by key."
 
 [[claims]]
 path = "src/novelvideo/official_media_models.json"
-mode = "read-only"
-reason = "Declare LibLib-aligned MiniMax H3 capabilities and advanced parameters."
+mode = "shared"
+shared_with = ["minimax-h3-canvas-defaults", "sync-main-remotes"]
+reason = "Declare H3 capabilities; the defaults follow-up may update only this model's parameter defaults."
 
 [[claims]]
 path = "tests/test_model_gateway_settings.py"
@@ -65,8 +66,9 @@ reason = "Lock the official H3 catalog contract."
 
 [[claims]]
 path = "src/novelvideo/generators/minimax_h3_workbench.py"
-mode = "read-only"
-reason = "Stable local H3 workbench API adapter."
+mode = "shared"
+shared_with = ["minimax-h3-canvas-defaults"]
+reason = "Stable H3 adapter; the defaults follow-up adds validated single-LoRA forwarding."
 
 [[claims]]
 path = "src/novelvideo/generators/video_generator.py"
