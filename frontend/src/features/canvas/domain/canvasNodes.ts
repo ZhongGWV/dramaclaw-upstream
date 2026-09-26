@@ -816,6 +816,8 @@ export interface LiblibImportMetadata {
   importedContent?: string;
   /** Node title imported from LibTV, so a local rename survives a refresh. */
   importedDisplayName?: string;
+  /** Empty string records an uncolored import, so later local color edits survive refresh. */
+  importedGroupColor?: string;
   /** 本节点里没能本地保存、仍走 LibTV 远端地址的素材。 */
   remoteMedia?: RemoteMediaRef[];
 }

@@ -16,6 +16,11 @@ colors:
   border: "#22232c"
   text: "#e8eaf0"
   text-muted: "#6f7079"
+  group-label-text: "#919191"
+  group-label-colored-text: "#ffffff"
+  group-label-red: "#4e1714"
+  group-label-cyan: "#014a5a"
+  group-label-green: "#0c4327"
   accent: "#5ba0ff"
   # ── shadcn 语义层（来源：.dark 块的 oklch 值）──
   primary: "#00bdcf"
@@ -503,3 +508,7 @@ npx @google/design.md export DESIGN.md --format css-vars   # 或 tailwind | dtcg
 alpha 版规范既没有 border 属性也没有图表序列概念，这些 token 无法被 component 引用。
 **不要为了消警告删掉它们**，它们在 `index.css` 里是承重的。
 出现任何**新的 error**，或 warning 数超过 15，都意味着回归。
+
+### 工作流分组备注
+
+分组标题使用独立的屏幕尺寸浮层，复用 `--st-canvas-zoom` 的反向缩放：普通标题 13px / 1.55 行高，颜色 `--group-label-text`；彩色标题 12px / 18px 行高、标签高 24px、圆角 6px、左右内距 6px，白字使用 `--group-label-colored-text`。浮层在组框左上方，间距为画布坐标 8px，与组框一起定位，不参与节点几何测量。来源红 / 青 / 绿标签使用对应 `--group-label-*` 色值，组底色和边框分别为基础色的 10% / 20%。故事板组继续使用原标题和拖动区域。

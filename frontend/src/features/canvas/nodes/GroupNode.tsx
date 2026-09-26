@@ -22,6 +22,7 @@ import { readUrl } from '@/lib/url-params';
 import { CanvasHistoryAssetsModal } from '@/features/canvas/ui/CanvasHistoryAssetsModal';
 import type { CanvasAsset } from '@/features/canvas/domain/canvasAssets';
 import { NodeHeader, NODE_HEADER_FLOATING_POSITION_CLASS } from '@/features/canvas/ui/NodeHeader';
+import { GroupNodeHeader } from '@/features/canvas/ui/GroupNodeHeader';
 import { NodeResizeHandle } from '@/features/canvas/ui/NodeResizeHandle';
 import { canvasNodeFrameClass } from '@/features/canvas/ui/nodeFrameStyles';
 import {
@@ -416,7 +417,7 @@ export const GroupNode = memo(({ id, data, selected }: GroupNodeProps) => {
             : undefined,
       }}
     >
-      <NodeHeader
+      {isStoryboard ? <NodeHeader
         // Storyboard groups only drag by this header (dragHandle on the node), so
         // dragging a thumbnail reorders instead of moving the whole board.
         className={`${NODE_HEADER_FLOATING_POSITION_CLASS}${
@@ -429,7 +430,14 @@ export const GroupNode = memo(({ id, data, selected }: GroupNodeProps) => {
           displayName: nextTitle,
           label: nextTitle,
         })}
-      />
+      /> : <GroupNodeHeader
+        title={headerTitle}
+        color={data.backgroundColor}
+        onTitleChange={(nextTitle) => updateNodeData(id, {
+          displayName: nextTitle,
+          label: nextTitle,
+        })}
+      />}
 
       {isStoryboard
         ? emptyCells.map((rect, index) => (

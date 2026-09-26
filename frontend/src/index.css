@@ -90,6 +90,12 @@
   --group-node-bg: rgba(15, 23, 42, 0.06);
   --group-node-border: rgba(15, 23, 42, 0.1);
   --group-node-radius: 20px;
+  /* Workflow group headings retain screen-space size and source palette. */
+  --group-label-text: #919191;
+  --group-label-colored-text: #ffffff;
+  --group-label-red: #4e1714;
+  --group-label-cyan: #014a5a;
+  --group-label-green: #0c4327;
 
   /* Shadows — soft, diffuse for light mode */
   --shadow-2xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.05);

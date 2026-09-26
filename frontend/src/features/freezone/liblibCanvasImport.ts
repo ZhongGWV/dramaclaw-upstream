@@ -19,6 +19,7 @@ import {
   type VideoNodeData,
 } from '@/features/canvas/domain/canvasNodes';
 import { getNodeDefinition } from '@/features/canvas/domain/nodeRegistry';
+import { normalizeGroupColor } from '@/features/canvas/domain/groupColors';
 import { liblibImageThumbnailUrl, liblibVideoPosterUrl } from '@/features/canvas/domain/liblibMediaUrl';
 
 type SourceNode = {
@@ -697,12 +698,14 @@ export function convertLiblibCanvasDetail(
       } satisfies TextAnnotationNodeData;
     } else if (kind === 'group') {
       const defaults = getNodeDefinition(type).createDefaultData() as GroupNodeData;
+      const backgroundColor = normalizeGroupColor(parsed.data.groupColor);
       data = {
         ...defaults,
         displayName,
         label: displayName,
         createdAt,
-        liblibImport,
+        backgroundColor,
+        liblibImport: { ...liblibImport, importedGroupColor: backgroundColor ?? '' },
       } satisfies GroupNodeData;
     } else {
       data = {
@@ -846,6 +849,13 @@ export function mergeLiblibCanvasGraph(
       if (typeof importedValue === 'string' && oldData[field] !== importedValue) {
         nextData[field] = oldData[field];
       }
+    }
+    if (node.type === CANVAS_NODE_TYPES.group
+      && (oldImport.importedGroupColor !== undefined
+        ? (normalizeGroupColor(oldData.backgroundColor) ?? '') !== oldImport.importedGroupColor
+        : Boolean(normalizeGroupColor(oldData.backgroundColor)))) {
+      // Older imports omitted this metadata: an existing color is a local edit.
+      nextData.backgroundColor = oldData.backgroundColor;
     }
     if (node.type === CANVAS_NODE_TYPES.group
       && typeof oldImport.importedDisplayName === 'string'
