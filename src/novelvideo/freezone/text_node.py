@@ -8,12 +8,14 @@
 
 from __future__ import annotations
 
+import re
+import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent
+from pydantic_ai import Agent, BinaryContent
 
 from novelvideo.egress_context import TrustedEgressContext
 from novelvideo.model_gateway_runtime import (
@@ -249,13 +251,90 @@ def get_freezone_translation_agent() -> Agent:
     return _translation_agent
 
 
-def create_freezone_text_writer_agent() -> Agent:
+def is_selectable_deepseek_text_model(model: str) -> bool:
+    """Only chat-capable DeepSeek IDs may bypass the local gateway's default model."""
+    return bool(
+        re.fullmatch(
+            r"(?:Pro/)?deepseek-ai/DeepSeek-(?:R1|V3|V4)[A-Za-z0-9._-]*",
+            model,
+        )
+    )
+
+
+def text_writer_model_media_kind(model: str) -> Literal["text", "image", "video"] | None:
+    """Keep the picker and submit validation aligned with the gateway allowlist."""
+    if is_selectable_deepseek_text_model(model):
+        return "text"
+    if model == "zai-org/GLM-4.5V":
+        return "image"
+    if re.fullmatch(
+        r"Qwen/Qwen3-VL-(?:8B|30B-A3B|32B)-(?:Instruct|Thinking)", model
+    ):
+        return "video"
+    return None
+
+
+def validate_text_writer_references_model(
+    model: str, references: Sequence[Mapping[str, str]]
+) -> None:
+    """A visual reference must never disappear behind a text-only fallback."""
+    has_video = any(ref.get("video_url") for ref in references)
+    has_image = has_video or any(ref.get("image_url") for ref in references)
+    kind = text_writer_model_media_kind(model) if model else None
+    if model and kind is None:
+        raise ValueError("unsupported text model")
+    if has_video and kind != "video":
+        raise ValueError("video references require a Qwen3-VL model")
+    if has_image and kind not in {"image", "video"}:
+        raise ValueError("image references require a vision model")
+
+
+async def _text_writer_reference_parts(
+    references: Sequence[Mapping[str, str]], project_dir: Path
+) -> list[str | BinaryContent]:
+    """Resolve only this project's files and keep the canvas edge order intact."""
+    from novelvideo.freezone.jobs import _sample_evenly
+    from novelvideo.freezone.paths import resolve_static_url_to_path
+    from novelvideo.freezone.vision_gateway import load_compact_vision_inputs
+
+    parts: list[str | BinaryContent] = []
+    with tempfile.TemporaryDirectory(prefix="freezone-text-refs-") as temp_root:
+        for index, ref in enumerate(references, start=1):
+            label = f"Reference {index} (node {ref.get('node_id', '')})"
+            if text := str(ref.get("text") or "").strip():
+                parts.append(f"{label}, source text:\n{text}")
+            if image_url := str(ref.get("image_url") or "").strip():
+                path = resolve_static_url_to_path(image_url, project_dir)
+                parts.append(f"{label}, source image:")
+                for image in await load_compact_vision_inputs([path]):
+                    parts.append(BinaryContent(data=image.data, media_type=image.media_type))
+            if video_url := str(ref.get("video_url") or "").strip():
+                path = resolve_static_url_to_path(video_url, project_dir)
+                frame_dir = Path(temp_root) / f"video_{index}"
+                frame_dir.mkdir()
+                frames = await _sample_evenly(path, frame_dir, 6)
+                if not frames:
+                    raise ValueError(f"video reference {index} has no readable frames")
+                parts.append(
+                    f"{label}, source video represented by {len(frames)} frames "
+                    "in chronological order; use their visual progression as reference:"
+                )
+                for frame_index, image in enumerate(
+                    await load_compact_vision_inputs(frames), start=1
+                ):
+                    parts.append(f"{label}, video frame {frame_index}/{len(frames)}:")
+                    parts.append(BinaryContent(data=image.data, media_type=image.media_type))
+    return parts
+
+
+def create_freezone_text_writer_agent(model_name: str | None = None) -> Agent:
     """创建 Freezone 自由文本生成 Agent。"""
     from novelvideo.config import get_newapi_text_pydantic_model
 
     model = get_newapi_text_pydantic_model(
         "FREEZONE_TEXT_WRITER_MODEL",
         FREEZONE_TEXT_WRITER_MODEL,
+        model_name_override=model_name,
     )
     return Agent(
         model,
@@ -389,6 +468,9 @@ async def translate_freezone_text(
 async def generate_freezone_text(
     *,
     prompt: str,
+    model: str | None = None,
+    references: Sequence[Mapping[str, str]] = (),
+    project_dir: Path | None = None,
     egress_context: TrustedEgressContext | None = None,
 ) -> tuple[str, str]:
     """根据用户指令生成自由文本，返回逻辑模型名与最终文本。**会出网**。
@@ -400,14 +482,33 @@ async def generate_freezone_text(
     if not clean_prompt:
         raise ValueError("prompt is required")
 
+    selected_model = str(model or "").strip()
+    validate_text_writer_references_model(selected_model, references)
+    if references and project_dir is None:
+        raise ValueError("project_dir is required for references")
+
+    prompt_parts: list[str | BinaryContent] = [clean_prompt]
+    if references:
+        assert project_dir is not None
+        prompt_parts = [
+            "Use the following upstream canvas materials as references for the writing task.",
+            *await _text_writer_reference_parts(references, project_dir),
+            f"User instruction:\n{clean_prompt}",
+        ]
+
     from novelvideo.model_gateway_runtime import model_gateway_request_scope
 
     with model_gateway_request_scope(egress_context):
-        response = await get_freezone_text_writer_agent().run(clean_prompt)
+        agent = (
+            create_freezone_text_writer_agent(selected_model)
+            if selected_model
+            else get_freezone_text_writer_agent()
+        )
+        response = await agent.run(prompt_parts if references else clean_prompt)
     generated_text = str(response.output or "").strip()
     if not generated_text:
         raise ValueError("text generation returned empty output")
-    return resolve_freezone_text_writer_model(), generated_text
+    return selected_model or resolve_freezone_text_writer_model(), generated_text
 
 
 _STORY_SCRIPT_COMMON_RULES = (

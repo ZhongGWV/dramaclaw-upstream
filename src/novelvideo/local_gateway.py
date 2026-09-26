@@ -491,6 +491,7 @@ def create_app(config: RouterConfig | None = None) -> FastAPI:
             "kreaT2iWorkflow": config.krea_t2i_workflow.is_file(),
             "kreaEditWorkflow": config.krea_edit_workflow.is_file(),
             "siliconflowKey": config.siliconflow_key_file.is_file(),
+            "textModel": config.text_model,
         }
 
     @app.get("/v1/models")
@@ -499,8 +500,22 @@ def create_app(config: RouterConfig | None = None) -> FastAPI:
 
     @app.post("/v1/chat/completions")
     async def chat_completions(request: Request) -> Response:
+        # Existing aliases keep the configured default. Explicit text/vision
+        # IDs are the opt-in path for per-node model selection.
+        try:
+            requested = str((await request.json()).get("model") or "")
+        except (ValueError, AttributeError):
+            requested = ""
+        selectable = bool(
+            re.fullmatch(
+                r"(?:Pro/)?deepseek-ai/DeepSeek-(?:R1|V3|V4)[A-Za-z0-9._-]*"
+                r"|zai-org/GLM-4\.5V"
+                r"|Qwen/Qwen3-VL-(?:8B|30B-A3B|32B)-(?:Instruct|Thinking)",
+                requested,
+            )
+        )
         return await _forward_to_siliconflow(
-            request, config, "chat/completions", config.text_model
+            request, config, "chat/completions", None if selectable else config.text_model
         )
 
     @app.post("/v1/embeddings")

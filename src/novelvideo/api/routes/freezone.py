@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Annotated, Any, Awaitable, Callable, Literal, Optional
 from urllib.parse import quote, unquote, urlencode, urlsplit
 
+import httpx
 from fastapi import (
     APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile,
 )
@@ -289,7 +290,9 @@ from novelvideo.freezone.text_node import (
     generate_freezone_text,
     generate_freezone_story_script,
     generate_freezone_story_script_with_vision,
+    text_writer_model_media_kind,
     translate_freezone_text,
+    validate_text_writer_references_model,
 )
 from novelvideo.freezone.video_node import (
     MAINLINE_FOLDER_KEY,
@@ -6497,6 +6500,8 @@ def _start_freezone_text_generate_task(
     project_dir: Path,
     job_id: str,
     prompt: str,
+    model: str = "",
+    references: list[dict[str, str]] | None = None,
     canvas_id: str | None = None,
     node_id: str | None = None,
 ) -> None:
@@ -6529,8 +6534,13 @@ def _start_freezone_text_generate_task(
                 current_task="generating_text",
                 logs=["开始生成文本"],
             )
-            model, generated_text = await generate_freezone_text(prompt=prompt)
-            payload = {"generated_text": generated_text, "model": model}
+            used_model, generated_text = await generate_freezone_text(
+                prompt=prompt,
+                model=model,
+                references=references or [],
+                project_dir=project_dir,
+            )
+            payload = {"generated_text": generated_text, "model": used_model}
             out = _text_generate_output_path(project_dir, job_id)
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -6546,7 +6556,7 @@ def _start_freezone_text_generate_task(
                 media_type="text",
                 input_preview=_freezone_history_preview(prompt),
                 prompt=prompt,
-                model=model,
+                model=used_model,
                 result={"output_format": "json", **payload},
             )
             result = {"output_format": "json", **payload}
@@ -6593,6 +6603,60 @@ def _start_freezone_text_generate_task(
     asyncio.create_task(_runner())
 
 
+@router.get("/projects/{project}/freezone/text/models", tags=[TAG_FREEZONE_TEXT])
+async def freezone_text_models(
+    project: str,
+    user: dict = Depends(get_api_user),
+) -> dict[str, Any]:
+    """Read the active gateway catalog so the picker shows models this install exposes."""
+    from novelvideo.config import get_newapi_runtime_credentials
+
+    await _resolve_freezone_project(project, user)
+    api_key, base_url = get_newapi_runtime_credentials(
+        env_api_key="MODEL_API_KEY",
+        env_base_url="MODEL_BASE_URL",
+    )
+    if not api_key or not base_url:
+        return {"ok": True, "data": {"models": [], "defaultModel": ""}}
+    gateway_host = urlsplit(base_url).hostname
+    local_gateway = gateway_host in {"localhost", "127.0.0.1", "::1"}
+    default_model = ""
+    try:
+        async with httpx.AsyncClient(timeout=15.0, trust_env=not local_gateway) as client:
+            response = await client.get(
+                f"{base_url.rstrip('/')}/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            response.raise_for_status()
+            catalog = response.json()
+            if local_gateway:
+                health_url = f"{base_url.rstrip('/').removesuffix('/v1')}/healthz"
+                try:
+                    health = await client.get(health_url)
+                    health_data = health.json() if health.is_success else None
+                    if (
+                        isinstance(health_data, dict)
+                        and health_data.get("service") == "dramaclaw-local-gateway"
+                    ):
+                        default_model = str(health_data.get("textModel") or "")
+                except (httpx.HTTPError, ValueError):
+                    pass
+    except (httpx.HTTPError, ValueError):
+        return {"ok": True, "data": {"models": [], "defaultModel": ""}}
+    items = catalog.get("data") if isinstance(catalog, dict) else None
+    ids = (
+        sorted({
+            str(item.get("id") or "")
+            for item in items
+            if isinstance(item, dict)
+            and text_writer_model_media_kind(str(item.get("id") or "")) is not None
+        })
+        if isinstance(items, list)
+        else []
+    )
+    return {"ok": True, "data": {"models": ids, "defaultModel": default_model}}
+
+
 @router.post(
     "/projects/{project}/freezone/text/generate",
     response_model=FreezoneJobAcceptedResponse,
@@ -6610,6 +6674,31 @@ async def freezone_text_generate(
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(400, "prompt is required")
+    model = body.model.strip()
+    references = [item.model_dump() for item in body.references]
+    try:
+        validate_text_writer_references_model(model, references)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    image_count = sum(bool(item["image_url"]) for item in references)
+    video_count = sum(bool(item["video_url"]) for item in references)
+    if image_count > 8 or video_count > 2:
+        raise HTTPException(400, "too many text node media references")
+    for item in references:
+        for key, suffixes, max_bytes in (
+            ("image_url", {".png", ".jpg", ".jpeg", ".webp", ".gif"}, 64 * 1024 * 1024),
+            ("video_url", {".mp4", ".mov", ".webm", ".mkv"}, 256 * 1024 * 1024),
+        ):
+            if not item[key]:
+                continue
+            try:
+                path = resolve_static_url_to_path(item[key], project_dir)
+                if not path.is_file() or path.suffix.lower() not in suffixes:
+                    raise ValueError("unsupported or missing reference media")
+                if path.stat().st_size > max_bytes:
+                    raise ValueError("reference media exceeds size limit")
+            except (OSError, ValueError) as exc:
+                raise HTTPException(400, "invalid text reference media") from exc
 
     try:
         job_id = _new_job_id()
@@ -6621,6 +6710,8 @@ async def freezone_text_generate(
                 job_id=job_id,
                 payload={
                     "prompt": prompt,
+                    "model": model,
+                    "references": references,
                     "canvas_id": body.canvas_id or "",
                     "node_id": body.node_id or "",
                     "billing": {
@@ -6635,6 +6726,8 @@ async def freezone_text_generate(
             project_dir=project_dir,
             job_id=job_id,
             prompt=prompt,
+            model=model,
+            references=references,
             canvas_id=body.canvas_id or None,
             node_id=body.node_id or None,
         )

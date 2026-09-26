@@ -2376,6 +2376,19 @@ export async function createFreezoneAudioVoice(
 
 export interface FreezoneTextGeneratePayload extends FreezoneNodeContext {
   prompt: string;
+  model?: string;
+  references?: Array<{ node_id: string; text?: string; image_url?: string; video_url?: string }>;
+}
+
+export interface FreezoneTextModels {
+  models: string[];
+  defaultModel: string;
+}
+
+export async function fetchFreezoneTextModels(project: string): Promise<FreezoneTextModels> {
+  return await apiCall<FreezoneTextModels>(
+    `projects/${encodeURIComponent(project)}/freezone/text/models`,
+  );
 }
 
 export async function submitFreezoneTextGenerate(
@@ -2388,6 +2401,8 @@ export async function submitFreezoneTextGenerate(
       method: "POST",
       json: {
         prompt: payload.prompt,
+        model: payload.model ?? '',
+        references: payload.references ?? [],
         ...nodeContextBody(payload),
       },
     },

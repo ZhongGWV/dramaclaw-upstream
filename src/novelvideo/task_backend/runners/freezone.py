@@ -1426,6 +1426,9 @@ async def _run_freezone_text_generate_async(
         generate_freezone_text,
         "generate_freezone_text",
         prompt=prompt,
+        model=str(payload.get("model") or ""),
+        references=payload.get("references") or [],
+        project_dir=project_dir,
     )
     data = {"generated_text": generated_text, "model": model}
     out = outputs_dir(project_dir, "freezone_text_generate") / f"{job_id}.json"
