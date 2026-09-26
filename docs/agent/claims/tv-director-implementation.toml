@@ -4,6 +4,21 @@ ledger = "docs/agent/tasks/tv-director-implementation.md"
 baseline = "e7b1fbce7ee814fb3fd7343b74f68d331f24ec70"
 
 [[claims]]
+path = "docs/agent/archive/git-sync-preparation.md"
+mode = "coordination"
+reason = "Retain completed commit audit for the Director implementation."
+
+[[claims]]
+path = "docs/agent/tasks/git-sync-preparation.md"
+mode = "coordination"
+reason = "Cover removal of the completed active ledger during archival."
+
+[[claims]]
+path = "docs/agent/claims/git-sync-preparation.toml"
+mode = "coordination"
+reason = "Cover removal of the completed preparation scope."
+
+[[claims]]
 path = "tests/director/test_outline_review.py"
 mode = "exclusive"
 reason = "Outline review obligations, evidence separation, retained failures and execution integration."
@@ -120,8 +135,7 @@ reason = "UI parity interactions, draft preservation and scoped layout regressio
 
 [[claims]]
 path = "docs/guides/tv-director/ui-parity.md"
-mode = "shared"
-shared_with = ["git-sync-preparation"]
+mode = "exclusive"
 reason = "Measured reference geometry, screenshots and honest visual acceptance gaps."
 
 [[claims]]

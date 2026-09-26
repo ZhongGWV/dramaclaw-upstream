@@ -2,7 +2,7 @@
 
 **状态**：执行中
 **最后更新**：2026-09-26
-**基线**：`e7b1fbce7ee814fb3fd7343b74f68d331f24ec70`；`main` 与 `zhonggwv/main` 同步；当前首切片、v2执行层与两条Director线文档仍未提交，本轮共享config只修回环文本代理默认，其他既有脏文件与受保护资料不动
+**基线**：`e7b1fbce7ee814fb3fd7343b74f68d331f24ec70`（本线实现起点）；本地实现已提交`cb3833ee`、研究`180aac9f`、协调`ba101496`，尚未push。下次业务写入前重新审计实际HEAD并同步本台账/claim基线；受保护资料不动
 **认领者**：`codex/tv-director-outline-review-20260926`
 **相关文档**：`docs/guides/liblib-tv-director-analysis.md`、`docs/guides/liblib-tv-director-development.md`、`docs/guides/tv-director-skill-fusion.md`
 **相关分支 / PR**：无
@@ -277,6 +277,12 @@ V4-Flash 联机验收分叉（2026-09-25）：定位到此前的 502 是本机 H
 - [ ] `python3 scripts/agent_guard.py check`、handoff/release、本线改动均在范围内，无凭据进入 Git。
 
 ## 进展记录
+
+### 2026-09-26 · 已按授权完成本地提交（未推送）
+
+实现219文件已提交为`cb3833ee`，取证2报告为`180aac9f`，两线协调依赖为`ba101496`。提交前候选指纹无变化，逐组实际索引diff-check、gitleaks/guard/banned-words全通过，三条DCO有效。沿用同字节471后端/78前端/build结果；本轮未修改业务或重跑模型。提交不是完整功能/文学质量验收，也未授权push/部署；第三方素材许可仍需核验或替换。只剩三份受保护原稿/旧文件未跟踪。
+
+提交工作线收口见`docs/agent/archive/git-sync-preparation.md`，本线仅以三条精确coordination claim承接其归档与活动台账/claim移除，旧内容可从已创建commit恢复。临时ui-parity共享随该线归档撤回，本线继续持有视觉文档。后续开发开工须将本线基线更新到实际HEAD后重新acquire/preflight，不能凭已提交推定可绕过基线复核。
 
 ### 2026-09-26 · 提交准备复验（无业务源码变动）
 
@@ -557,7 +563,7 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 
 ## 交接摘要
 
-- **最后完成到**：已保存大纲独立证据审查UI/API/费用/报告完成；6笔同稿真实审查仍漏判，1.1.0去掉正文模板冲突仍未修好语义。454后端/78前端/build/ruff/i18n/CE与合成浏览器通过；全部付费证据/用量落档。历史14次生成诊断及LibTV《页脚》对照保留。M07仍2.2.0、short-drama根基与用户时长权威不变。整套目标未完成，未提交推送部署、不归档。
+- **最后完成到**：已保存大纲独立证据审查UI/API/费用/报告完成；6笔同稿真实审查仍漏判，1.1.0去掉正文模板冲突仍未修好语义。提交准备复验含网关471后端/78前端/build及钩子通过；全部付费证据/用量落档。历史14次生成诊断及LibTV《页脚》对照保留。M07仍2.2.0、short-drama根基与用户时长权威不变。实现已本地提交cb3833ee，未push/deploy；整套目标未完成，本实现线不归档。
 - **下一步唯一动作**：先读literary-benchmark §9.5与workplace-reference-only/warmth审查原回包，在本台账开精确边界，把五类漏判沉淀为带原要求/剧情锚点及最小正反变异的反例fixture；设计可人工确认的原子事实版本，联通来源/方向/大纲，区别模型提议与用户事实。当前句覆盖与引用检查不代替该事实表。反例能区分正反后才做同稿已配置模型对照；不先加长prompt或购买新稿，旧UNKNOWN不重发。后续M10/完整来源/完整UI仍照原合同。
 - **先读这些文件**：本台账顶部、literary-benchmark.md §9、outline_review.py/schemas/outline_review.py及test_outline_review.py/live_outline_review.py、outline_benchmark.py、outline-parity.md；M07看story-plan/{SKILL.md,method.md,manifest.json}。总目标看implementation-closure/runtime-validation和skill/workflow合同，UI看ui-parity/DESIGN/feature-contracts。6适配包不等于24完整方法，历史开销不等于内容改善。
 - **不要动这些文件 / 决策**：现有 story/freezone/canvas 业务代码、用户源稿、研究 Cookie。

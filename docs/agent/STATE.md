@@ -8,19 +8,17 @@
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 分支 `main`；画布架构/LibTV 基线 `3238af61`、动作注册表 + 音频截取/变速 `0f20e8ac`、
-  音频智能/自定义切分 `4b578509`、创意片头取证 `bb0bf189` 均已作为独立提交推送，当前与
-  `zhonggwv/main` 同步；来源、决策和验证可从对应台账追溯。
-- **当前工作区另有两条 TV Director 工作线的未提交增量**：研究报告/台账属于
-  `liblib-tv-director-discovery`；新域、API、UI、测试、翻译、路由及本台账属于
-  `tv-director-implementation`，均未提交。`.playwright-cli/` 浏览器运行日志、`_to_delete/`
-  旧原型、`曹操.md` 原始故事样例继续受保护。此前 49 条在途的 LOD、素材替换、入口恢复、本地路由与 Depth
-  差异均已按工作线独立提交；受保护资料不因名称或“提交全部”的口头命令自动删除或公开。
+- 分支 `main`；画布/H3等历史已推送到`zhonggwv/main`的基线为`e7b1fbce`。
+  本轮新增本地提交`ba101496`（协调）、`180aac9f`（研究）、`cb3833ee`（实现）及后续协调归档，**尚未push**。
+- **两条TV Director工作线的已有增量已本地提交**：研究归discovery，实现/API/UI/测试/翻译/配置归implementation，
+  不代表两线功能已完成。工作区仅保留受保护`_to_delete/`旧原型与`曹操.md`原始故事稿；
+  `.playwright-cli/`、本地配置及付费回包继续忽略，不提交、不删除。备份与逐组验证见
+  `docs/agent/archive/git-sync-preparation.md`。受保护资料不因“提交全部”自动公开。
   会话开始时 hook 注入的摘要是实时值，不能用条目总数反推某条业务线又新增了多少文件。
 - 这是当前最大的风险：一次整树 restore / 自动 stash / 强制切分支，就能抹掉三周的工作。
   **接手后第一条命令是 `git status --short --branch`，先和下表对账。**
-- 当前 `main` 已推送到 `zhonggwv/main`；`origin` 只作为上游对照，且仍有 27 个上游提交
-  尚未审计合并，多处本地脏文件也被上游修改。
+- 当前main有上述未推送本地提交；`origin`只作为上游对照，此前记录的27个上游提交
+  尚未审计合并，多处本地实现也被上游修改。
   在完成逐线来源审计和拆提交前，不得直接 pull/rebase，也不要为了建 worktree 自动 stash。
 - GitHub CLI 已认证为 `ZhongGWV`；Git 的全局 HTTP/HTTPS 代理为 `http://127.0.0.1:7890`。
 
@@ -28,8 +26,7 @@
 
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
-| [git-sync-preparation](tasks/git-sync-preparation.md) | 跟踪远端同步与提交准备 | 执行中 | 用户已授权本地提交；228候选指纹与空索引复核通过，按协调7/研究2/实现219分组commit -s。前轮471后端/78前端/build/完整钩子通过，源码不改；不push，素材许可及文学缺口保留 |
-| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 已保存大纲独立证据审查/单独费用/版本失效/API与UI接通；6笔同稿审查5不可用1REVIEWED且全漏关键错，模板reference-only修正仍未过文学门，不能自动放行。454后端/78前端/build/合成浏览器通过，M07 2.2.0保留short-drama根基。历史五稿14请求及LibTV《页脚》对照留存。下一步literary-benchmark §9.5原子事实确认+最小正反反例，不加长prompt刷绿。UI/M10/Windows/22包退出门未全过；未提交推送部署 |
+| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | cb3833ee已本地提交（未push/deploy）；471后端/78前端/build/提交钩子通过。已保存大纲证据审查接通，但6笔审稿全漏关键错，未过文学门、不能自动放行；M07 2.2.0保留short-drama根基。下一步literary-benchmark §9.5原子事实确认+最小正反反例；UI/M10/Windows/完整退出门与素材再分发许可仍未全过 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
