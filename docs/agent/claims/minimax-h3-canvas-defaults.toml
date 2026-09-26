@@ -1,7 +1,7 @@
 version = 1
 slug = "minimax-h3-canvas-defaults"
 ledger = "docs/agent/tasks/minimax-h3-canvas-defaults.md"
-baseline = "17436a2"
+baseline = "762591d"
 
 [[claims]]
 path = "docs/agent/STATE.md"
@@ -42,7 +42,7 @@ reason = "Change only MiniMax-H3 parameter defaults and resolution options while
 [[claims]]
 path = "src/novelvideo/generators/minimax_h3_workbench.py"
 mode = "shared"
-shared_with = ["minimax-h3-liblib-parity"]
+shared_with = ["minimax-h3-liblib-parity", "h3-completion-recovery"]
 reason = "Add validated default LoRA forwarding to H3 workbench payloads."
 
 [[claims]]
@@ -53,7 +53,7 @@ reason = "Set the static fallback video model for newly created nodes to MiniMax
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Skip source-duration probing only for MiniMax-H3 all-reference requests with no duration bounds; preserve other models and video_edit behavior."
 
 [[claims]]
@@ -61,3 +61,21 @@ path = ".dramaclaw-local/local.env"
 mode = "shared"
 shared_with = ["local-stack"]
 reason = "Correct only the local ComfyUI portable paths so the requested local stack can restart."
+
+[[claims]]
+path = "frontend/src/features/canvas/domain/nodeRegistry.ts"
+mode = "shared"
+shared_with = ["liblib-canvas-parity"]
+reason = "Prefer H3 for new and imported video nodes."
+
+[[claims]]
+path = "frontend/src/features/freezone/createProjectLiblibImport.ts"
+mode = "shared"
+shared_with = ["liblib-canvas-parity"]
+reason = "Prefer H3 for new and imported video nodes."
+
+[[claims]]
+path = "frontend/src/features/freezone/CanvasesTab.tsx"
+mode = "shared"
+shared_with = ["liblib-canvas-parity", "legacy-unassigned-diff"]
+reason = "Prefer H3 for new and imported video nodes."

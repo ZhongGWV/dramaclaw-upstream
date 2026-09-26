@@ -92,19 +92,19 @@ reason = "Shared assistant surface; only story-specific integration blocks belon
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Chinese story UI and backend error keys; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "English story UI and backend error keys; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Vietnamese story UI and backend error keys; merge by key."
 
 [[claims]]

@@ -57,7 +57,7 @@ reason = "Audio trim and speed input UI."
 [[claims]]
 path = "frontend/src/features/canvas/ui/NodeActionToolbar.tsx"
 mode = "shared"
-shared_with = ["canvas-audio-split", "creative-intro-implementation", "liblib-canvas-parity", "shot-breakdown"]
+shared_with = ["video-prompt-split", "video-node-duplicate", "canvas-audio-split", "creative-intro-implementation", "liblib-canvas-parity", "shot-breakdown"]
 reason = "Mount audio actions without replacing existing video actions."
 
 [[claims]]
@@ -69,25 +69,25 @@ reason = "Persist typed audio derivation metadata."
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Add the audio transform API client and result task type."
 
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Chinese audio action strings; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "English audio action strings; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Vietnamese audio action strings; merge by key."
 
 [[claims]]
@@ -98,19 +98,19 @@ reason = "Local ffmpeg audio trim and pitch-preserving speed transform."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Add the audio transform request schema."
 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Validate, enqueue, and expose audio transform results."
 
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Register the local audio transform leaf and runner."
 
 [[claims]]

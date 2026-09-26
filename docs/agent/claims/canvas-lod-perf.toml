@@ -21,12 +21,13 @@ reason = "Machine-readable scope for this workstream."
 [[claims]]
 path = "frontend/src/features/canvas/Canvas.tsx"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "liblib-canvas-parity"]
+shared_with = ["asset-replacement-picker", "liblib-canvas-parity", "storyboard-dual-view"]
 reason = "LOD mounting and downstream-node focus both integrate at the canvas root."
 
 [[claims]]
 path = "frontend/src/index.css"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-canvas-parity"]
 reason = "LOD presentation styles; remote branch overlap still requires source audit."
 
 [[claims]]

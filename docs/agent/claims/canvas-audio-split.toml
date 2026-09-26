@@ -68,31 +68,31 @@ reason = "Smart and custom split preview UI."
 [[claims]]
 path = "frontend/src/features/canvas/ui/NodeActionToolbar.tsx"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "creative-intro-implementation", "liblib-canvas-parity", "shot-breakdown"]
+shared_with = ["video-prompt-split", "video-node-duplicate", "canvas-audio-actions", "creative-intro-implementation", "liblib-canvas-parity", "shot-breakdown"]
 reason = "Mount split actions and fan out existing audio transforms."
 
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Add the smart split preview API client."
 
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Chinese audio split strings; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "English audio split strings; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Vietnamese audio split strings; merge by key."
 
 [[claims]]
@@ -103,13 +103,13 @@ reason = "Local ffmpeg silence analysis and stable segment projection."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Add the smart split preview request schema."
 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Resolve local audio and expose the non-mutating split preview endpoint."
 
 [[claims]]

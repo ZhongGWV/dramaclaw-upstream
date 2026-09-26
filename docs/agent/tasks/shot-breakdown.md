@@ -182,3 +182,19 @@ demucs 未安装 → 音乐维度当前只能验证降级路径，正常路径�
 - **先读这些文件**：`docs/guides/shot-breakdown.md`、两个新增后端模块、前端投影模块。
 - **不要动这些文件 / 决策**：不要合并作者意图与反编译结果，不要静默降级音乐模式；不要
   从远端整套复制专用拉片节点，除非先废弃当前视频节点直接入口并写迁移方案。
+
+### 2026-09-26 · 故事板共享协调
+
+本线既有实现先完成，storyboard-dual-view 后续串行集成共享视图接点；保留本线生成和保存行为。由当前 Codex 会话集成，禁止改工作流坐标。
+
+### 2026-09-26 · 视频副本工具条共享协调
+
+本线原工具条功能先完成；video-node-duplicate 后串行追加副本按钮，复用 store 入边复制，当前 Codex 会话集成，不变更本线操作。
+
+### 2026-09-26 · 时间分镜拆分协调
+
+本线先完成，video-prompt-split 后串行集成，保留原功能；当前会话集成共享路径：frontend/src/features/canvas/nodes/VideoNode.tsx, frontend/src/features/canvas/ui/NodeActionToolbar.tsx, frontend/src/stores/canvasStore.ts, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+
+### 2026-09-26 · H3 提示词优化协调
+原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。

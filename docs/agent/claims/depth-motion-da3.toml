@@ -36,7 +36,7 @@ reason = "Model inference and deterministic depth-video export."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth, breakdown, and LibTV endpoints share the freezone adapter."
 
 [[claims]]
@@ -48,19 +48,19 @@ reason = "Task-center labels for both analysis task types share one mapping."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth and breakdown request contracts live in the shared API schema module."
 
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth and breakdown leaf classification share the runner."
 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/VideoNode.tsx"
 mode = "shared"
-shared_with = ["liblib-canvas-parity", "shot-breakdown", "minimax-h3-reference-order", "sync-main-remotes"]
+shared_with = ["video-prompt-split", "liblib-canvas-parity", "shot-breakdown", "minimax-h3-reference-order", "sync-main-remotes"]
 reason = "Depth-motion action and video recreation actions share one node."
 
 [[claims]]
@@ -72,7 +72,7 @@ reason = "Depth job persistence fields share the canvas node contract."
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Depth and breakdown API clients share the operations module."
 
 [[claims]]
@@ -95,19 +95,19 @@ reason = "Depth and breakdown tasks extend the placement-free task contract."
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Depth UI strings; merge by key only."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Depth UI strings; merge by key only."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Depth UI strings; merge by key only."
 
 [[claims]]

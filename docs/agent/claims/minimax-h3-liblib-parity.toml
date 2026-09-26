@@ -67,7 +67,7 @@ reason = "Lock the official H3 catalog contract."
 [[claims]]
 path = "src/novelvideo/generators/minimax_h3_workbench.py"
 mode = "shared"
-shared_with = ["minimax-h3-canvas-defaults"]
+shared_with = ["minimax-h3-canvas-defaults", "h3-completion-recovery"]
 reason = "Stable H3 adapter; the defaults follow-up adds validated single-LoRA forwarding."
 
 [[claims]]

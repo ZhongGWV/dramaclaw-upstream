@@ -20,7 +20,8 @@ reason = "Machine-readable scope."
 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/TextAnnotationNode.tsx"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["storyboard-dual-view"]
 reason = "Show live upstream references and submit them with compatible text or vision model."
 
 [[claims]]
@@ -31,36 +32,37 @@ reason = "Liblib-style text model trigger and portalled popup with keyboard sele
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown"]
 reason = "Expose text and vision model catalog and send ordered references."
 
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown"]
 reason = "Validate selected model and bounded text, image, video reference fields."
 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "shot-breakdown", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown"]
 reason = "Text/vision model catalog, media scope validation, and generation submission only."
 
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown"]
 reason = "Pass selected model and references to freezone text leaf."
 
 [[claims]]
 path = "src/novelvideo/freezone/text_node.py"
-mode = "exclusive"
+mode = "shared"
 reason = "Select compatible model and send ordered text and compacted image/video frames."
+shared_with = ["h3-prompt-optimizer"]
 
 [[claims]]
 path = "src/novelvideo/local_gateway.py"
 mode = "shared"
-shared_with = ["local-stack"]
+shared_with = ["local-stack", "h3-prompt-optimizer"]
 reason = "Honor authenticated DeepSeek and supported GLM/Qwen vision chat model selection."
 
 [[claims]]

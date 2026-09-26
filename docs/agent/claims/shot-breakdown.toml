@@ -46,13 +46,13 @@ reason = "Breakdown task definitions."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "text-node-liblib-visual-parity"]
 reason = "Breakdown, depth, and LibTV endpoints share the freezone adapter."
 
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity"]
 reason = "Breakdown and depth leaf classification share the runner."
 
 [[claims]]
@@ -64,25 +64,25 @@ reason = "Expose breakdown task lifecycle."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity"]
 reason = "Breakdown request and result schemas."
 
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity"]
 reason = "Breakdown operation endpoint client."
 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/VideoNode.tsx"
 mode = "shared"
-shared_with = ["depth-motion-da3", "liblib-canvas-parity", "minimax-h3-reference-order", "sync-main-remotes"]
+shared_with = ["video-prompt-split", "depth-motion-da3", "liblib-canvas-parity", "minimax-h3-reference-order", "sync-main-remotes"]
 reason = "Breakdown, depth, and video recreation actions share one node."
 
 [[claims]]
 path = "frontend/src/features/canvas/ui/NodeActionToolbar.tsx"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "creative-intro-implementation", "liblib-canvas-parity"]
+shared_with = ["video-prompt-split", "video-node-duplicate", "canvas-audio-actions", "canvas-audio-split", "creative-intro-implementation", "liblib-canvas-parity"]
 reason = "Breakdown entry and LibTV-compatible video actions share the toolbar."
 
 [[claims]]
@@ -103,25 +103,26 @@ reason = "Snapshot replay and non-terminal metadata delivery for streamed breakd
 
 [[claims]]
 path = "frontend/src/stores/canvasStore.ts"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["video-prompt-split"]
 reason = "Reset unrecoverable breakdown activity during canvas hydration."
 
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Shot-breakdown UI strings; merge by key only."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Shot-breakdown UI strings; merge by key only."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Shot-breakdown UI strings; merge by key only."
 
 [[claims]]

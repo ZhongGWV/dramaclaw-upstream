@@ -2,8 +2,8 @@
 
 **状态**：执行中
 **最后更新**：2026-09-26
-**基线**：`17436a2`，分支 `codex/sync-main-remotes`
-**认领者**：`codex/minimax-h3-canvas-defaults-20260925`
+**基线**：`762591d`，分支 `codex/sync-main-remotes`；本轮目标文件无既有 diff
+**认领者**：`codex/h3-default-import-20260926`
 **相关工作线**：`minimax-h3-liblib-parity`（已完成合同）、`sync-main-remotes`（已合并内容只允许窄范围产品调整）
 
 ## 目标
@@ -91,6 +91,20 @@
 
 ## 进展记录
 
+### 2026-09-26 · 新建与导入 H3 默认值已补齐
+三个代码路径已修改：nodeRegistry 新建视频直接用 DEFAULT_VIDEO_MODEL_ID；createProjectLiblibImport 与 CanvasesTab 从实时模型列表优先选该默认值，目录没有 H3 才回退可用首项。替代先前“上次选择优先”决定，仅影响新建默认，保留已保存节点明确选择。
+当前用户新导入画布备份至忽略的本地运行目录后，通过带 base_revision 的 API 将 13 个仍沿用 Wan 导入默认值的视频节点 model/importedModel 改为 MiniMax-H3，保存返回 revision 6；请求只修改这两个模型字段和保存元信息。实时目录已包含 H3。未触发生成任务。
+acquire/preflight 成功，owner `codex/h3-default-import-20260926`。审阅精确 diff；不新增或运行测试（用户本轮未要求）。本轮代码未提交；原故事板与首次导入修复均保留。
+
+
+### 2026-09-26 · 补齐新建与两个导入入口的 H3 默认值方案
+用户再次要求所有新视频节点默认本机可用 MiniMax-H3。现状：静态默认值已是 H3，但 nodeRegistry 优先上次选择；两个 LibTV 导入入口覆盖为目录第一项 Wan。当前新导入画布有 13 个视频节点，仍沿用导入默认 Wan，未见自定义模型。
+本轮步骤：新建节点直接取 DEFAULT_VIDEO_MODEL_ID；新建项目导入和画布抽屉导入优先选择目录中的该默认模型，缺少时才取可用首项；备份后通过带 base_revision 的本地 API 将当前刚导入画布仍用原导入模型的 13 个视频节点切为 H3（同时更新 importedModel 来源标记）。保留节点坐标、连线、素材、提示词及明确手选的模型。
+本轮替代旧“继承上次选择”的决定，仅新建时使用固定默认；已有节点选择保持。无需新增 API 或迁移。回退仅撤销三处默认选择与本轮数据修改，保留其他脏文件。
+审计：三个目标路径 git diff 为空；HEAD..origin/main 无目标差异；相关 origin/codex/minimax-h3-upstream 早于当前实现，缺少导入模块及较新画布操作，无可复用默认导入方案。故事板和首次导入容错的既有脏文件保持原样。
+验证方式：本轮用户未要求测试，不新增/运行测试；做精确 diff 检查。既有 LibTV 与 legacy 实现先完成，本线串行窄修改，当前会话集成。台账共享范围同步 claim。
+
+
 ### 2026-09-26 · H3 默认项代码提交
 
 做什么：将本轮 MiniMax-H3 节点默认模型、544P / 480P 分辨率、FL2VA / 8 步 / LoRA 默认值及无时长边界全能参考的探测修复提交为 `8e024ac`。提交仅包含四个实现文件。
@@ -151,3 +165,17 @@
 - **下一步唯一动作**：基于真实任务日志或请求确认媒体类型/附件计数在哪一层丢失，再做窄范围修复；不通过新生成任务盲测。
 - **先读这些文件**：H3 目录与适配器、`freezone.py` 中模型能力时长分支、`ProviderModelPicker.tsx` 默认常量。
 - **不要动这些文件 / 决策**：不改用户画布 JSON；不改其他模型默认值；不改变无视频编辑模式的计费时长口径。
+
+## 本轮补充写入边界
+
+- `frontend/src/features/canvas/domain/nodeRegistry.ts`：共享，默认模型选择。
+- `frontend/src/features/freezone/createProjectLiblibImport.ts`：共享，默认模型选择。
+- `frontend/src/features/freezone/CanvasesTab.tsx`：共享，默认模型选择。
+- 当前用户刚导入的画布文档：只更新仍使用导入默认模型的 videoNode；本地备份不提交。
+
+### 2026-09-26 · H3 完成恢复协调
+与 h3-completion-recovery 串行共享 H3 适配器，仅修完成认领/断线补查，保留本线参数与引用逻辑。由该线会话最终集成。
+
+
+### 2026-09-26 · H3 提示词优化协调
+原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。

@@ -1,7 +1,7 @@
 version = 1
 slug = "liblib-canvas-parity"
 ledger = "docs/agent/tasks/liblib-canvas-parity.md"
-baseline = "0e55d252"
+baseline = "762591d"
 
 [[claims]]
 path = ".gitignore"
@@ -38,7 +38,7 @@ reason = "Current canvas architecture, invariants, extension seams, and refactor
 [[claims]]
 path = "frontend/src/features/canvas/Canvas.tsx"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-lod-perf"]
+shared_with = ["asset-replacement-picker", "canvas-lod-perf", "storyboard-dual-view"]
 reason = "Focus newly derived nodes without replacing LOD mounting logic."
 
 [[claims]]
@@ -112,7 +112,8 @@ reason = "LibTV canvas import."
 
 [[claims]]
 path = "frontend/src/features/freezone/createProjectLiblibImport.ts"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["minimax-h3-canvas-defaults"]
 reason = "Project creation import entry."
 
 [[claims]]
@@ -129,7 +130,7 @@ reason = "Imported-node fallbacks share the lazy registry with LOD heavy compone
 [[claims]]
 path = "frontend/src/features/canvas/nodes/VideoNode.tsx"
 mode = "shared"
-shared_with = ["depth-motion-da3", "shot-breakdown", "minimax-h3-reference-order", "sync-main-remotes"]
+shared_with = ["video-prompt-split", "depth-motion-da3", "shot-breakdown", "minimax-h3-reference-order", "sync-main-remotes"]
 reason = "Video remake/continuation and depth-motion entry share the video node."
 
 [[claims]]
@@ -159,7 +160,7 @@ reason = "Measured LibTV node and toolbar surface tokens."
 [[claims]]
 path = "frontend/src/features/canvas/ui/NodeActionToolbar.tsx"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "creative-intro-implementation", "shot-breakdown"]
+shared_with = ["video-prompt-split", "video-node-duplicate", "canvas-audio-actions", "canvas-audio-split", "creative-intro-implementation", "shot-breakdown"]
 reason = "Measured LibTV-compatible video actions share the toolbar with breakdown."
 
 [[claims]]
@@ -175,7 +176,8 @@ reason = "Fields for imported and derived nodes."
 
 [[claims]]
 path = "frontend/src/features/canvas/domain/nodeRegistry.ts"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["minimax-h3-canvas-defaults"]
 reason = "Imported node registration."
 
 [[claims]]
@@ -204,7 +206,7 @@ reason = "Navigate directly to a newly imported canvas."
 [[claims]]
 path = "frontend/src/features/freezone/CanvasesTab.tsx"
 mode = "shared"
-shared_with = ["legacy-unassigned-diff"]
+shared_with = ["minimax-h3-canvas-defaults", "legacy-unassigned-diff"]
 reason = "Import into an existing project while preserving unrelated canvas-selector work."
 
 [[claims]]
@@ -222,31 +224,31 @@ reason = "Display and filter imported fallback media nodes."
 [[claims]]
 path = "frontend/src/features/freezone/FreezoneShell.tsx"
 mode = "shared"
-shared_with = ["asset-replacement-picker"]
+shared_with = ["asset-replacement-picker", "storyboard-dual-view"]
 reason = "Mount the explicit asset-localization control."
 
 [[claims]]
 path = "frontend/src/routes/_app/index.tsx"
 mode = "shared"
-shared_with = ["legacy-unassigned-diff"]
+shared_with = ["liblib-first-import", "legacy-unassigned-diff"]
 reason = "Create or re-import a project from a LibTV share URL without absorbing unrelated project-card edits."
 
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Chinese user-facing strings; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "English user-facing strings; merge by key."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Vietnamese user-facing strings; merge by key."
 
 [[claims]]
@@ -268,7 +270,7 @@ reason = "Persist imported canvas semantics and prewarm the LOD image ladder."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "shot-breakdown", "local-stack", "minimax-h3-canvas-defaults", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
 reason = "Expose LibTV detail/localization endpoints; stage only owned hunks."
 
 [[claims]]
@@ -313,3 +315,29 @@ path = "frontend/src/__tests__/lib/media-url.test.ts"
 mode = "shared"
 shared_with = ["canvas-lod-perf"]
 reason = "Remote image variant regression tests."
+
+[[claims]]
+path = "frontend/src/features/canvas/domain/groupColors.ts"
+mode = "exclusive"
+reason = "LibTV group annotation styling and color preservation."
+
+[[claims]]
+path = "frontend/src/features/canvas/ui/GroupNodeHeader.tsx"
+mode = "exclusive"
+reason = "LibTV group annotation styling and color preservation."
+
+[[claims]]
+path = "DESIGN.md"
+mode = "exclusive"
+reason = "LibTV group annotation styling and color preservation."
+
+[[claims]]
+path = "frontend/src/index.css"
+mode = "shared"
+shared_with = ["canvas-lod-perf"]
+reason = "Group label tokens only; preserve existing LOD rules."
+
+[[claims]]
+path = "state/local/mishou_plan/freezone/canvases/liblib_1cc7b1689a0f4418a145ed32f6f766e4.json"
+mode = "exclusive"
+reason = "Restore only source group colors through the normal revision-checked canvas save API; runtime data stays ignored."

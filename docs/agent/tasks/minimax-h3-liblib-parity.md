@@ -218,3 +218,10 @@ H3 实现不会覆盖创意片头现场。稳定 API 已经存在，不应继续
 - **下一步唯一动作**：主检出锁释放后逐 hunk 集成 `codex/minimax-h3-liblib-parity`，优先复核三语与四个共享热点。
 - **先读这些文件**：本台账、`minimaxH3GenerationDecision.ts`、`minimax_h3_workbench.py`、两组聚焦测试。
 - **不要动这些文件 / 决策**：不改 `VideoNode.tsx` / `freezone.py`；不把真实工作台地址写入仓库；引用模式继续使用已实测 QuickUI HTTP 合同，直至 v1 素材解析修复。
+
+### 2026-09-26 · 时间分镜拆分协调
+
+本线先完成，video-prompt-split 后串行集成，保留原功能；当前会话集成共享路径：frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+### 2026-09-26 · H3 完成恢复协调
+与 h3-completion-recovery 串行共享 H3 适配器，仅修完成认领/断线补查，保留本线参数与引用逻辑。由该线会话最终集成。

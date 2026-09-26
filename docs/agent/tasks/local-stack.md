@@ -41,6 +41,8 @@
 
 ## 协调与冲突
 
+- 2026-09-27：pending-code-checkpoint 在本线之后串行追加 `.gitignore` 精确规则，排除用户凭据附件和未提交本地工作流；当前会话集成，只提交已有代码。
+
 - 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 local gateway and Freezone route：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
 
 - `src/novelvideo/generators/nanobanana_grid.py` 同时被 `origin/main` 修改。必须先看上游修复语义，
@@ -260,3 +262,17 @@ Depth、拉片和 LibTV endpoint 均未写入。
 - **下一步唯一动作**：用户在图片节点选择 Krea 2 Turbo（本地 ComfyUI）进行实际创作验收；Mac INT8 基准另行开展。
 - **先读这些文件**：`local_gateway.py`、`start-local-stack.sh`、`启动说明.md`、上游生成器 diff。
 - **不要动这些文件 / 决策**：不要把路由泛化；不要整文件覆盖 `nanobanana_grid.py`。
+
+### 2026-09-26 · 故事板共享协调
+
+本线既有实现先完成，storyboard-dual-view 后续串行集成共享视图接点；保留本线生成和保存行为。由当前 Codex 会话集成，禁止改工作流坐标。
+
+### 2026-09-26 · 时间分镜拆分协调
+
+本线先完成，video-prompt-split 后串行集成，保留原功能；当前会话集成共享路径：frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+
+### 2026-09-26 · H3 提示词优化协调
+原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
+
+2026-09-26 协调：h3-prompt-optimizer 在既有模型选择上串行加入 gateway SSE 透传与回归；最终集成由 H3 工作线负责，不改其他网关行为。

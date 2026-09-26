@@ -180,3 +180,15 @@ auto-merge。阻塞解除条件：PR 合入；不要在此之前单独移动 `zh
   `git push zhonggwv origin/main:main` 并用两次 `ls-remote` 核对同 SHA。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
 - **不要动这些文件 / 决策**：不强推、不 rebase、不提前移动 fork main，不把主工作区未跟踪资料复制进来。
+
+### 2026-09-26 · 故事板共享协调
+
+本线既有实现先完成，storyboard-dual-view 后续串行集成共享视图接点；保留本线生成和保存行为。由当前 Codex 会话集成，禁止改工作流坐标。
+
+### 2026-09-26 · 时间分镜拆分协调
+
+本线先完成，video-prompt-split 后串行集成，保留原功能；当前会话集成共享路径：frontend/public/locales/vi/translation.json, frontend/src/features/canvas/nodes/VideoNode.tsx, frontend/public/locales/en/translation.json, frontend/public/locales/zh/translation.json。
+
+
+### 2026-09-26 · H3 提示词优化协调
+原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。

@@ -93,3 +93,15 @@ LibTV 导入本身，必须独立回退。
 - **下一步唯一动作**：提交本工作线后在真实画布手工走一遍点选替换。
 - **先读这些文件**：本台账、`assetDropStore.ts`、`AssetLibraryPanel.tsx`。
 - **不要动这些文件 / 决策**：不要把挑选态另起一套服务端替换协议。
+
+### 2026-09-26 · 故事板共享协调
+
+本线既有实现先完成，storyboard-dual-view 后续串行集成共享视图接点；保留本线生成和保存行为。由当前 Codex 会话集成，禁止改工作流坐标。
+
+### 2026-09-26 · 时间分镜拆分协调
+
+本线先完成，video-prompt-split 后串行集成，保留原功能；当前会话集成共享路径：frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+
+### 2026-09-26 · H3 提示词优化协调
+原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。

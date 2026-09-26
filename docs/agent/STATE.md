@@ -3,15 +3,16 @@
 > **新会话的第一件事是读这份文件。** 它只回答三个问题：现在有哪几条线在做、各自卡在哪、
 > 下一步做什么。取证与方案不在这里——在 `docs/guides/`；每条线的逐步记录在 `docs/agent/tasks/`。
 >
-> 最后更新：2026-09-25 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
+> 最后更新：2026-09-27 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
 > [`docs/agent/README.md`](README.md)
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 分支 `main`；画布架构/LibTV 基线 `3238af61`、动作注册表 + 音频截取/变速 `0f20e8ac`、
+- 本机实际分支 `codex/sync-main-remotes`，本轮业务提交基线 `969d76d`（文档提交后的实际 HEAD 以 Git 为准）；下述 main 同步记录为历史状态。
+- 历史分支 `main`；画布架构/LibTV 基线 `3238af61`、动作注册表 + 音频截取/变速 `0f20e8ac`、
   音频智能/自定义切分 `4b578509`、创意片头取证 `bb0bf189` 均已作为独立提交推送，当前与
   `zhonggwv/main` 同步；来源、决策和验证可从对应台账追溯。
-- **工作区只剩 3 类未跟踪的受保护本地资料**：`.playwright-cli/` 浏览器运行日志、`_to_delete/`
+- **历史记录（当前已有多条工作线的未提交改动，以实时 Git 为准）：曾只剩 3 类未跟踪的受保护本地资料**：`.playwright-cli/` 浏览器运行日志、`_to_delete/`
   旧原型、`曹操.md` 原始故事样例。此前 49 条在途的 LOD、素材替换、入口恢复、本地路由与 Depth
   差异均已按工作线独立提交；这三类不因名称或“提交全部”的口头命令自动删除或公开。
   会话开始时 hook 注入的摘要是实时值，不能用条目总数反推某条业务线又新增了多少文件。
@@ -26,16 +27,23 @@
 
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
+| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除，未推送 |
+| [h3-prompt-optimizer](tasks/h3-prompt-optimizer.md) | H3 参考图完整保留与提示词格式转换 | 待验收 | 本地/云端共用字段布局，去共用段重复、统一空行/音效标题；服务已重启，待用户试转 |
+| [h3-completion-recovery](tasks/h3-completion-recovery.md) | H3 完成结果认领及超时恢复 | 待验收 | 按任务 ID 认领修复并重启生效；545秒成品已接回、任务恢复完成，待下次正常生成通知验收 |
+| [video-prompt-split](tasks/video-prompt-split.md) | 时间分镜一键拆分 | 待验收 | 完整镜头≤15秒、横排避让、清旧封面；18项回归及类型检查通过，当前五段坐标已修复，待空占位刷新复核 |
+| [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
+| [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
+| [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
 | [sync-main-remotes](tasks/sync-main-remotes.md) | 让 origin/main 与 zhonggwv/main 合流并最终同 SHA | 已阻塞 | 合并提交 `a2418a65` 全量验证通过；upstream PR #717 可合并但要求上游 review，合入后再快进 fork main |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
 | [asset-replacement-picker](tasks/asset-replacement-picker.md) | 画布素材替换：拖拽与点选双入口 | 待验收 | 独立实现与 5 项聚焦测试已通过；待真实画布手工走一遍点选替换 |
 | [freezone-entry-recovery](tasks/freezone-entry-recovery.md) | 项目画布入口恢复 | 待验收 | 30 项聚焦测试和生产构建通过；待跨项目、无效深链、首次个人画布浏览器验收 |
-| [liblib-canvas-parity](tasks/liblib-canvas-parity.md) | 画布架构与 LibTV 能力对齐 | 待验收 | 真实 UI、线上 chunk、我方架构与分阶段路线已固化；待产品确认 P0 顺序及 relay 真实出片验收 |
+| [liblib-canvas-parity](tasks/liblib-canvas-parity.md) | 画布架构与 LibTV 能力对齐 | 待验收 | 分组备注字号/标签/配色已对齐，目标15组恢复颜色；DOM/类型检查通过，几何和512条边未变 |
 | [canvas-grouped-auto-layout](tasks/canvas-grouped-auto-layout.md) | 分组画布整理与本地布局恢复 | 待验收 | 代码与本机 rev47 已修复，项目 API 已确认；待浏览器视觉确认 |
 | [text-node-liblib-visual-parity](tasks/text-node-liblib-visual-parity.md) | 文本节点 LibLib 视觉、模型与引用素材 | 待验收 | 模型按钮/浮层按 Liblib 线上尺寸和色值实现，构建通过；待窗口视觉确认 |
 | [minimax-h3-liblib-parity](tasks/minimax-h3-liblib-parity.md) | MiniMax H3 视频节点与 LibLib 参数/模式对齐 | 已完成 | 已验收分支集成到 main；后续底部模式入口与 Mixed 顺序由 `minimax-h3-reference-order` 接手 |
-| [minimax-h3-canvas-defaults](tasks/minimax-h3-canvas-defaults.md) | DramaClaw MiniMax-H3 视频节点默认参数 | 执行中 | 本机工作台已确认 FL2VA / Ref2VA 都走 R2V 全能参考；继续定位 DramaClaw 实际任务里视频引用的落点 |
+| [minimax-h3-canvas-defaults](tasks/minimax-h3-canvas-defaults.md) | DramaClaw MiniMax-H3 视频节点默认参数 | 执行中 | 新建及两个导入入口默认 H3；当前新画布 13 个视频节点已切 H3，旧引用附件验收待续 |
 | [canvas-audio-actions](tasks/canvas-audio-actions.md) | 动作注册表 + 音频截取/变速 | 已完成 | 本地 ffmpeg 端到端、23+7 项聚焦测试、生产构建与真实画布截取/2×/刷新验收均通过 |
 | [canvas-audio-split](tasks/canvas-audio-split.md) | 音频智能切分 / 自定义切分 | 已完成 | `4b578509` 已推送；17+10 项聚焦测试、构建、三语及真实画布智能/自定义/播放/刷新验收通过 |
 | [creative-intro-discovery](tasks/creative-intro-discovery.md) | LibTV 创意片头专项取证 | 已完成 | `bb0bf189` 已推送；可另开实现线，最终供应商画质与扣费仍需真实任务验收 |

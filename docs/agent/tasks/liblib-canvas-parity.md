@@ -1,8 +1,8 @@
 # LibTV 画布对齐：片段重拍 / 智能续写 / 导入器 / 工具条
 
 **状态**：待验收
-**最后更新**：2026-09-19
-**基线**：`0e55d252`；四个可评审功能提交均已完成；本轮只补架构与竞品取证文档，不改业务代码
+**最后更新**：2026-09-27
+**基线**：`762591d`；`codex/sync-main-remotes`；本轮只修分组标题/颜色，早期提交和取证记录保留如下
 **相关文档**：`docs/guides/canvas-architecture.md`（我方画布功能架构与扩展边界）、
 `docs/guides/liblib-canvas-parity.md`（真实界面、线上 chunk 与能力差距）
 **相关分支 / PR**：`main`；`28936905`、`8bc8d598`、`4959b1d9`、`09e2703a`
@@ -79,6 +79,33 @@ LibTV 画布导入不再丢节点语义，视频节点工具条按实测规格�
 - 回退按四个功能切片执行；未拆提交前不对共享文件做 restore。
 
 ## 进展记录
+
+### 2026-09-27 · 分组备注样式落地并完成目标画布呈现对照
+
+改动：新增 GroupNodeHeader，仅普通工作流组采用；保持故事板拖动头、组尺寸计算和子节点布局逻辑。groupColors 对齐 10% 底色、20% 边框，导入 groupColor 并保存 importedGroupColor，刷新保留用户改色（兼容旧导入）。index.css / DESIGN.md 同步标签配色和尺寸。用户指定画布通过已有 base_revision 保存接口从 revision 3 保存至 4，仅补 15 组颜色元数据，10 组恢复颜色；原数据备份留在忽略目录。
+
+原因：通用 NodeHeader 在低缩放下文字太小，导入遗漏 groupColor；分组需要独立且固定屏幕尺寸的标签。复用 CSS 缩放变量，无新增每组缩放订阅。原站 DOM 取证结果与本地当前 DOM 一致：普通 13px / #919191；彩色 12px 白字、24px 高、6px 圆角；红 #4e1714、青 #014a5a、绿 #0c4327。
+
+验证：两次 TypeScript `tsc -b frontend/tsconfig.json --pretty false` 退出 0；本轮路径 `git diff --check` 通过。Chrome 查看实际目标页面和截图，彩色标签已生效；一次开发 CSS 缓存未更新，重新保存样式文件后 HMR 已载入新 tokens。API 只读核对 revision 4、128 节点、512 边，全部坐标/尺寸/父组/样式几何与全部边保持原样。未新增或执行测试（本轮用户只要求样式调整）；未提交生成任务或代码。
+
+Guard：owner codex/group-label-20260927 acquire 成功，首次 preflight 提醒旧基线，已按读取到的 762591d 审计并更新 ledger/claim；后续所有业务路径和目标数据路径 preflight 通过。canvas-lod-perf 的 index.css 共享声明和串行顺序同步在双方台账。
+
+本轮完成；原工作线早期视频重拍/续写待办保持原状态。后续如需扩展其他色板，先实测原站对应 badge token，勿改工作流几何。
+
+
+### 2026-09-27 · 工作流分组备注样式方案（已执行）
+
+- 目标：普通组标题 13px 灰字；彩色组 12px 白字、24px 高 / 6px 圆角 / 横向 6px 内距标签；缩放保持可读。恢复来源 groupColor，背景/边框分别 10%/20%。
+- 非目标：不移动、缩放、重排节点，不改边、文本、媒体、故事板布局、提示词和任务调用。
+- 基线：762591d，codex/sync-main-remotes。拟改业务文件目前无本地 diff；origin/main 与同步分支没有同类样式差异，旧 H3 分支只有旧导入器差异，复用当前导入器，不移植旧代码。
+- 证据：用户指定原站实际 DOM，普通文字 13px / #919191，彩色 12px / 18px，badge 24px / 6px；分组 header 使用 inverse zoom。源数据 15 组，其中 8 个红色、1 青色、1 绿色；本地漏 groupColor。
+- 精确写入：共享 GroupNode.tsx、canvasNodes.ts、index.css；独占 groupColors.ts、ui/GroupNodeHeader.tsx、liblibCanvasImport.ts、DESIGN.md。原有 GroupNode/Canvas LOD 先完成，本线后串行集成，只消费现有 --st-canvas-zoom，不新增逐节点缩放订阅。index.css 与 canvas-lod-perf 共享声明双方同步；由本会话集成。
+- 步骤：独立组标题组件；颜色导入和刷新时保留用户修改；补齐设计 token；通过现有带 base_revision 的保存接口修复目标画布的颜色字段并备份本地原数据；浏览器查看结果。
+- 本地修复只按源 nodeKey 对齐 15 组的 backgroundColor / importedGroupColor，不改任何几何和引用，走现有 API 和历史备份，不做通用迁移。诊断与备份在忽略目录 .dramaclaw-local。
+- 风险：旧画布颜色曾被用户编辑；已有颜色保留，刷新只在与上次导入值相同才更新。回退仅本轮 hunk 和颜色备份，不整树还原。
+- 验证：类型检查、diff 检查与页面 DOM/截图观察。本轮用户未要求测试，不新增或运行测试。
+- owner：codex/group-label-20260927；acquire/preflight 通过后写代码。
+
 
 ### 2026-09-19 · 目标画布真实交互复核与架构方案固化
 
@@ -276,3 +303,27 @@ shot / depth 已收口后的 `2ca34419`，补齐本线真实会触碰的集成�
 - **下一步唯一动作**：配置 `OSS_RELAY_AK/SK` 后真实出片一次，再按同一清单跑续写，不要先重写状态模型。
 - **先读这些文件**：本台账决策、`docs/guides/liblib-canvas-parity.md`、远端相关测试。
 - **不要动这些文件 / 决策**：不要先覆盖共享画布文件；保留“派生节点”和“重拍平铺”的已验证理由。
+
+### 2026-09-26 · 故事板共享协调
+
+本线既有实现先完成，storyboard-dual-view 后续串行集成共享视图接点；保留本线生成和保存行为。由当前 Codex 会话集成，禁止改工作流坐标。
+
+### 2026-09-26 · 首次导入容错协调
+
+index.tsx 既有改动已提交且当前无 diff；liblib-first-import 在本线之后串行修新建排序缓存容错，由当前 Codex 会话集成，保持导入与卡片功能。
+
+### 2026-09-26 · 新建/导入 H3 默认模型共享协调
+
+本线提交的节点/导入入口先完成，minimax-h3-canvas-defaults 后串行修改默认模型选择；当前相关业务路径无历史 diff，由 Codex 集成，保持其他导入和卡片行为。
+
+### 2026-09-26 · 视频副本工具条共享协调
+
+本线原工具条功能先完成；video-node-duplicate 后串行追加副本按钮，复用 store 入边复制，当前 Codex 会话集成，不变更本线操作。
+
+### 2026-09-26 · 时间分镜拆分协调
+
+本线先完成，video-prompt-split 后串行集成，保留原功能；当前会话集成共享路径：frontend/src/features/canvas/nodes/VideoNode.tsx, frontend/src/features/canvas/ui/NodeActionToolbar.tsx, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+
+### 2026-09-26 · H3 提示词优化协调
+原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。

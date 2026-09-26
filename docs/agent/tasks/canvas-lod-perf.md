@@ -142,3 +142,11 @@
 - **下一步唯一动作**：对 `08f8f410` 与本地 4 个重叠文件做行为级差异表。
 - **先读这些文件**：`canvasLod.ts`、`Canvas.tsx`、对应 LOD 测试、远端提交。
 - **不要动这些文件 / 决策**：审计前不要覆盖 `Canvas.tsx` / `index.css` 等共享热点。
+
+### 2026-09-26 · 故事板共享协调
+
+本线既有实现先完成，storyboard-dual-view 后续串行集成共享视图接点；保留本线生成和保存行为。由当前 Codex 会话集成，禁止改工作流坐标。
+
+### 2026-09-27 · 分组标题串行协调
+
+本线 LOD 先完成，liblib-canvas-parity 后修改共享 GroupNode 和 index.css 的分组标题样式，由 codex/group-label-20260927 集成；复用现有 --st-canvas-zoom，保留 LOD 挂载/订阅与几何。
