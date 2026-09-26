@@ -1,3 +1,4 @@
+import { OperationPanelShell } from "@/features/canvas/ui/OperationPanelShell";
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -1083,9 +1084,9 @@ function WritingOpsPanel({
   const videoReferences = references.filter((item) => typeof item.videoUrl === 'string' && item.videoUrl.length > 0);
 
   return (
-    <div
-      className={`nodrag absolute left-1/2 z-[300] flex -translate-x-1/2 flex-col rounded-[var(--node-radius)] border ${CANVAS_NODE_INPUT_SURFACE_CLASS} ${CANVAS_NODE_INPUT_FRAME_CLASS}`}
-      style={{
+    <OperationPanelShell expanded={false} onCollapse={() => {}}
+      inlineClassName={`nodrag absolute left-1/2 z-[300] flex -translate-x-1/2 flex-col rounded-[var(--node-radius)] border ${CANVAS_NODE_INPUT_SURFACE_CLASS} ${CANVAS_NODE_INPUT_FRAME_CLASS}`}
+      inlineStyle={{
         top: `calc(100% + ${COMPACT_OPS_PANEL_GAP}px)`,
         height: Math.max(height, WRITING_OPS_PANEL_MIN_HEIGHT),
         width: Math.min(
@@ -1093,7 +1094,6 @@ function WritingOpsPanel({
           Math.max(width * 1.5, WRITING_OPS_PANEL_MIN_WIDTH),
         ),
       }}
-      onClick={(event) => event.stopPropagation()}
     >
       {(textReferences.length > 0 || imageReferences.length > 0 || videoReferences.length > 0) && (
         <div className="ui-scrollbar nowheel flex shrink-0 items-center gap-3 overflow-x-auto px-6 pb-2 pt-5">
@@ -1225,7 +1225,7 @@ function WritingOpsPanel({
           </button>
         </div>
       </div>
-    </div>
+    </OperationPanelShell>
   );
 }
 

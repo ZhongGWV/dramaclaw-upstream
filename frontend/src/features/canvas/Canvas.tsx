@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
+import { storyboardActive } from '@/features/storyboard/storyboardStore';
 import {
   useState,
   useCallback,
@@ -726,6 +727,7 @@ interface PendingNodePlacement {
 }
 
 interface CanvasProps {
+  interactionActive?: boolean;
   onBlankPaneClick?: () => void;
   controlsPlacement?: 'bottom-right' | 'top-right';
   liblibImported?: boolean;
@@ -733,6 +735,7 @@ interface CanvasProps {
 
 export function Canvas({
   onBlankPaneClick,
+  interactionActive = true,
   controlsPlacement = 'bottom-right',
   liblibImported = false,
 }: CanvasProps = {}) {
@@ -1198,6 +1201,7 @@ export function Canvas({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (!isSpacePanKey(event) || isTypingTarget(event.target) || isImmersiveViewerActive()) {
         return;
       }
@@ -1206,6 +1210,7 @@ export function Canvas({
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (!isSpacePanKey(event)) {
         return;
       }
@@ -1325,6 +1330,7 @@ export function Canvas({
   // 自动 fitView 回到节点集中区，避免用户找不到自己的内容。
   useEffect(() => {
     if (!initialViewportCorrectionPendingRef.current) return;
+    if (storyboardActive()) { initialViewportCorrectionPendingRef.current = false; return; }
     if (!nodesInitialized) return;
 
     const container = wrapperRef.current;
@@ -1374,6 +1380,11 @@ export function Canvas({
     if (!pendingFocusNodeId) return;
     const target = nodes.find((node) => node.id === pendingFocusNodeId);
     if (!target) {
+      clearPendingFocus();
+      return;
+    }
+    if (storyboardActive()) {
+      useCanvasStore.getState().setSelectedNode(target.id);
       clearPendingFocus();
       return;
     }
@@ -1636,6 +1647,8 @@ export function Canvas({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange<CanvasNode>[]) => {
+      // Offscreen node measurements must never change workflow geometry.
+      if (storyboardActive()) return;
       // 拖拽时 applyNodeChanges 每帧重建 nodes 数组。这里只在事件回调里「读一次」当前快照,
       // 不把 nodes 列进依赖,避免该回调每帧重建、进而打穿下游 memo。
       const nodes = useCanvasStore.getState().nodes;
@@ -2284,6 +2297,7 @@ export function Canvas({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (
         event.defaultPrevented ||
         event.isComposing ||
@@ -2326,6 +2340,7 @@ export function Canvas({
   // a bare digit jumps to it, and ⌘/Ctrl+Shift+E clears them all.
   useEffect(() => {
     const handleBookmarkKeys = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (isTypingTarget(event.target) || isImmersiveViewerActive()) {
         return;
       }
@@ -2368,6 +2383,7 @@ export function Canvas({
   // collides with ⌘M (minimize) or text input.
   useEffect(() => {
     const handleMinimapKey = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
         return;
       }
@@ -2390,12 +2406,14 @@ export function Canvas({
   // keyup that fires off-window (e.g. after an alt-tab) can't leave it stuck on.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (event.code !== 'Space' || isTypingTarget(event.target)) {
         return;
       }
       spacePanActiveRef.current = true;
     };
     const handleKeyUp = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (event.code !== 'Space') {
         return;
       }
@@ -2725,6 +2743,13 @@ export function Canvas({
   }, [nodes, selectedNodeIds]);
 
   useEffect(() => {
+    if (storyboardActive()) {
+      const state = useCanvasStore.getState();
+      const changes = state.nodes.filter(n => Boolean(n.selected) !== (n.id === selectedNodeId))
+        .map(n => ({ id: n.id, type: 'select' as const, selected: n.id === selectedNodeId }));
+      if (changes.length) state.onNodesChange(changes);
+      return;
+    }
     if (selectedNodeIds.length === 1) {
       if (selectedNodeId !== selectedNodeIds[0]) {
         setSelectedNode(selectedNodeIds[0]);
@@ -2739,6 +2764,7 @@ export function Canvas({
 
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
+      if (storyboardActive()) return;
       pasteImageHandledRef.current = false;
       if (isTypingTarget(event.target) || isImmersiveViewerActive()) {
         return;
@@ -2845,6 +2871,7 @@ export function Canvas({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (storyboardActive()) return;
       if (isTypingTarget(event.target)) {
         return;
       }
@@ -4946,8 +4973,8 @@ export function Canvas({
         maxZoom={8}
         // 抓手工具下节点既不可拖也不可选：不可拖，左键落在节点上才会交给 pane 去平移；
         // 不可选，否则一次「拖着节点平移」松手时还会顺手把它选中。
-        nodesDraggable={!handToolActive}
-        elementsSelectable={!handToolActive}
+        nodesDraggable={interactionActive && !handToolActive}
+        elementsSelectable={interactionActive && !handToolActive}
         nodesConnectable
         edgesReconnectable
         panOnDrag={handToolActive ? PAN_ON_DRAG_BUTTONS_HAND : PAN_ON_DRAG_BUTTONS}
@@ -4961,7 +4988,7 @@ export function Canvas({
         // 低缩放档关掉视口裁剪：此档所有节点都是轻量 shell（见 withLodShell），
         // 全量挂载的渲染树很小；而裁剪在快速平移时每帧挂/卸边界节点，实测 4 秒
         // 拖拽 800+ 次翻腾、p99 帧时 470ms——收益早已倒挂。高缩放档维持裁剪。
-        onlyRenderVisibleElements={!lowDetailActive}
+        onlyRenderVisibleElements={interactionActive && !lowDetailActive}
         zoomOnDoubleClick={false}
         proOptions={REACT_FLOW_PRO_OPTIONS}
         className={liblibImported ? 'bg-surface-dark' : 'bg-background'}

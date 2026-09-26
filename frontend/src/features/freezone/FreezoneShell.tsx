@@ -1,3 +1,5 @@
+import { StoryboardView, StoryboardModeSwitch } from "@/features/storyboard/StoryboardView";
+import { useStoryboardView } from "@/features/storyboard/storyboardStore";
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -515,6 +517,16 @@ export function FreezoneShell({ project, canvasId }: FreezoneShellProps) {
     }
   }, [projectId, queryClient]);
   const sync = useCanvasSync(projectId, canvasId);
+  const viewScope = useStoryboardView(s => s.scope);
+  const viewMode = useStoryboardView(s => s.mode);
+  const isStoryboard = viewScope === currentCanvasKey && viewMode === 'storyboard';
+  useEffect(() => {
+    useStoryboardView.getState().enterScope(currentCanvasKey);
+    return () => { useStoryboardView.getState().leaveScope(); };
+  }, [currentCanvasKey]);
+  useEffect(() => {
+    document.querySelectorAll<HTMLMediaElement>('[data-workflow-host] video, [data-workflow-host] audio').forEach(media => media.pause());
+  }, [isStoryboard]);
 
   const handleBlankPaneClick = useCallback(() => {
     setAssetPanelCollapsed(true);
@@ -940,11 +952,16 @@ export function FreezoneShell({ project, canvasId }: FreezoneShellProps) {
     <div className="relative w-full h-full flex flex-col overflow-hidden">
       <div className="relative flex flex-1 min-h-0">
         <main className="relative h-full min-w-0 flex-1">
+          <div data-workflow-host aria-hidden={isStoryboard || undefined} style={{ visibility: isStoryboard ? "hidden" : "visible", pointerEvents: isStoryboard ? "none" : "auto", height: "100%" }}>
           <Canvas
+            interactionActive={!isStoryboard}
             onBlankPaneClick={handleBlankPaneClick}
             controlsPlacement="bottom-right"
             liblibImported={Boolean(sync.metadata?.liblib_import)}
           />
+          </div>
+          {isStoryboard && !showBlockingLoading && sync.status !== 'loading' && <StoryboardView scope={currentCanvasKey} />}
+          <StoryboardModeSwitch scope={currentCanvasKey} disabled={showBlockingLoading || sync.status === 'loading'} />
           {showBlockingLoading && <CanvasLoadingScreen />}
           {showLoadingOverlay && <CanvasLoadingOverlay />}
           {sync.status === "error" && (
@@ -985,7 +1002,7 @@ export function FreezoneShell({ project, canvasId }: FreezoneShellProps) {
               onRehydrate={sync.retry}
             />
           )}
-          <AssetLibraryPanel
+          {!isStoryboard && <AssetLibraryPanel
             project={projectId}
             metadata={sync.metadata}
             collapsed={assetPanelCollapsed}
@@ -1009,7 +1026,7 @@ export function FreezoneShell({ project, canvasId }: FreezoneShellProps) {
               }
               setToast(message);
             }}
-          />
+          />}
         </main>
         {showChatDock && (
           <FreezoneChatDock
@@ -1558,7 +1575,7 @@ function CanvasConflictOverlay({
   };
 
   return (
-    <div className="absolute inset-0 bg-bg-dark/60 flex items-center justify-center">
+    <div className="absolute inset-0 z-40 bg-bg-dark/60 flex items-center justify-center">
       <div className="px-4 py-3 rounded-lg bg-surface border border-amber-400/50 text-sm text-amber-100 max-w-md flex flex-col gap-3">
         <div className="font-medium">{t("freezone.shell.conflict.title")}</div>
         <div className="text-text-muted">
@@ -1692,7 +1709,7 @@ function CanvasErrorOverlay({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-bg-dark/45 px-6">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-bg-dark/45 px-6">
       <div className="flex w-full max-w-2xl flex-col gap-3 rounded-xl border border-red-400/25 bg-red-950/[0.14] px-4 py-3 text-sm shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl">
         <div className="font-medium text-red-200">{t("freezone.shell.syncFailed")}</div>
         <div className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-xs leading-5 text-red-100/75">
