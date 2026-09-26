@@ -30,6 +30,9 @@ const AppProjectsProjectStoryLazyRouteImport = createFileRoute(
 const AppProjectsProjectFreezoneLazyRouteImport = createFileRoute(
   '/_app/projects/$project/freezone',
 )()
+const AppProjectsProjectDirectorLazyRouteImport = createFileRoute(
+  '/_app/projects/$project/director',
+)()
 const AppProjectsProjectCharactersLazyRouteImport = createFileRoute(
   '/_app/projects/$project/characters',
 )()
@@ -105,6 +108,16 @@ const AppProjectsProjectFreezoneLazyRoute =
     getParentRoute: () => AppRoute,
   } as any).lazy(() =>
     import('./routes/_app/projects.$project/freezone.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const AppProjectsProjectDirectorLazyRoute =
+  AppProjectsProjectDirectorLazyRouteImport.update({
+    id: '/projects/$project/director',
+    path: '/projects/$project/director',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import('./routes/_app/projects.$project/director.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -241,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/projects/$project/styles': typeof AppProjectsProjectStylesRoute
   '/projects/$project/tasks': typeof AppProjectsProjectTasksRoute
   '/projects/$project/characters': typeof AppProjectsProjectCharactersLazyRoute
+  '/projects/$project/director': typeof AppProjectsProjectDirectorLazyRoute
   '/projects/$project/freezone': typeof AppProjectsProjectFreezoneLazyRoute
   '/projects/$project/story': typeof AppProjectsProjectStoryLazyRoute
   '/projects/$project/episodes/$episode/audio': typeof AppProjectsProjectEpisodesEpisodeAudioLazyRoute
@@ -265,6 +279,7 @@ export interface FileRoutesByTo {
   '/projects/$project/styles': typeof AppProjectsProjectStylesRoute
   '/projects/$project/tasks': typeof AppProjectsProjectTasksRoute
   '/projects/$project/characters': typeof AppProjectsProjectCharactersLazyRoute
+  '/projects/$project/director': typeof AppProjectsProjectDirectorLazyRoute
   '/projects/$project/freezone': typeof AppProjectsProjectFreezoneLazyRoute
   '/projects/$project/story': typeof AppProjectsProjectStoryLazyRoute
   '/projects/$project/episodes/$episode/audio': typeof AppProjectsProjectEpisodesEpisodeAudioLazyRoute
@@ -291,6 +306,7 @@ export interface FileRoutesById {
   '/_app/projects/$project/styles': typeof AppProjectsProjectStylesRoute
   '/_app/projects/$project/tasks': typeof AppProjectsProjectTasksRoute
   '/_app/projects/$project/characters': typeof AppProjectsProjectCharactersLazyRoute
+  '/_app/projects/$project/director': typeof AppProjectsProjectDirectorLazyRoute
   '/_app/projects/$project/freezone': typeof AppProjectsProjectFreezoneLazyRoute
   '/_app/projects/$project/story': typeof AppProjectsProjectStoryLazyRoute
   '/_app/projects/$project/episodes/$episode/audio': typeof AppProjectsProjectEpisodesEpisodeAudioLazyRoute
@@ -317,6 +333,7 @@ export interface FileRouteTypes {
     | '/projects/$project/styles'
     | '/projects/$project/tasks'
     | '/projects/$project/characters'
+    | '/projects/$project/director'
     | '/projects/$project/freezone'
     | '/projects/$project/story'
     | '/projects/$project/episodes/$episode/audio'
@@ -341,6 +358,7 @@ export interface FileRouteTypes {
     | '/projects/$project/styles'
     | '/projects/$project/tasks'
     | '/projects/$project/characters'
+    | '/projects/$project/director'
     | '/projects/$project/freezone'
     | '/projects/$project/story'
     | '/projects/$project/episodes/$episode/audio'
@@ -366,6 +384,7 @@ export interface FileRouteTypes {
     | '/_app/projects/$project/styles'
     | '/_app/projects/$project/tasks'
     | '/_app/projects/$project/characters'
+    | '/_app/projects/$project/director'
     | '/_app/projects/$project/freezone'
     | '/_app/projects/$project/story'
     | '/_app/projects/$project/episodes/$episode/audio'
@@ -448,6 +467,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$project/freezone'
       fullPath: '/projects/$project/freezone'
       preLoaderRoute: typeof AppProjectsProjectFreezoneLazyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/projects/$project/director': {
+      id: '/_app/projects/$project/director'
+      path: '/projects/$project/director'
+      fullPath: '/projects/$project/director'
+      preLoaderRoute: typeof AppProjectsProjectDirectorLazyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/projects/$project/characters': {
@@ -597,6 +623,7 @@ interface AppRouteChildren {
   AppProjectsProjectStylesRoute: typeof AppProjectsProjectStylesRoute
   AppProjectsProjectTasksRoute: typeof AppProjectsProjectTasksRoute
   AppProjectsProjectCharactersLazyRoute: typeof AppProjectsProjectCharactersLazyRoute
+  AppProjectsProjectDirectorLazyRoute: typeof AppProjectsProjectDirectorLazyRoute
   AppProjectsProjectFreezoneLazyRoute: typeof AppProjectsProjectFreezoneLazyRoute
   AppProjectsProjectStoryLazyRoute: typeof AppProjectsProjectStoryLazyRoute
 }
@@ -611,6 +638,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProjectsProjectStylesRoute: AppProjectsProjectStylesRoute,
   AppProjectsProjectTasksRoute: AppProjectsProjectTasksRoute,
   AppProjectsProjectCharactersLazyRoute: AppProjectsProjectCharactersLazyRoute,
+  AppProjectsProjectDirectorLazyRoute: AppProjectsProjectDirectorLazyRoute,
   AppProjectsProjectFreezoneLazyRoute: AppProjectsProjectFreezoneLazyRoute,
   AppProjectsProjectStoryLazyRoute: AppProjectsProjectStoryLazyRoute,
 }

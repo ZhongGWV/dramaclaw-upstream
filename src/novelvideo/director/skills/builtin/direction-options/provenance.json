@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "stage": "M03",
+  "privateLibTVSourceObtained": false,
+  "license": "MIT",
+  "copyright": "2025 0xsline",
+  "sources": [
+    {
+      "path": "references/genre-guide.md",
+      "sha256": "6e9ebf184dd824fcdeacfc0aec113e86aeccc42e50b53b36db469fd0fa149230"
+    },
+    {
+      "path": "references/opening-rules.md",
+      "sha256": "72b43ff9ca3d6eaaf91ad1a47f3328de010a8e9c06eb2a6e5819732a94b1b971"
+    }
+  ],
+  "adaptation": "Independent host planning contracts, informed by observable LibTV checkpoints and routed short-drama methods. Full semantic quality remains subject to review."
+}
