@@ -1793,12 +1793,19 @@ class FreezoneTextReference(BaseModel):
     video_url: str = Field(default="", max_length=2048)
 
 
+class H3PromptFormatOptions(BaseModel):
+    mode: Literal["textToVideo", "allReference", "firstFrame", "imageToVideo", "firstLastFrame", "imageReference", "videoEdit", "videoExtend"]
+    duration_sec: float = Field(gt=0, le=120)
+    reference_order: list[Literal["image", "video", "audio"]] = Field(default_factory=list, max_length=12)
+
+
 class FreezoneTextGenerateRequest(BaseModel):
     """Freezone 文本节点：根据创作要求生成自由文本。"""
 
     prompt: str = Field(min_length=1, max_length=20000, description="文本创作要求")
     model: str = Field(default="", max_length=160, description="可选：硅基流动文本或视觉模型 ID")
     references: list[FreezoneTextReference] = Field(default_factory=list, max_length=16)
+    h3_options: H3PromptFormatOptions | None = None
     canvas_id: str = Field(default="", description="可选：来源画布 id，用于记录节点生成历史")
     node_id: str = Field(default="", description="可选：来源节点 id，用于记录节点生成历史")
 

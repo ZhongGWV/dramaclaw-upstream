@@ -5923,6 +5923,26 @@
     "noModelsAvailable": "管理员尚未配置任何图片模型"
   },
   "node": {
+    "h3Format": {
+      "local": "本地格式转换（快速）",
+      "localMaterials": "按本地 H3 技能规则整理，不调用大模型。原文逐字保留，镜头时间只按明确时长计算；未注明的摘要或引用保留分析不作推断。",
+      "textOnlyMaterials": "DeepSeek 仅整理原提示词、上游文本和素材编号/名称，不分析图片或视频内容；素材引用关系会保留。",
+      "title": "H3 格式转换",
+      "description": "只整理 H3 字段、引用标签与时间标记，保留原文语言、运镜、描述、台词和镜头时长，不润色、不扩写。点击使用后才替换当前提示词。",
+      "model": "转换模型",
+      "noModel": "没有可用的兼容模型",
+      "working": "正在转换…",
+      "convert": "生成转换预览",
+      "materials": "使用 h3-prompt-writing 技能；图片与视频抽帧用于核对引用，上游文本仅作上下文。Mixed 标记在提交 H3 时转换为对应 Picture / Video / Audio 编号。",
+      "audioNote": "音频仅提供编号和已有说明，不分析音轨。",
+      "original": "原提示词",
+      "preview": "转换结果（可编辑）",
+      "placeholder": "点击“生成转换预览”后查看结果",
+      "discard": "弃用",
+      "use": "使用并替换提示词",
+      "stale": "提示词、引用或参数已经变化，请重新转换。",
+      "invalidReference": "结果包含不存在的引用编号，请检查。"
+    },
     "menu": {
       "uploadImage": "上传资源",
       "image": "图片",

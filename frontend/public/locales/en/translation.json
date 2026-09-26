@@ -5923,6 +5923,26 @@
     "noModelsAvailable": "No image model has been configured by the administrator"
   },
   "node": {
+    "h3Format": {
+      "local": "Local format conversion (fast)",
+      "localMaterials": "Uses local H3 skill rules without a model call. Preserves original wording and derives shot times only from explicit durations. Does not infer missing summaries or retention analysis.",
+      "textOnlyMaterials": "DeepSeek formats the original prompt, upstream text and asset labels/names without analyzing images or videos. Reference bindings are preserved.",
+      "title": "H3 format conversion",
+      "description": "Convert H3 fields, reference labels and timing notation only. Preserve the original language, camera movements, descriptions, dialogue and shot durations. No rewriting or expansion. Apply to replace the prompt.",
+      "model": "Formatting model",
+      "noModel": "No compatible model available",
+      "working": "Converting…",
+      "convert": "Generate preview",
+      "materials": "Uses the h3-prompt-writing skill. Images and sampled video frames verify bindings; upstream text is context only. Mixed labels map to Picture / Video / Audio on H3 submission.",
+      "audioNote": "Audio labels and existing descriptions only; audio tracks are not analyzed.",
+      "original": "Original prompt",
+      "preview": "Formatted draft (editable)",
+      "placeholder": "Generate a preview to see the formatted prompt",
+      "discard": "Discard",
+      "use": "Apply and replace prompt",
+      "stale": "The prompt, references or parameters changed. Generate a new preview.",
+      "invalidReference": "The draft contains an unavailable reference number."
+    },
     "menu": {
       "uploadImage": "Upload Resource",
       "image": "Image",

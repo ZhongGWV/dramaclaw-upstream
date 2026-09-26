@@ -25,10 +25,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
+import anyio
 import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 
 logger = logging.getLogger("dramaclaw.local_gateway")
@@ -454,6 +455,7 @@ async def _forward_to_siliconflow(
     if content_type:
         headers["Content-Type"] = content_type
     body = await request.body()
+    payload = {}
     if forced_model and content_type and content_type.startswith("application/json"):
         try:
             payload = json.loads(body)
@@ -463,6 +465,56 @@ async def _forward_to_siliconflow(
             raise HTTPException(status_code=400, detail="request body must be an object")
         payload["model"] = forced_model
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    elif content_type and content_type.startswith("application/json"):
+        try:
+            payload = json.loads(body)
+        except json.JSONDecodeError:
+            pass
+    if path.lstrip("/") == "chat/completions" and isinstance(payload, dict) and payload.get("stream") is True:
+        # request() buffers the entire SSE body. Keep both resources alive until
+        # downstream finishes (or disconnects), forwarding each chunk immediately.
+        client = httpx.AsyncClient(timeout=httpx.Timeout(300, connect=10))
+        started = time.perf_counter()
+        try:
+            upstream = await client.send(client.build_request(
+                request.method, f"{config.siliconflow_base_url}/{path.lstrip('/')}",
+                headers=headers, content=body,
+            ), stream=True)
+        except BaseException as exc:
+            with anyio.CancelScope(shield=True):
+                await client.aclose()
+            if isinstance(exc, httpx.HTTPError):
+                raise HTTPException(502, "SiliconFlow stream connection failed") from exc
+            raise
+        if upstream.status_code >= 400:
+            try:
+                content = await upstream.aread()
+                return Response(content, status_code=upstream.status_code,
+                                media_type=upstream.headers.get("content-type"))
+            finally:
+                with anyio.CancelScope(shield=True):
+                    await upstream.aclose()
+                    await client.aclose()
+
+        async def chunks():
+            first = True
+            try:
+                async for chunk in upstream.aiter_bytes():
+                    if first and chunk:
+                        first = False
+                        logger.info("siliconflow stream first_chunk_seconds=%.3f model=%s",
+                                    time.perf_counter() - started, payload.get("model"))
+                    yield chunk
+            finally:
+                with anyio.CancelScope(shield=True):
+                    await upstream.aclose()
+                    await client.aclose()
+                logger.info("siliconflow stream closed total_seconds=%.3f model=%s",
+                            time.perf_counter() - started, payload.get("model"))
+
+        return StreamingResponse(chunks(), media_type="text/event-stream", headers={
+            "Cache-Control": "no-cache", "X-Accel-Buffering": "no",
+        })
     try:
         async with httpx.AsyncClient(timeout=300) as client:
             upstream = await client.request(

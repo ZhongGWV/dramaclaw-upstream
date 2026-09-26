@@ -4,10 +4,75 @@ import json
 import shutil
 from pathlib import Path
 
+import asyncio
+import httpx
+import pytest
+from starlette.requests import Request
 from fastapi.responses import Response
 from fastapi.testclient import TestClient
 
 from novelvideo import local_gateway
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stop_early", [True, False])
+async def test_siliconflow_stream_is_not_buffered_and_closes_upstream(tmp_path, monkeypatch, stop_early):
+    config = _config(tmp_path)
+    released = asyncio.Event()
+    closed = asyncio.Event()
+
+    class Chunks(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            yield b'data: {"choices":[]}\n\n'
+            await released.wait()
+            yield b'data: [DONE]\n\n'
+
+        async def aclose(self):
+            closed.set()
+
+    async def upstream(request):
+        assert json.loads(request.content)["stream"] is True
+        return httpx.Response(200, stream=Chunks(), headers={"content-type": "text/event-stream"})
+
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(local_gateway.httpx, "AsyncClient", lambda **kw: original_client(transport=httpx.MockTransport(upstream), **kw))
+
+    async def receive():
+        return {"type": "http.request", "body": json.dumps({"stream": True}).encode()}
+
+    request = Request({"type": "http", "method": "POST", "headers": [
+        (b'authorization', b'Bearer test-router-token'), (b'content-type', b'application/json'),
+    ]}, receive)
+    response = await asyncio.wait_for(local_gateway._forward_to_siliconflow(request, config, "chat/completions", "text-forced"), 1)
+    first = await asyncio.wait_for(anext(response.body_iterator), 1)
+    assert b'choices' in first
+    assert not closed.is_set()
+    if stop_early:
+        await response.body_iterator.aclose()
+    else:
+        released.set()
+        assert b'[DONE]' in await anext(response.body_iterator)
+        with pytest.raises(StopAsyncIteration):
+            await anext(response.body_iterator)
+    assert closed.is_set()
+
+
+@pytest.mark.asyncio
+async def test_stream_upstream_errors_keep_http_status_and_body(tmp_path, monkeypatch):
+    config = _config(tmp_path)
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(local_gateway.httpx, "AsyncClient", lambda **kw: original_client(
+        transport=httpx.MockTransport(lambda _: httpx.Response(429, json={"error": "rate limited"})), **kw))
+
+    async def receive():
+        return {"type": "http.request", "body": b'{"stream":true}'}
+
+    request = Request({"type": "http", "method": "POST", "headers": [
+        (b'authorization', b'Bearer test-router-token'), (b'content-type', b'application/json'),
+    ]}, receive)
+    response = await local_gateway._forward_to_siliconflow(request, config, "chat/completions", "model")
+    assert response.status_code == 429
+    assert json.loads(response.body) == {"error": "rate limited"}
 
 
 def _config(tmp_path: Path) -> local_gateway.RouterConfig:

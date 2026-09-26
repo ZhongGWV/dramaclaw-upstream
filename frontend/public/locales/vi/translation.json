@@ -5827,6 +5827,26 @@
     "noModelsAvailable": "Quản trị viên chưa cấu hình model tạo ảnh nào"
   },
   "node": {
+    "h3Format": {
+      "local": "Định dạng cục bộ (nhanh)",
+      "localMaterials": "Dùng quy tắc kỹ năng H3 cục bộ, không gọi mô hình. Giữ nguyên văn bản và chỉ tính thời điểm cảnh từ thời lượng rõ ràng. Không suy đoán tóm tắt hay phân tích giữ lại còn thiếu.",
+      "textOnlyMaterials": "DeepSeek chỉ định dạng lời nhắc gốc, văn bản nguồn và nhãn/tên tư liệu, không phân tích ảnh hoặc video. Liên kết tham chiếu được giữ nguyên.",
+      "title": "Chuyển định dạng H3",
+      "description": "Chỉ chuyển trường H3, nhãn tham chiếu và mốc thời gian. Giữ nguyên ngôn ngữ, chuyển động máy quay, mô tả, lời thoại và thời lượng cảnh. Không viết lại hoặc bổ sung. Chỉ thay lời nhắc khi áp dụng.",
+      "model": "Mô hình định dạng",
+      "noModel": "Không có mô hình tương thích",
+      "working": "Đang chuyển…",
+      "convert": "Tạo bản xem trước",
+      "materials": "Dùng kỹ năng h3-prompt-writing. Ảnh và khung hình video kiểm tra tham chiếu; văn bản nguồn chỉ làm ngữ cảnh. Nhãn Mixed đổi thành Picture / Video / Audio khi gửi H3.",
+      "audioNote": "Chỉ dùng nhãn và mô tả âm thanh có sẵn; không phân tích âm thanh.",
+      "original": "Lời nhắc gốc",
+      "preview": "Bản chuyển đổi (có thể sửa)",
+      "placeholder": "Tạo bản xem trước để xem kết quả",
+      "discard": "Bỏ",
+      "use": "Áp dụng và thay lời nhắc",
+      "stale": "Lời nhắc, tham chiếu hoặc tham số đã thay đổi. Hãy tạo lại.",
+      "invalidReference": "Bản nháp có số tham chiếu không tồn tại."
+    },
     "menu": {
       "uploadImage": "Tải tài nguyên lên",
       "image": "Ảnh",

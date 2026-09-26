@@ -293,6 +293,7 @@ from novelvideo.freezone.text_node import (
     text_writer_model_media_kind,
     translate_freezone_text,
     validate_text_writer_references_model,
+    text_writer_request_references,
 )
 from novelvideo.freezone.video_node import (
     MAINLINE_FOLDER_KEY,
@@ -6502,6 +6503,7 @@ def _start_freezone_text_generate_task(
     prompt: str,
     model: str = "",
     references: list[dict[str, str]] | None = None,
+    h3_options: dict[str, Any] | None = None,
     canvas_id: str | None = None,
     node_id: str | None = None,
 ) -> None:
@@ -6538,6 +6540,7 @@ def _start_freezone_text_generate_task(
                 prompt=prompt,
                 model=model,
                 references=references or [],
+                h3_options=h3_options,
                 project_dir=project_dir,
             )
             payload = {"generated_text": generated_text, "model": used_model}
@@ -6657,33 +6660,41 @@ async def freezone_text_models(
     return {"ok": True, "data": {"models": ids, "defaultModel": default_model}}
 
 
-@router.post(
-    "/projects/{project}/freezone/text/generate",
-    response_model=FreezoneJobAcceptedResponse,
-    tags=[TAG_FREEZONE_TEXT],
-)
-async def freezone_text_generate(
-    project: str,
-    body: FreezoneTextGenerateRequest,
-    user: dict = Depends(get_api_user),
-):
-    """文本节点：根据用户要求生成可继续编辑的自由文本。"""
-    ctx, username, project_name, project_dir, _output_dir = await _resolve_freezone_project(
-        project, user
-    )
+def _validate_text_generate_request(body: FreezoneTextGenerateRequest, project_dir: Path):
+    """Keep streamed previews and queued generation on the same media boundary."""
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(400, "prompt is required")
     model = body.model.strip()
     references = [item.model_dump() for item in body.references]
+    h3_options = body.h3_options.model_dump() if body.h3_options is not None else None
     try:
-        validate_text_writer_references_model(model, references)
+        validate_text_writer_references_model(
+            model, text_writer_request_references(model, references, h3_options)
+        )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     image_count = sum(bool(item["image_url"]) for item in references)
     video_count = sum(bool(item["video_url"]) for item in references)
-    if image_count > 8 or video_count > 2:
+    if image_count > (9 if h3_options else 8) or video_count > (3 if h3_options else 2):
         raise HTTPException(400, "too many text node media references")
+    if h3_options is not None:
+        from novelvideo.freezone.h3_prompt_optimizer import canonical_prompt, skill_system_prompt
+
+        kinds = h3_options["reference_order"]
+        if len(references) < len(kinds):
+            raise HTTPException(400, "missing H3 reference attachments")
+        for kind, item in zip(kinds, references):
+            actual = "video" if item["video_url"] else "image" if item["image_url"] else "audio"
+            if kind != actual:
+                raise HTTPException(400, "H3 reference order does not match attachments")
+        if kinds.count("image") != image_count or kinds.count("video") != video_count:
+            raise HTTPException(400, "H3 reference counts do not match attachments")
+        try:
+            canonical_prompt(prompt, h3_options)
+            skill_system_prompt(h3_options)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(400, str(exc)) from exc
     for item in references:
         for key, suffixes, max_bytes in (
             ("image_url", {".png", ".jpg", ".jpeg", ".webp", ".gif"}, 64 * 1024 * 1024),
@@ -6700,6 +6711,116 @@ async def freezone_text_generate(
             except (OSError, ValueError) as exc:
                 raise HTTPException(400, "invalid text reference media") from exc
 
+    return prompt, model, references, h3_options
+
+
+@router.post("/projects/{project}/freezone/text/stream-h3", tags=[TAG_FREEZONE_TEXT])
+async def freezone_text_stream_h3(
+    project: str, body: FreezoneTextGenerateRequest,
+    user: dict = Depends(get_api_user),
+):
+    """Stream a detached preview; only the final validated event may be applied."""
+    from contextlib import suppress
+
+    from novelvideo.api.egress_binding import build_request_egress_context
+    from novelvideo.api.sse_shutdown import shutdown_aware_sse_response
+
+    ctx, _, _, project_dir, _ = await _resolve_freezone_project(project, user)
+    if body.h3_options is None:
+        raise HTTPException(400, "H3 format options are required")
+    prompt, model, references, h3_options = _validate_text_generate_request(body, project_dir)
+    # Admission is resolved before sending HTTP 200, using the verified project
+    # identity rather than client-supplied canvas/node identifiers.
+    egress = await build_request_egress_context(
+        requester_user_id=ctx.requester_user_id,
+        project_id=ctx.project_id,
+        task_type="freezone_text_generate",
+    )
+
+    async def events(shutdown):
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=8)
+
+        async def on_text(delta: str):
+            await queue.put({"type": "delta", "text": delta})
+
+        async def produce():
+            try:
+                async with asyncio.timeout(180):
+                    used_model, text = await generate_freezone_text(
+                        prompt=prompt, model=model, references=references,
+                        h3_options=h3_options, project_dir=project_dir,
+                        egress_context=egress, on_text=on_text,
+                    )
+                await queue.put({"type": "done", "generated_text": text, "model": used_model})
+            except ValueError as exc:
+                await queue.put({"type": "error", "error": str(exc)})
+            except TimeoutError:
+                await queue.put({"type": "error", "error": "Model stream timed out"})
+            except Exception:
+                logger.exception("H3 preview stream failed")
+                await queue.put({"type": "error", "error": "Model stream failed; please retry"})
+
+        task = asyncio.create_task(produce())
+        try:
+            yield {"data": json.dumps({"type": "start"})}
+            while not shutdown.is_set():
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=1)
+                except TimeoutError:
+                    continue
+                yield {"data": json.dumps(event, ensure_ascii=False)}
+                if event["type"] in {"done", "error"}:
+                    break
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+    return shutdown_aware_sse_response(events, headers={"X-Accel-Buffering": "no"})
+
+
+@router.post("/projects/{project}/freezone/text/format-h3", tags=[TAG_FREEZONE_TEXT])
+async def freezone_text_format_h3(
+    project: str,
+    body: FreezoneTextGenerateRequest,
+    user: dict = Depends(get_api_user),
+) -> dict[str, Any]:
+    """Return a local preview without queueing, model egress or canvas writes."""
+    await _resolve_freezone_project(project, user)
+    if body.h3_options is None:
+        raise HTTPException(400, "H3 format options are required")
+    options = body.h3_options.model_dump()
+    if len(body.references) < len(options["reference_order"]):
+        raise HTTPException(400, "missing H3 reference attachments")
+    for kind, ref in zip(options["reference_order"], body.references):
+        actual = "video" if ref.video_url else "image" if ref.image_url else "audio"
+        if kind != actual:
+            raise HTTPException(400, "H3 reference order does not match attachments")
+    from novelvideo.freezone.h3_prompt_optimizer import local_format_prompt
+
+    try:
+        result = await run_in_threadpool(local_format_prompt, body.prompt, options)
+    except (ValueError, OSError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {"ok": True, "data": {"generated_text": result, "model": "local-h3-format"}}
+
+
+@router.post(
+    "/projects/{project}/freezone/text/generate",
+    response_model=FreezoneJobAcceptedResponse,
+    tags=[TAG_FREEZONE_TEXT],
+)
+async def freezone_text_generate(
+    project: str,
+    body: FreezoneTextGenerateRequest,
+    user: dict = Depends(get_api_user),
+):
+    """文本节点：根据用户要求生成可继续编辑的自由文本。"""
+    ctx, username, project_name, project_dir, _output_dir = await _resolve_freezone_project(
+        project, user
+    )
+    prompt, model, references, h3_options = _validate_text_generate_request(body, project_dir)
+
     try:
         job_id = _new_job_id()
         if ctx is not None:
@@ -6712,6 +6833,7 @@ async def freezone_text_generate(
                     "prompt": prompt,
                     "model": model,
                     "references": references,
+                    "h3_options": h3_options,
                     "canvas_id": body.canvas_id or "",
                     "node_id": body.node_id or "",
                     "billing": {
@@ -6728,6 +6850,7 @@ async def freezone_text_generate(
             prompt=prompt,
             model=model,
             references=references,
+            h3_options=h3_options,
             canvas_id=body.canvas_id or None,
             node_id=body.node_id or None,
         )

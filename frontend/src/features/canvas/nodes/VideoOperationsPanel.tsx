@@ -58,6 +58,7 @@ import { spawnExternalAssetNodes } from "@/features/canvas/application/spawnExte
 import { canvasEventBus } from "@/features/canvas/application/canvasServices";
 import type { UpstreamContent } from "@/features/canvas/application/ports";
 import { ReferenceTextChip } from "@/features/canvas/nodes/shared/ReferenceTextChip";
+import { H3PromptOptimizer } from "@/features/canvas/nodes/shared/H3PromptOptimizer";
 import { ReferenceDetachButton } from "@/features/canvas/nodes/shared/ReferenceDetachButton";
 import { ReferencePickChip } from "@/features/canvas/nodes/shared/ReferencePickChip";
 import { ReferenceMentionButton } from "@/features/canvas/nodes/shared/ReferenceMentionButton";
@@ -1123,6 +1124,11 @@ export function VideoOperationsPanel({
                       updateNodeData(id, { count: nextCount })
                     }
                   />
+                  {isMiniMaxH3VideoModel(modelId) && (
+                    <H3PromptOptimizer id={id} prompt={promptDraft} genMode={genMode}
+                      durationSec={durationSec} references={referenceMedia}
+                      upstreamText={upstreamTextJoined} disabled={isGenerating || isTranslatingPrompt} />
+                  )}
                   <button
                     type="button"
                     title={t("node.videoOps.translateTitle")}

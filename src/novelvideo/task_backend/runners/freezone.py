@@ -1428,6 +1428,7 @@ async def _run_freezone_text_generate_async(
         prompt=prompt,
         model=str(payload.get("model") or ""),
         references=payload.get("references") or [],
+        h3_options=payload.get("h3_options"),
         project_dir=project_dir,
     )
     data = {"generated_text": generated_text, "model": model}

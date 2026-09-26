@@ -2378,6 +2378,11 @@ export interface FreezoneTextGeneratePayload extends FreezoneNodeContext {
   prompt: string;
   model?: string;
   references?: Array<{ node_id: string; text?: string; image_url?: string; video_url?: string }>;
+  h3Options?: {
+    mode: string;
+    duration_sec: number;
+    reference_order: Array<'image' | 'video' | 'audio'>;
+  };
 }
 
 export interface FreezoneTextModels {
@@ -2403,6 +2408,7 @@ export async function submitFreezoneTextGenerate(
         prompt: payload.prompt,
         model: payload.model ?? '',
         references: payload.references ?? [],
+        h3_options: payload.h3Options ?? null,
         ...nodeContextBody(payload),
       },
     },
@@ -2412,6 +2418,35 @@ export async function submitFreezoneTextGenerate(
 export interface FreezoneTextGenerateResult {
   generated_text: string;
   model: string;
+}
+
+export async function streamFreezoneH3(
+  project: string,
+  payload: FreezoneTextGeneratePayload,
+  onText: (text: string) => void,
+  signal: AbortSignal,
+): Promise<FreezoneTextGenerateResult> {
+  const { readH3Stream } = await import('./h3-stream');
+  const response = await apiClient(`projects/${encodeURIComponent(project)}/freezone/text/stream-h3`, {
+    method: 'POST', timeout: false, retry: 0, signal,
+    json: { prompt: payload.prompt, model: payload.model ?? '',
+      references: payload.references ?? [], h3_options: payload.h3Options },
+  });
+  return readH3Stream(response, onText);
+}
+
+export async function formatFreezoneH3Locally(
+  project: string,
+  payload: FreezoneTextGeneratePayload,
+): Promise<FreezoneTextGenerateResult> {
+  return await apiCall<FreezoneTextGenerateResult>(
+    `projects/${encodeURIComponent(project)}/freezone/text/format-h3`,
+    { method: 'POST', json: {
+      prompt: payload.prompt,
+      references: payload.references ?? [],
+      h3_options: payload.h3Options,
+    } },
+  );
 }
 
 export async function fetchFreezoneTextGenerateResult(

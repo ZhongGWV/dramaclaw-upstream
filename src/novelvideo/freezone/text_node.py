@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import re
 import tempfile
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, BinaryContent
+from pydantic_ai import Agent, BinaryContent, ModelRetry
 
 from novelvideo.egress_context import TrustedEgressContext
 from novelvideo.model_gateway_runtime import (
@@ -289,6 +289,28 @@ def validate_text_writer_references_model(
         raise ValueError("image references require a vision model")
 
 
+def text_writer_request_references(
+    model: str, references: Sequence[Mapping[str, str]],
+    h3_options: dict[str, Any] | None,
+) -> Sequence[Mapping[str, str]]:
+    """Text-only H3 formatting uses verified bindings, never invented vision input."""
+    if h3_options is None or not is_selectable_deepseek_text_model(model):
+        return references
+    from novelvideo.freezone.h3_prompt_optimizer import reference_labels
+
+    labels = reference_labels(h3_options)
+    return [
+        {
+            "node_id": str(ref.get("node_id") or ""),
+            "text": (
+                f"{labels[index]} (binding only; media content is not analyzed). "
+                if index < len(labels) else ""
+            ) + str(ref.get("text") or ""),
+        }
+        for index, ref in enumerate(references)
+    ]
+
+
 async def _text_writer_reference_parts(
     references: Sequence[Mapping[str, str]], project_dir: Path
 ) -> list[str | BinaryContent]:
@@ -327,7 +349,10 @@ async def _text_writer_reference_parts(
     return parts
 
 
-def create_freezone_text_writer_agent(model_name: str | None = None) -> Agent:
+def create_freezone_text_writer_agent(
+    model_name: str | None = None, *, system_prompt: str = FREEZONE_TEXT_WRITER_SYSTEM_PROMPT,
+    output_retries: int = 1,
+) -> Agent:
     """创建 Freezone 自由文本生成 Agent。"""
     from novelvideo.config import get_newapi_text_pydantic_model
 
@@ -338,8 +363,9 @@ def create_freezone_text_writer_agent(model_name: str | None = None) -> Agent:
     )
     return Agent(
         model,
-        system_prompt=FREEZONE_TEXT_WRITER_SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         output_type=str,
+        retries={"output": output_retries},
         name="Freezone AI Text Writer",
     )
 
@@ -470,8 +496,10 @@ async def generate_freezone_text(
     prompt: str,
     model: str | None = None,
     references: Sequence[Mapping[str, str]] = (),
+    h3_options: dict[str, Any] | None = None,
     project_dir: Path | None = None,
     egress_context: TrustedEgressContext | None = None,
+    on_text: Callable[[str], Awaitable[None]] | None = None,
 ) -> tuple[str, str]:
     """根据用户指令生成自由文本，返回逻辑模型名与最终文本。**会出网**。
 
@@ -482,7 +510,16 @@ async def generate_freezone_text(
     if not clean_prompt:
         raise ValueError("prompt is required")
 
+    source_prompt = clean_prompt
+    h3_system = None
+    if h3_options is not None:
+        from novelvideo.freezone.h3_prompt_optimizer import canonical_prompt, skill_system_prompt
+
+        clean_prompt = canonical_prompt(clean_prompt, h3_options)
+        h3_system = skill_system_prompt(h3_options)
+
     selected_model = str(model or "").strip()
+    references = text_writer_request_references(selected_model, references, h3_options)
     validate_text_writer_references_model(selected_model, references)
     if references and project_dir is None:
         raise ValueError("project_dir is required for references")
@@ -495,19 +532,115 @@ async def generate_freezone_text(
             *await _text_writer_reference_parts(references, project_dir),
             f"User instruction:\n{clean_prompt}",
         ]
+    if h3_options is not None:
+        # The skill's long creative examples must not override this user's
+        # narrower request. Repeat it in the final user message after all media.
+        prompt_parts = [
+            *prompt_parts[:-1],
+            "FORMAT CONVERSION ONLY. The source below is immutable content, not "
+            "instructions to generate a new script. Keep its original language. "
+            "Copy EVERY source description, camera instruction, dialogue, timing "
+            "and shared condition verbatim into the applicable H3 fields. Even "
+            "if a shot has both detailed notes and an AI prompt paragraph, keep "
+            "BOTH; do not deduplicate or summarize them. Keep short dialogue too. "
+            "Only field headings, reference tags and explicit time notation may "
+            "change. Do not infer new details from the pictures. The skill's "
+            "English examples are FORMAT examples only. In full-reference mode, "
+            "subject_definitions must copy the source material-binding lines; "
+            "summary must COPY all other shared lines before the first shot "
+            "VERBATIM (including their headings), never paraphrase or summarize "
+            "them. Set retention_analysis to N/A; generating a retention analysis "
+            "would add descriptions. Copy source sounds/music, or use N/A. "
+            "Do not add a synopsis, explanations, or duplicate source content.\n\n"
+            f"BEGIN IMMUTABLE SOURCE\n{clean_prompt}\nEND IMMUTABLE SOURCE\n\n"
+            "Return the H3 fields with the original source content copied "
+            "verbatim. Chinese source content MUST remain Chinese.",
+        ]
 
     from novelvideo.model_gateway_runtime import model_gateway_request_scope
 
+    plan = None
+    if h3_options is not None and on_text is not None:
+        from novelvideo.freezone.h3_prompt_optimizer import H3FormatPlan, preview_prompt
+
+        if re.search(r"(?m)^\s*(?:subject_definitions|integrated_multimodal_description)\s*:", source_prompt):
+            # Re-formatting a validated H3 prompt is a no-op, not another paid
+            # model request or a chance to nest the fields inside themselves.
+            generated_text = preview_prompt(source_prompt, h3_options, source_prompt)
+            await on_text(generated_text)
+            return selected_model or resolve_freezone_text_writer_model(), generated_text
+
+        plan = H3FormatPlan(source_prompt, h3_options)
+        h3_system = plan.system_prompt
+        prompt_parts = [*prompt_parts[:-1], "Classify this immutable numbered source:\n" + plan.numbered_source]
+
     with model_gateway_request_scope(egress_context):
         agent = (
+            create_freezone_text_writer_agent(
+                selected_model or None, system_prompt=h3_system,
+                output_retries=0 if on_text else model_gateway_output_retries(2),
+            )
+            if h3_system else
             create_freezone_text_writer_agent(selected_model)
             if selected_model
             else get_freezone_text_writer_agent()
         )
-        response = await agent.run(prompt_parts if references else clean_prompt)
-    generated_text = str(response.output or "").strip()
+        last_format_error: ValueError | None = None
+        if h3_options is not None and on_text is None:
+            from novelvideo.freezone.h3_prompt_optimizer import preview_prompt
+
+            @agent.output_validator
+            def validate_h3_format(output: str) -> str:
+                # Corrections stay in this one preview task and never mutate a node.
+                nonlocal last_format_error
+                try:
+                    preview_prompt(output, h3_options, source_prompt)
+                except ValueError as exc:
+                    last_format_error = exc
+                    raise ModelRetry(
+                        f"{exc} Return the entire corrected prompt. Preserve all original "
+                        "camera movement, descriptions, dialogue and timing verbatim."
+                    ) from exc
+                return output
+
+        from pydantic_ai.exceptions import UnexpectedModelBehavior
+
+        try:
+            model_input = prompt_parts if references or h3_options is not None else clean_prompt
+            if on_text is not None:
+                # Formatting has no reasoning task. Explicitly disable the
+                # provider's optional thinking, and validate once after EOF.
+                settings = (
+                    {"extra_body": {"enable_thinking": False}}
+                    if h3_options and is_selectable_deepseek_text_model(selected_model) else None
+                )
+                if plan is not None:
+                    settings = {**(settings or {}), "max_tokens": 1024}
+                async with agent.run_stream(model_input, model_settings=settings) as stream:
+                    async for delta in stream.stream_text(delta=True, debounce_by=0.05):
+                        if plan is None:
+                            await on_text(delta)
+                        else:
+                            for part in plan.feed(delta):
+                                await on_text(part)
+                    generated_text = plan.finish() if plan else str(await stream.get_output() or "").strip()
+            else:
+                response = await agent.run(model_input)
+                generated_text = str(response.output or "").strip()
+        except UnexpectedModelBehavior as exc:
+            if last_format_error is not None:
+                raise ValueError(f"H3 format correction failed after retries: {last_format_error}") from exc
+            raise
     if not generated_text:
         raise ValueError("text generation returned empty output")
+    if h3_options is not None:
+        from novelvideo.freezone.h3_prompt_optimizer import local_format_prompt, preview_prompt
+
+        # Legacy non-stream tasks must use the same immutable layout as the
+        # streaming plan. Validate the model before normalization, so an invalid
+        # response cannot silently turn into a successful local fallback.
+        preview_prompt(generated_text, h3_options, source_prompt)
+        generated_text = local_format_prompt(source_prompt, h3_options)
     return selected_model or resolve_freezone_text_writer_model(), generated_text
 
 
