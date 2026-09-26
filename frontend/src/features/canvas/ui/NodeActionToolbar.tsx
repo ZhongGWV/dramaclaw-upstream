@@ -67,7 +67,8 @@ import {
   type AudioDownloadFormat,
 } from "@/lib/audioTranscode";
 import { nodeMainlineFlags } from "@/features/canvas/domain/mainlineNodeFlags";
-import { inheritMainlineFields } from "@/features/canvas/domain/inheritMainlineFields";
+import { VideoPromptSplitError } from "@/features/canvas/application/videoPromptSplit";
+import { inheritMainlineFields, type MainlineFieldsSource } from "@/features/canvas/domain/inheritMainlineFields";
 import {
   extractMainlineContextsFromNode,
   type MainlineContext,
@@ -561,6 +562,67 @@ export const NodeActionToolbar = memo(
     );
     const updateNodeData = useCanvasStore((state) => state.updateNodeData);
     const findNodePosition = useCanvasStore((state) => state.findNodePosition);
+    const handleDuplicateVideo = useCallback(() => {
+      const state = useCanvasStore.getState();
+      const source = state.nodes.find((item) => item.id === nodeId);
+      if (!source || !isVideoNode(source)) return;
+
+      const [copyId] = state.duplicateNodesAsSiblings([source.id]);
+      const copy = useCanvasStore.getState().nodes.find((item) => item.id === copyId);
+      if (!copy) return;
+
+      // Reuse the graph operation for incoming references, grouping and undo.
+      // A copy owns independent parameters and must never resume the source job.
+      const data = JSON.parse(JSON.stringify(copy.data)) as typeof source.data;
+      state.updateNodeData(copy.id, {
+        ...inheritMainlineFields({ data: source.data as MainlineFieldsSource }, data),
+        preset_managed: false,
+        projection_key: undefined,
+        isGenerating: false,
+        isUploading: false,
+        isAnalyzing: false,
+        isSeparatingAv: false,
+        isBreakingDown: false,
+        isClipMode: false,
+        depthPending: null,
+        generationStartedAt: null,
+        generationJobId: null,
+        generationProviderId: null,
+        generationClientSessionId: null,
+        generationTaskKey: null,
+        generationTaskType: null,
+        generationTaskJobId: null,
+        generationStoryboardMetadata: undefined,
+        generationError: null,
+        generationErrorDetails: null,
+        generationErrorRequestId: null,
+        generationDebugContext: undefined,
+        analysisError: null,
+        breakdownError: null,
+      }, { recordHistory: false });
+      state.updateNodeSize(copy.id, {
+        width: source.measured?.width ?? source.width ?? DEFAULT_NODE_WIDTH,
+        height: source.measured?.height ?? source.height ?? 360,
+      }, { recordHistory: false });
+      state.requestFocusNode(copy.id);
+    }, [nodeId]);
+    const handleSplitVideoPrompt = useCallback(() => {
+      try {
+        const plan = useCanvasStore.getState().splitVideoNodeByPrompt(nodeId);
+        toast.success(t('videoPromptSplit.success', {
+          count: plan.segments.length,
+          total: plan.totalDurationSec,
+          durations: plan.segments.map((segment) => `${segment.durationSec}s`).join(' + '),
+        }), {
+          description: t('videoPromptSplit.description'),
+          duration: 10000,
+        });
+        const selectedId = useCanvasStore.getState().selectedNodeId;
+        if (selectedId) useCanvasStore.getState().requestFocusNode(selectedId);
+      } catch (error) {
+        toast.error(t(`videoPromptSplit.errors.${error instanceof VideoPromptSplitError ? error.code : 'failed'}`));
+      }
+    }, [nodeId, t]);
     const canReupload = isUploadNode(node) && Boolean(node.data.imageUrl);
     const ignoreAtTagWhenCopyingAndGenerating = useSettingsStore(
       (state) => state.ignoreAtTagWhenCopyingAndGenerating,
@@ -2252,6 +2314,29 @@ export const NodeActionToolbar = memo(
 
                 return (
                   <>
+                    <UiChipButton
+                      key="video-duplicate"
+                      className={TOOLBAR_TEXT_BUTTON_CLASS}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDuplicateVideo();
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {t("canvas.multiSelect.duplicate")}
+                    </UiChipButton>
+                    <UiChipButton
+                      key="video-prompt-split"
+                      className={TOOLBAR_TEXT_BUTTON_CLASS}
+                      title={t('videoPromptSplit.description')}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleSplitVideoPrompt();
+                      }}
+                    >
+                      <Scissors className="h-3.5 w-3.5" />
+                      {t('videoPromptSplit.action')}
+                    </UiChipButton>
                     {/*
                       顺序照 LibTV 的视频节点工具条实测：高清 | 片段重拍 | 逐帧拉片 |
                       智能去字幕 | 音视频分离（他们还有主体消除、创意片头，我们没有）。

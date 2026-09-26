@@ -1,4 +1,22 @@
 {
+  "videoPromptSplit": {
+    "action": "Tách lời nhắc",
+    "description": "Nhóm các cảnh quay nguyên vẹn thành từng đoạn không quá 15 giây, giữ hướng dẫn chung và tư liệu tham chiếu. Nút gốc trở thành đoạn đầu. Có thể hoàn tác; video hiện có không bị cắt.",
+    "success": "Lời nhắc: {{total}} giây, đã tách thành {{count}} đoạn: {{durations}}",
+    "segmentName": "{{name}} - Đoạn {{index}}/{{count}}",
+    "errors": {
+      "noTimeline": "Không tìm thấy cảnh có thời lượng. Hãy dùng tiêu đề cảnh kèm thời lượng hoặc khoảng thời gian như 00:00–00:06.",
+      "missingTiming": "Một cảnh chưa có thời lượng. Hãy thêm thời lượng cho từng cảnh trước khi tách.",
+      "ambiguousTiming": "Thời gian cảnh bị chồng lấn, có khoảng trống hoặc không hợp lệ. Hãy dùng dòng thời gian liên tục.",
+      "alreadyShort": "Tổng thời lượng trong lời nhắc không quá 15 giây, không cần tách.",
+      "tooLong": "Dòng thời gian quá dài để tách một lần. Hãy giảm nội dung trước.",
+      "busy": "Nút đang xử lý tác vụ. Hãy đợi hoàn tất trước khi tách.",
+      "unsupported": "Hãy chọn nút tạo video thông thường có thể chỉnh sửa.",
+      "multipleTimelines": "Có nhiều kịch bản có thời gian trong nút và các tham chiếu. Hãy giữ một dòng thời gian để tránh lặp cảnh.",
+      "failed": "Chưa hoàn tất tách. Hãy kiểm tra lời nhắc và thử lại.",
+      "shotTooLong": "Một cảnh quay dài hơn 15 giây. Hãy điều chỉnh thời lượng cảnh đó trước để giữ cảnh nguyên vẹn."
+    }
+  },
   "referenceValidation": {
     "firstFrame": "Khung hình đầu", "lastFrame": "Khung hình cuối",
     "title": "Tư liệu tham chiếu không đáp ứng yêu cầu của mô hình", "hint": "Vui lòng sửa các tư liệu bên dưới trước khi tạo. Định vị để chọn nút tương ứng trên canvas.", "locate": "Định vị tư liệu",

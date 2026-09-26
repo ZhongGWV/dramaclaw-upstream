@@ -46,6 +46,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { TFunction } from "i18next";
+import { videoSplitTextOverrides } from "@/features/canvas/application/videoPromptSplit";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -1057,8 +1058,14 @@ export const VideoNode = memo(
     // 视频生成只用其中的 text 字段拼接到 prompt 前面；image/video/audio 仍走
     // 各自分支已有的分类逻辑（带 backend 上限校验）。
     const upstreamContents = useMemo(
-      () => upstreamNodes.map(extractUpstreamContent),
-      [upstreamNodes],
+      () => {
+        const overrides = videoSplitTextOverrides(data);
+        return upstreamNodes.map((node) => {
+          const content = extractUpstreamContent(node);
+          return Object.prototype.hasOwnProperty.call(overrides, node.id) ? { ...content, text: overrides[node.id] } : content;
+        });
+      },
+      [upstreamNodes, data.videoPromptSplit],
     );
     const upstreamTextJoined = useMemo(
       () => joinUpstreamText(upstreamContents),

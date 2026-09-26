@@ -1,4 +1,22 @@
 {
+  "videoPromptSplit": {
+    "action": "一键拆分",
+    "description": "按完整镜头分组，每段不超过 15 秒，保留共用说明与引用。原节点成为首段，可撤销；已有视频不会被裁切。",
+    "success": "提示词共 {{total}} 秒，已拆为 {{count}} 段：{{durations}}",
+    "segmentName": "{{name}} - 第{{index}}/{{count}}段",
+    "errors": {
+      "noTimeline": "未找到带时长的分镜。请使用“【镜头1】＋时长：6秒”或“00:00–00:06”的写法后再拆分。",
+      "missingTiming": "有镜头缺少明确时长，暂未拆分。请补齐每个镜头的时长。",
+      "ambiguousTiming": "镜头时间存在重叠、缺口或无效值，暂未拆分。请先整理成连续时间轴。",
+      "alreadyShort": "提示词中的镜头总时长不超过 15 秒，无需拆分。",
+      "tooLong": "镜头时长超出可拆分范围，请先缩小拆分内容。",
+      "busy": "该节点正在处理任务，请完成后再拆分。",
+      "unsupported": "请选择可编辑的普通视频生成节点。",
+      "multipleTimelines": "当前视频及引用中有多份时间分镜，请保留一份要拆分的分镜，避免剧情重复。",
+      "failed": "拆分未完成，请检查提示词后重试。",
+      "shotTooLong": "单个镜头超过 15 秒，无法在保持镜头完整的同时拆分。请先调整该镜头的时长。"
+    }
+  },
   "referenceValidation": {
     "firstFrame": "首帧", "lastFrame": "尾帧",
     "title": "参考素材不符合模型要求", "hint": "请修正以下素材后重新生成。可定位到对应画布节点。", "locate": "定位素材",

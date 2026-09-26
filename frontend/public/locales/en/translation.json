@@ -1,4 +1,22 @@
 {
+  "videoPromptSplit": {
+    "action": "Split prompt",
+    "description": "Group whole shots into segments of up to 15 seconds, keeping shared instructions and references. The original node becomes the first segment. Undo is available; existing video is not trimmed.",
+    "success": "Prompt: {{total}} seconds, split into {{count}} segments: {{durations}}",
+    "segmentName": "{{name}} - Part {{index}}/{{count}}",
+    "errors": {
+      "noTimeline": "No timed shots found. Use shot headings with a duration, or time ranges such as 00:00–00:06.",
+      "missingTiming": "A shot is missing its duration. Add a duration to every shot before splitting.",
+      "ambiguousTiming": "Shot timings overlap, have gaps, or contain invalid values. Use a continuous timeline before splitting.",
+      "alreadyShort": "The written shot timeline is 15 seconds or less; no split is needed.",
+      "tooLong": "The timeline is too long to split at once. Reduce the content first.",
+      "busy": "This node has an active operation. Wait until it finishes before splitting.",
+      "unsupported": "Select an editable standard video generation node.",
+      "multipleTimelines": "Multiple timed scripts were found in this node and its references. Keep one timeline to avoid repeating scenes.",
+      "failed": "Splitting did not finish. Check the prompt and try again.",
+      "shotTooLong": "A single shot exceeds 15 seconds. Adjust its duration first so it can stay intact."
+    }
+  },
   "referenceValidation": {
     "firstFrame": "First frame", "lastFrame": "Last frame",
     "title": "Reference media does not meet model requirements", "hint": "Correct the listed media before generating. Locate opens the corresponding canvas node.", "locate": "Locate media",
