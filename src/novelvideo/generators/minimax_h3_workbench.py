@@ -32,6 +32,10 @@ from novelvideo.task_backend.cancel import TaskCancelled, TaskTimedOut
 class MiniMaxH3WorkbenchError(RuntimeError):
     """Stable local-workbench failure that does not expose endpoint details."""
 
+    def __init__(self, message: str, *, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
+
 
 _H3_RATIO_OPTIONS = {"auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"}
 _H3_RESOLUTION_OPTIONS = {"544p", "480p", "768p", "2k"}
@@ -376,7 +380,8 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
                 text = await response.text()
                 if response.status < 200 or response.status >= 300:
                     raise MiniMaxH3WorkbenchError(
-                        f"H3 workbench request failed ({response.status})"
+                        f"H3 workbench request failed ({response.status})",
+                        status_code=response.status,
                     )
                 if not text.strip():
                     return {}
@@ -556,6 +561,48 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
         outputs = payload.get("outputs")
         return [item for item in outputs or [] if isinstance(item, dict)]
 
+    async def _reference_job_output(self, job_id: str) -> str:
+        """Completed jobs leave QuickUI's queue; their ID still owns the output.
+
+        Output mode describes the model (e.g. FL2VA), not the request transport
+        (R2V). Picking a new output by mode both loses completions and risks
+        returning somebody else's concurrent generation.
+        """
+        try:
+            payload = await self._request_json("GET", f"/api/v1/jobs/{job_id}")
+            job = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+            state = str(job.get("status") or job.get("state") or "").lower()
+            if state in {"failed", "error", "cancelled", "interrupted"}:
+                raise MiniMaxH3WorkbenchError(f"H3 workbench job {state}")
+            if state in {"completed", "done", "success"}:
+                outputs = await self._request_json(
+                    "GET", f"/api/v1/jobs/{job_id}/outputs"
+                )
+                location = _output_location(outputs)
+                if location:
+                    return location
+        except MiniMaxH3WorkbenchError as exc:
+            # Older workbenches may expose only QuickUI. Never use an unrelated
+            # output as a substitute when the per-job endpoint is unavailable.
+            if exc.status_code not in {404, 405, 501}:
+                raise
+        library = await self._request_json("GET", "/quickui-studio/api/bootstrap")
+        for output in self._quickui_outputs(library):
+            if self._quickui_task_id(output) == job_id:
+                location = _output_location(output)
+                if location:
+                    return location
+        return ""
+
+    @staticmethod
+    def _retryable_status_error(exc: BaseException) -> bool:
+        if isinstance(exc, (aiohttp.ClientError, asyncio.TimeoutError)):
+            return True
+        return isinstance(exc, MiniMaxH3WorkbenchError) and (
+            exc.status_code in {408, 429}
+            or (exc.status_code is not None and exc.status_code >= 500)
+        )
+
     async def _generate_reference_job(
         self,
         *,
@@ -577,13 +624,6 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
         max_polls: int,
         on_progress: Callable[[float], None] | None,
     ) -> VideoGenResult:
-        baseline = await self._request_json(
-            "GET", "/quickui-studio/api/bootstrap"
-        )
-        prior_output_ids = {
-            str(item.get("id") or "") for item in self._quickui_outputs(baseline)
-        }
-
         uploaded: dict[str, list[str]] = {
             "image": [],
             "video": [],
@@ -668,9 +708,16 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
             )
 
         for poll_index in range(max(1, max_polls)):
-            status_payload = await self._request_json(
-                "GET", "/quickui-studio/api/status"
-            )
+            try:
+                status_payload = await self._request_json(
+                    "GET", "/quickui-studio/api/status"
+                )
+            except (MiniMaxH3WorkbenchError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
+                if not self._retryable_status_error(exc):
+                    raise
+                # Keep the accepted job ID across transient disconnects. A
+                # status retry must never submit a second GPU generation.
+                status_payload = {}
             queue = status_payload.get("queue")
             tasks = queue.get("tasks") if isinstance(queue, dict) else None
             current = next(
@@ -704,29 +751,24 @@ class MiniMaxH3WorkbenchVideoGenerator(VideoGeneratorBase):
                         duration_seconds=duration,
                     )
 
-            if current is None:
-                refreshed = await self._request_json(
-                    "GET", "/quickui-studio/api/bootstrap"
-                )
-                new_outputs = [
-                    item
-                    for item in self._quickui_outputs(refreshed)
-                    if str(item.get("id") or "") not in prior_output_ids
-                    and str(item.get("mode") or "").lower() == transport
-                ]
-                if new_outputs:
-                    location = _output_location(new_outputs[0])
-                    if location:
-                        await self._download_video(location, output_path)
-                        if on_progress:
-                            on_progress(1.0)
-                        return VideoGenResult(
-                            status=VideoGenStatus.DONE,
-                            video_path=output_path,
-                            task_id=job_id,
-                            provider_task_id=job_id,
-                            duration_seconds=duration,
-                        )
+            if current is None or str(current.get("state") or current.get("status") or "").lower() in {"completed", "done", "success"}:
+                try:
+                    location = await self._reference_job_output(job_id)
+                except (MiniMaxH3WorkbenchError, aiohttp.ClientError, asyncio.TimeoutError) as exc:
+                    if not self._retryable_status_error(exc):
+                        raise
+                    location = ""
+                if location:
+                    await self._download_video(location, output_path)
+                    if on_progress:
+                        on_progress(1.0)
+                    return VideoGenResult(
+                        status=VideoGenStatus.DONE,
+                        video_path=output_path,
+                        task_id=job_id,
+                        provider_task_id=job_id,
+                        duration_seconds=duration,
+                    )
             if poll_index + 1 < max_polls:
                 await asyncio.sleep(max(0.05, float(poll_interval)))
         raise MiniMaxH3WorkbenchError("H3 workbench job timed out")
