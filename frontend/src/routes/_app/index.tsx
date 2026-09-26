@@ -89,6 +89,7 @@ import {
 import { useProjectNavStore } from "@/stores/project-nav-store";
 import { surfaceAccess, useProductSurfaces } from "@/lib/queries/product-surfaces";
 import { useAuthStore } from "@/stores/auth-store";
+import { quotaSafeStateStorage } from "@/lib/localStorageQuota";
 import {
   describeLiblibCanvasImportError,
   parseLiblibShareUrl,
@@ -125,7 +126,7 @@ const RECENTLY_CREATED_PROJECT_KEY = "supertale-dashboard-recent-created-project
 
 function readRecentlyCreatedProject(): string | null {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(RECENTLY_CREATED_PROJECT_KEY);
+  return quotaSafeStateStorage.getItem(RECENTLY_CREATED_PROJECT_KEY);
 }
 
 function prioritizeRecentlyCreatedProject(
@@ -1447,7 +1448,9 @@ function ProjectDashboard() {
       const createdName = res.data.name || name;
       createdProjectId = res.data.id ?? res.data.project_id ?? null;
       setRecentlyCreatedProject(createdName);
-      window.localStorage.setItem(RECENTLY_CREATED_PROJECT_KEY, createdName);
+      // Dashboard ordering is optional; a full browser cache must not abort
+      // the import after the project has already been created on the server.
+      quotaSafeStateStorage.setItem(RECENTLY_CREATED_PROJECT_KEY, createdName);
       if (share) {
         if (!createdProjectId) throw new Error(t("project.missingCreatedProjectId"));
         setImportingLiblib(true);
