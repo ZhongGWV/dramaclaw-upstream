@@ -19,6 +19,7 @@ import {
   liblibImportAssetStats,
 } from "./liblibCanvasImport";
 import type { CanvasEdge, CanvasNode } from "@/features/canvas/domain/canvasNodes";
+import { DEFAULT_VIDEO_MODEL_ID } from "@/features/canvas/ui/ProviderModelPicker";
 
 export function suggestedProjectNameForLiblibShare(shareUrl: string): string {
   return `liblib_${parseLiblibShareUrl(shareUrl).projectId}`;
@@ -55,7 +56,7 @@ export async function importLiblibCanvasIntoProject(options: {
     options.viewportSize ?? { width: 1440, height: 900 },
     {
       imageModelId: imageModels[0]?.id,
-      videoModelId: videoModels[0]?.id,
+      videoModelId: videoModels.find((model) => model.id === DEFAULT_VIDEO_MODEL_ID)?.id ?? videoModels[0]?.id,
     },
   );
   const merged = previous

@@ -31,6 +31,7 @@ import { MAX_USER_CREATED_CANVASES_PER_PROJECT } from "@/lib/limits";
 import { BackendStatusError } from "@/lib/api-errors";
 import { convertLiblibCanvasDetail, describeLiblibCanvasImportError, liblibImportAssetStats, mergeLiblibCanvasGraph, parseLiblibShareUrl } from "./liblibCanvasImport";
 import type { CanvasEdge, CanvasNode } from "@/features/canvas/domain/canvasNodes";
+import { DEFAULT_VIDEO_MODEL_ID } from "@/features/canvas/ui/ProviderModelPicker";
 
 const PERSONAL_CANVAS_DISPLAY_NAME = "__personal_canvas__";
 
@@ -291,7 +292,7 @@ export function CanvasesTab({
         height: canvasRect?.height ?? window.innerHeight,
       }, {
         imageModelId: imageModels[0]?.id,
-        videoModelId: videoModels[0]?.id,
+        videoModelId: videoModels.find((model) => model.id === DEFAULT_VIDEO_MODEL_ID)?.id ?? videoModels[0]?.id,
       });
       const previous = stored ? await getFreezoneCanvas(project, canvasId) : null;
       const merged = previous
