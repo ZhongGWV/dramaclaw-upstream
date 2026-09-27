@@ -1,7 +1,7 @@
 version = 1
 slug = "sync-main-remotes"
 ledger = "docs/agent/tasks/sync-main-remotes.md"
-baseline = "11f553e"
+baseline = "4c9dee4f"
 
 [[claims]]
 path = "docs/agent/STATE.md"
@@ -17,6 +17,242 @@ reason = "Plan, verification, and handoff ledger for the final integrator."
 path = "docs/agent/claims/sync-main-remotes.toml"
 mode = "coordination"
 reason = "Exact machine-readable import and conflict-resolution scope."
+
+[[claims]]
+path = "docs/guides/tv-director/batch-facts-pixels.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "docs/guides/tv-director/character-parity.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "docs/guides/tv-director/episode-parity.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "docs/guides/tv-director/interaction-closure.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "docs/guides/tv-director/prop-parity.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "docs/guides/tv-director/scene-parity.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/__tests__/director-autosave.test.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/__tests__/director-facts.test.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/__tests__/director-media-batch.test.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/__tests__/director-media.test.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/__tests__/director-streaming.test.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/features/director/components/DirectorConversation.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/features/director/components/DirectorMediaNodes.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/features/director/components/DirectorMediaPanel.tsx"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/features/director/useDirectorMedia.ts"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/features/director/useDocumentAutosave.ts"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "frontend/src/features/director/useExecutionStream.ts"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/characters.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/episode_facts.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/episode_format.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/fact_guard.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/media.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/media_batch.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/props.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/scenes.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/skills/builtin/character-bible/SKILL.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/skills/builtin/character-bible/references/character-craft.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/skills/builtin/character-bible/references/prop-craft.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/skills/builtin/character-bible/references/scene-craft.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/skills/builtin/episode-review/SKILL.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/skills/builtin/episode-writing/SKILL.md"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "src/novelvideo/director/streaming.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/live_characters.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/live_episode_facts.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/live_episodes.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/live_props.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/live_scenes.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/pixel_compare.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_characters.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_episode_facts.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_episode_format.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_fact_guard.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_media.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_media_batch.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_props.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_scenes.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
+[[claims]]
+path = "tests/director/test_streaming.py"
+mode = "read-only"
+reason = "Import b5883b8f through automatic merge only; preserve original Director behavior."
+
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"

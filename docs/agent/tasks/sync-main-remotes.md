@@ -1,13 +1,23 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：待验收
+**状态**：执行中
 **最后更新**：2026-09-27
-**基线**：`11f553e`；本地当前分支与远端 0298aef 分叉 2/7，本轮仅 pull/push 同名分支。
-**认领者**：`codex/pull-push-20260927`
+**基线**：`4c9dee4f`；目标分支已快进恢复远端最新模型/H3/中文项目名，待合入main的b5883b8f。
+**认领者**：`codex/sync-director-20260927`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 最新增量：保留目标分支新增功能并合入main最新TV Director
+
+用户要求更新并提交到 `codex/sync-main-remotes`。本轮只更新私有 `zhonggwv` 同名分支，不改本地/远端main、不推公开origin、不部署。开始目标检出干净且无锁；已fetch两个私有引用，正常快进目标从0298aefa到4c9dee4f。main=b5883b8f已推送；两边从0298aefa分叉1/5，目标已有模型供应商、H3引用和中文项目名功能，必须原样保留。
+
+只读merge-tree预演唯一冲突为STATE，三语自动合并。main的91条精确增量均登记现有或新增claim，业务和指南只接受Git自动导入；手工仅STATE、本台账、同名claim与必要Director交接协调，不修改方法包或产品逻辑。三语逐叶检查双方非冲突值、无重复键；Director独有路径与b5883b8f逐blob核验，目标独有业务与4c9dee4f核验。其他旧scope写权限本轮不使用。
+
+先提交本轮方案/精确scope以保持合并起点干净，重新校准基线并acquire/preflight协调路径；正常merge b5883b8f（目标历史第一父），仅解决STATE事实冲突。验证Director后端/前端、模型目录/路由、中文项目名、H3引用聚焦回归，生产build、ruff/i18n/CE/密钥/guard/DCO及双方祖先关系；不跑收费模型/媒体。若发现真正语义冲突先扩窄方案，不为过测改变业务合同。成功后只普通push同名分支并ls-remote核验；非快进拒绝则重新审计，不force。
+
+主目录5份未提交交接文档和受保护资料不复制、不覆盖、不stash。本轮不合入更新的origin/main；其历史PR仍独立等待。风险为自动合并的语义集成，失败保留现场，不强行发布；回退只能另行批准revert。完整Director文学/像素失败原样保留，不以同步成功代替产品验收。
 
 ### 本轮增量：将已推送的 TV Director 提交同步到本分支
 
@@ -121,6 +131,10 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-27 · 最新Director同步方案门
+
+恢复目标worktree后确认4c9dee4f与已推main的b5883b8f分叉，唯一文本冲突STATE。记录91条导入路径并新增47条精确read-only claim；现有业务改动不重写，三语按叶核验双方。目标历史模型/H3/中文名功能必须保留，主目录原5份协调diff和本地资料不碰。下一步正常合并、聚焦集成验证、DCO提交及仅私有同名分支推送。
 
 ### 2026-09-27 · 当前分支合并收口
 
