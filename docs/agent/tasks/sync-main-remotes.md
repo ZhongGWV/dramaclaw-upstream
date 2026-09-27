@@ -1,9 +1,9 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：已阻塞
-**最后更新**：2026-09-25
-**基线**：`a2418a65`（已验证合并提交）；原两个 main 均为其祖先，上游 review 前不提前移动 fork main
-**认领者**：`codex/sync-main-remotes-20260924`
+**状态**：执行中
+**最后更新**：2026-09-27
+**基线**：`1c8eaaa`；本地当前分支与远端 0298aef 分叉 2/7，本轮仅 pull/push 同名分支。
+**认领者**：`codex/pull-push-20260927`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
@@ -84,6 +84,20 @@
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-27 · 当前分支 pull/push 增量方案
+
+用户授权 pull 并 push 当前分支。当前 origin 指向用户仓库；fetch refspec 只配置 main，旧分支缓存过期。
+真实源 FETCH_HEAD 为 0298aef，本地 1c8eaaa，分叉 2/7；本轮仅同步当前同名分支。
+merge-tree 确认 238 项远端增量，7 个冲突：STATE、H3/故事板/拆分三份 claim、zh/en/vi 翻译。
+远端 Director 作为既有实现只读合入；本地两项模型配置与引用修复原样保留，其他业务不手改。
+翻译按 JSON 键合并且保持双方既有值，claim 合并 shared_with 集合，STATE 保留双方事实与当前任务状态。
+精确导入/冲突范围已补入同名 claim，现有 shared 范围互认；本线唯一串行集成，不创建子代理。
+先提交本方案以保持合并起点干净，再 acquire/preflight，正常 merge 并解决上述冲突；不 rebase/force。
+完成 JSON/冲突标记/差异/guard 与密钥检查，验证双方祖先关系，推 origin 当前分支并核对远端 SHA。
+本次只执行用户指定 Git 同步，不新增或运行实现测试、不触发生成；无运行配置、密钥或本地工作流改动。
+若推送期间远端再前进，重新取证并合并，绝不覆盖。推送前失败可保留合并现场继续处理。
+
 
 ### 2026-09-24 · 上游 PR 可合并但等待必需审核
 

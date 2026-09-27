@@ -149,3 +149,6 @@ H3FormatPlan 共用 local_format_prompt 的确定性布局及原文内容，模�
 
 ### 2026-09-27 · 引用合同串行协调
 既有 schemas 实现已提交；允许 multi-provider-models 串行修复 H3 格式绑定数量校验，保持本线媒体生成合同，由该线最终集成。
+
+### 2026-09-27 · 同名分支拉取推送协调
+既有实现已提交；sync-main-remotes 串行合并远端 Director 与本地模型/H3 的三语键，保留双方值，由当前同步线最终集成。

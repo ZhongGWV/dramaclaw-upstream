@@ -89,3 +89,6 @@ Chrome 提示其他扩展 UI 打开，禁止自动点击/导航；用户尚未�
 
 ### 2026-09-27 · 多供应商模型接入协调
 用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/src/features/canvas/nodes/TextAnnotationNode.tsx, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+### 2026-09-27 · 同名分支拉取推送协调
+既有实现已提交；sync-main-remotes 串行合并远端 Director 与本地模型/H3 的三语键，保留双方值，由当前同步线最终集成。
