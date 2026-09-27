@@ -65,6 +65,9 @@ import {
   useSoftDeleteProject,
   useUnarchiveProject,
 } from "@/lib/queries/projects";
+import { ProjectNameDialog, ProjectNamingMenuItems, type ProjectNameDialogMode } from "@/components/projects/project-name-dialog";
+import { getProjectNameValidationKey, previewLiblibProject } from "@/lib/project-naming";
+export { getProjectNameValidationKey, PROJECT_NAME_MAX_LENGTH } from "@/lib/project-naming";
 import { ProjectFolder } from "@/components/projects/project-folder";
 import { ShareProjectDialog } from "@/components/projects/share-project-dialog";
 import { getProjectCover, NOISE_DATA_URI } from "@/lib/project-cover";
@@ -112,14 +115,6 @@ const SORT_OPTIONS: { value: SortKey; labelKey: string }[] = [
   { value: "name-asc", labelKey: "project.sort.nameAsc" },
   { value: "name-desc", labelKey: "project.sort.nameDesc" },
 ];
-
-const PROJECT_NAME_PATTERN = /^[a-zA-Z0-9_]+$/;
-export const PROJECT_NAME_MAX_LENGTH = 64;
-
-export function getProjectNameValidationKey(name: string): string | null {
-  if (name.length > PROJECT_NAME_MAX_LENGTH) return "project.nameTooLong";
-  return !PROJECT_NAME_PATTERN.test(name) ? "project.nameInvalid" : null;
-}
 
 const PROJECT_CARD_MIN_HEIGHT_CLASS = "min-h-[12.75rem]";
 const RECENTLY_CREATED_PROJECT_KEY = "supertale-dashboard-recent-created-project";
@@ -181,6 +176,7 @@ function ProjectCard({
   onPreload,
   onShare,
   onImportLiblib,
+  onNameAction,
   onAction,
 }: {
   summary: ProjectSummary;
@@ -189,6 +185,7 @@ function ProjectCard({
   onPreload?: () => void;
   onShare: () => void;
   onImportLiblib: () => void;
+  onNameAction: (mode: ProjectNameDialogMode) => void;
   onAction: (
     action: "archive" | "unarchive" | "delete" | "restore" | "purge",
   ) => void;
@@ -308,9 +305,10 @@ function ProjectCard({
                 side="right"
                 align="start"
                 sideOffset={8}
-                className="w-32 rounded-md p-1 shadow-xl shadow-black/20 [&_[data-slot=dropdown-menu-item]]:min-h-8 [&_[data-slot=dropdown-menu-item]]:gap-2 [&_[data-slot=dropdown-menu-item]]:rounded-sm [&_[data-slot=dropdown-menu-item]]:px-2 [&_[data-slot=dropdown-menu-item]]:py-1.5 [&_[data-slot=dropdown-menu-item]]:text-xs [&_[data-slot=dropdown-menu-item]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item]:focus]:text-current [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:text-destructive [&_[data-slot=dropdown-menu-item]_svg]:size-3.5"
+                className="min-w-44 rounded-md p-1 shadow-xl shadow-black/20 [&_[data-slot=dropdown-menu-item]]:min-h-8 [&_[data-slot=dropdown-menu-item]]:gap-2 [&_[data-slot=dropdown-menu-item]]:rounded-sm [&_[data-slot=dropdown-menu-item]]:px-2 [&_[data-slot=dropdown-menu-item]]:py-1.5 [&_[data-slot=dropdown-menu-item]]:text-xs [&_[data-slot=dropdown-menu-item]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item]:focus]:text-current [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:text-destructive [&_[data-slot=dropdown-menu-item]_svg]:size-3.5"
               >
                 <DropdownMenuGroup>
+                  {!isDeleted && <ProjectNamingMenuItems canRename={canLifecycle} onAction={onNameAction} />}
                   {isActive && (
                     <>
                       <DropdownMenuItem onClick={onOpen}>
@@ -707,6 +705,7 @@ function ProjectRow({
   onPreload,
   onShare,
   onImportLiblib,
+  onNameAction,
   onAction,
 }: {
   summary: ProjectSummary;
@@ -714,6 +713,7 @@ function ProjectRow({
   onPreload?: () => void;
   onShare: () => void;
   onImportLiblib: () => void;
+  onNameAction: (mode: ProjectNameDialogMode) => void;
   onAction: (
     action: "archive" | "unarchive" | "delete" | "restore" | "purge",
   ) => void;
@@ -890,9 +890,10 @@ function ProjectRow({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-32 rounded-md p-1 shadow-xl shadow-black/20 [&_[data-slot=dropdown-menu-item]]:min-h-8 [&_[data-slot=dropdown-menu-item]]:gap-2 [&_[data-slot=dropdown-menu-item]]:rounded-sm [&_[data-slot=dropdown-menu-item]]:px-2 [&_[data-slot=dropdown-menu-item]]:py-1.5 [&_[data-slot=dropdown-menu-item]]:text-xs [&_[data-slot=dropdown-menu-item]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item]:focus]:text-current [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:text-destructive [&_[data-slot=dropdown-menu-item]_svg]:size-3.5"
+            className="min-w-44 rounded-md p-1 shadow-xl shadow-black/20 [&_[data-slot=dropdown-menu-item]]:min-h-8 [&_[data-slot=dropdown-menu-item]]:gap-2 [&_[data-slot=dropdown-menu-item]]:rounded-sm [&_[data-slot=dropdown-menu-item]]:px-2 [&_[data-slot=dropdown-menu-item]]:py-1.5 [&_[data-slot=dropdown-menu-item]]:text-xs [&_[data-slot=dropdown-menu-item]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item]:focus]:text-current [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:bg-white/8 [&_[data-slot=dropdown-menu-item][data-variant=destructive]:focus]:text-destructive [&_[data-slot=dropdown-menu-item]_svg]:size-3.5"
           >
             <DropdownMenuGroup>
+              {!isDeleted && <ProjectNamingMenuItems canRename={canLifecycle} onAction={onNameAction} />}
               {isActive && (
                 <>
                   <DropdownMenuItem onClick={onOpen}>
@@ -1312,6 +1313,11 @@ function ProjectDashboard() {
   // Project pending the "open in Freezone?" prompt after creation.
   const [shareProject, setShareProject] = useState<ProjectSummary | null>(null);
   const [liblibImportProject, setLiblibImportProject] = useState<ProjectSummary | null>(null);
+  const [namingProject, setNamingProject] = useState<{ project: ProjectSummary; mode: ProjectNameDialogMode } | null>(null);
+  const nameEdited = useRef(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewRetry, setPreviewRetry] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const username = useAuthStore((state) => state.username);
 
@@ -1421,16 +1427,41 @@ function ProjectDashboard() {
   const liblibLinkError = trimmedLiblibShareUrl && !parsedLiblibShare
     ? t("project.liblibLinkInvalid")
     : null;
+  useEffect(() => {
+    if (!createOpen || !parsedLiblibShare || pendingImportRecovery) {
+      setPreviewLoading(false);
+      setPreviewError("");
+      return;
+    }
+    const controller = new AbortController();
+    setPreviewLoading(true);
+    setPreviewError("");
+    const timer = window.setTimeout(() => {
+      void previewLiblibProject(parsedLiblibShare.shareUrl, controller.signal)
+        .then((preview) => {
+          if (!controller.signal.aborted && !nameEdited.current) setNewName(preview.name.trim());
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setPreviewError(t("project.naming.previewFailed"));
+        })
+        .finally(() => { if (!controller.signal.aborted) setPreviewLoading(false); });
+    }, 350);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [createOpen, parsedLiblibShare, pendingImportRecovery, previewRetry, t]);
+
   const createBusy = createProject.isPending || importingLiblib;
 
+
   const resetCreateForm = () => {
+    nameEdited.current = false;
+    setPreviewError("");
     setNewName("");
     setLiblibShareUrl("");
   };
 
   const handleLiblibShareUrlChange = (value: string) => {
     setLiblibShareUrl(value);
-    if (newName.trim()) return;
+    if (nameEdited.current) return;
     try {
       setNewName(suggestedProjectNameForLiblibShare(value));
     } catch {
@@ -1440,7 +1471,7 @@ function ProjectDashboard() {
 
   const handleCreate = async () => {
     const name = trimmedNewName;
-    if (!name || createNameError || liblibLinkError) return;
+    if (!name || createNameError || liblibLinkError || previewLoading) return;
     const share = parsedLiblibShare;
     let createdProjectId: string | null = null;
     try {
@@ -1685,10 +1716,10 @@ function ProjectDashboard() {
                   <Input
                     id="project-name"
                     value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
+                    onChange={(e) => { nameEdited.current = true; setNewName(e.target.value); }}
                     placeholder={t("project.namePlaceholder")}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
                         e.preventDefault();
                         handleCreate();
                       }
@@ -1701,7 +1732,7 @@ function ProjectDashboard() {
                   {newName && (
                     <button
                       type="button"
-                      onClick={() => setNewName("")}
+                      onClick={() => { nameEdited.current = true; setNewName(""); }}
                       className="absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
                       aria-label={t("project.clearName")}
                     >
@@ -1739,6 +1770,11 @@ function ProjectDashboard() {
                     aria-describedby={liblibLinkError ? "project-liblib-link-error" : "project-liblib-link-hint"}
                     className="h-11 rounded-[8px] border-white/12 bg-white/[0.04] px-3 text-sm placeholder:text-muted-foreground/70 focus-visible:border-white/25 focus-visible:ring-2 focus-visible:ring-white/8 dark:bg-white/[0.04]"
                   />
+                  {previewLoading && <p role="status" className="text-xs text-muted-foreground">{t("project.naming.readingOriginal")}</p>}
+                  {previewError && <div className="text-xs text-destructive" role="alert">
+                    <p>{previewError}</p>
+                    <button type="button" className="mt-1 underline" onClick={() => setPreviewRetry((value) => value + 1)}>{t("project.naming.retry")}</button>
+                  </div>}
                   {liblibLinkError ? (
                     <p id="project-liblib-link-error" className="text-xs text-destructive">
                       {liblibLinkError}
@@ -1793,7 +1829,7 @@ function ProjectDashboard() {
                   disabled={
                     pendingImportRecovery
                       ? createBusy || !parsedLiblibShare
-                      : createBusy || !trimmedNewName || !!createNameError || !!liblibLinkError
+                      : createBusy || previewLoading || !trimmedNewName || !!createNameError || !!liblibLinkError
                   }
                   className={cn(
                     "h-10 rounded-md bg-primary text-sm font-normal text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90",
@@ -1951,6 +1987,7 @@ function ProjectDashboard() {
                       onPreload={() => preloadProject(projectRouteParam(summary))}
                       onShare={() => setShareProject(summary)}
                       onImportLiblib={() => setLiblibImportProject(summary)}
+                      onNameAction={(mode) => setNamingProject({ project: summary, mode })}
                       onAction={(action) => onAction(summary, action)}
                     />
                   ) : (
@@ -1961,6 +1998,7 @@ function ProjectDashboard() {
                       onPreload={() => preloadProject(projectRouteParam(summary))}
                       onShare={() => setShareProject(summary)}
                       onImportLiblib={() => setLiblibImportProject(summary)}
+                      onNameAction={(mode) => setNamingProject({ project: summary, mode })}
                       onAction={(action) => onAction(summary, action)}
                     />
                   )}
@@ -1977,6 +2015,7 @@ function ProjectDashboard() {
                       onPreload={() => preloadProject(projectRouteParam(summary))}
                       onShare={() => setShareProject(summary)}
                       onImportLiblib={() => setLiblibImportProject(summary)}
+                      onNameAction={(mode) => setNamingProject({ project: summary, mode })}
                       onAction={(action) => onAction(summary, action)}
                     />
                   ) : (
@@ -1988,6 +2027,7 @@ function ProjectDashboard() {
                       onPreload={() => preloadProject(projectRouteParam(summary))}
                       onShare={() => setShareProject(summary)}
                       onImportLiblib={() => setLiblibImportProject(summary)}
+                      onNameAction={(mode) => setNamingProject({ project: summary, mode })}
                       onAction={(action) => onAction(summary, action)}
                     />
                   ),
@@ -2023,6 +2063,17 @@ function ProjectDashboard() {
           if (!open) setShareProject(null);
         }}
       />
+      {namingProject && <ProjectNameDialog
+        key={`${namingProject.project.id}:${namingProject.mode}`}
+        project={namingProject.project} mode={namingProject.mode}
+        onClose={() => setNamingProject(null)}
+        onSaved={(name) => {
+          if (recentlyCreatedProject === namingProject.project.name) {
+            setRecentlyCreatedProject(name);
+            quotaSafeStateStorage.setItem(RECENTLY_CREATED_PROJECT_KEY, name);
+          }
+        }}
+      />}
       <ProjectLiblibImportDialog
         project={liblibImportProject}
         onOpenChange={(open) => {

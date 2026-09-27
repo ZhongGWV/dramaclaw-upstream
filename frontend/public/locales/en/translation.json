@@ -2289,6 +2289,22 @@
     }
   },
   "project": {
+    "naming": {
+      "rename": "Rename",
+      "useOriginal": "Use Liblib name",
+      "sources": "Project sources",
+      "openOriginal": "Open original on Liblib",
+      "renameHint": "Existing media and canvases remain available after renaming.",
+      "saved": "Project name updated",
+      "duplicate": "A project with this name already exists. Choose another name.",
+      "saveFailed": "Could not rename the project. Please retry.",
+      "sourceLoadFailed": "Could not load project sources. Please retry.",
+      "noSources": "This project has no saved Liblib import links.",
+      "unnamedSource": "Imported Liblib canvas",
+      "retry": "Retry",
+      "previewFailed": "Could not read the original name. Retry or enter a project name yourself.",
+      "readingOriginal": "Reading the original Liblib name…"
+    },
     "create": "Create Project",
     "createCard": "New Project",
     "actionsLabel": "Project actions",
@@ -2330,9 +2346,8 @@
     "liblibReimportHint": "Media is downloaded into this project. Locally edited prompts, model choices, and generated results are preserved.",
     "liblibReimportSubmit": "Import and open",
     "missingCreatedProjectId": "The server did not return the new project ID",
-    "nameNoChinese": "Project name cannot contain Chinese characters.",
     "nameTooLong": "Project name must be at most 64 characters long.",
-    "nameInvalid": "Project name can only contain letters, numbers, and underscores.",
+    "nameInvalid": "Names support Chinese, spaces and punctuation, but cannot contain path separators or control characters, or start with an underscore.",
     "nameExistsActive": "A project with this name already exists. Choose another name.",
     "nameExistsArchived": "An archived project already uses this name. Unarchive it or choose another name.",
     "nameExistsDeleted": "A project with this name is in Trash. Restore or permanently delete it before creating a new one.",

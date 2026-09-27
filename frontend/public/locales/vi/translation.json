@@ -2193,6 +2193,22 @@
     "loginMethod": "Chọn phương thức đăng nhập"
   },
   "project": {
+    "naming": {
+      "rename": "Đổi tên",
+      "useOriginal": "Dùng tên gốc Liblib",
+      "sources": "Nguồn dự án",
+      "openOriginal": "Mở dự án gốc trên Liblib",
+      "renameHint": "Tư liệu và bảng vẽ hiện có vẫn sử dụng được sau khi đổi tên.",
+      "saved": "Đã cập nhật tên dự án",
+      "duplicate": "Tên dự án này đã tồn tại. Vui lòng chọn tên khác.",
+      "saveFailed": "Không thể đổi tên. Vui lòng thử lại.",
+      "sourceLoadFailed": "Không thể đọc nguồn dự án. Vui lòng thử lại.",
+      "noSources": "Dự án này chưa lưu liên kết nhập từ Liblib.",
+      "unnamedSource": "Bảng vẽ nhập từ Liblib",
+      "retry": "Thử lại",
+      "previewFailed": "Không thể đọc tên gốc. Hãy thử lại hoặc tự nhập tên dự án.",
+      "readingOriginal": "Đang đọc tên gốc trên Liblib…"
+    },
     "create": "Tạo dự án",
     "createCard": "Dự án mới",
     "actionsLabel": "Thao tác với dự án",
@@ -2234,9 +2250,8 @@
     "liblibReimportHint": "Nội dung sẽ được tải vào dự án này. Câu lệnh, lựa chọn mô hình và kết quả đã chỉnh sửa cục bộ sẽ được giữ lại.",
     "liblibReimportSubmit": "Nhập và mở",
     "missingCreatedProjectId": "Máy chủ không trả về ID dự án mới",
-    "nameNoChinese": "Tên dự án không được chứa ký tự tiếng Trung.",
     "nameTooLong": "Tên dự án dài tối đa 64 ký tự.",
-    "nameInvalid": "Tên dự án chỉ được chứa chữ cái, chữ số và dấu gạch dưới.",
+    "nameInvalid": "Tên hỗ trợ tiếng Trung, khoảng trắng và dấu câu, nhưng không được chứa ký tự phân cách đường dẫn, ký tự điều khiển hoặc bắt đầu bằng dấu gạch dưới.",
     "nameExistsActive": "Đã có dự án trùng tên này. Hãy chọn tên khác.",
     "nameExistsArchived": "Một dự án đã lưu trữ đang dùng tên này. Hãy bỏ lưu trữ nó hoặc chọn tên khác.",
     "nameExistsDeleted": "Một dự án trùng tên đang nằm trong Thùng rác. Hãy khôi phục hoặc xoá vĩnh viễn nó trước khi tạo mới.",

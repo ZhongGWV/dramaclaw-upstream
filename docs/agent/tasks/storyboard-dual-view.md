@@ -28,6 +28,8 @@
 - `frontend/src/__tests__/storyboard-ui.test.tsx`、`frontend/src/__tests__/storyboard-sync.test.tsx`：独占，交互与持久化测试。
 ## 协调与冲突
 
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
+
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
   最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。

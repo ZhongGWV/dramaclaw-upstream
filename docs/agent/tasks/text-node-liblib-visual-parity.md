@@ -52,6 +52,7 @@
 | `docs/agent/claims/text-node-liblib-visual-parity.toml` | 协调 | 机器认领 |
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
 
 - 相关工作线：`liblib-canvas-parity`；该线当前未认领目标组件，本轮只改节点展示。
 - 本地已有改动：目标组件无旧 diff；保留其他全部脏文件。

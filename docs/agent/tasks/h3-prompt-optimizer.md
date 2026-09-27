@@ -20,6 +20,9 @@
 具体文件见对应 claim：API schema/route、text runner/service、新 H3 服务、ops、VideoOperationsPanel、新 H3 预览组件、三语资源、本机工作台补丁脚本。工作台 Python 本机副本由补丁脚本定向修改并备份；技能复制到忽略的本地运行目录，读取用于模型系统规则。
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
+
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
 
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，

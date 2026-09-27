@@ -314,6 +314,7 @@ export function CanvasesTab({
           display_name: graph.name,
           creator_username: username ?? null,
           liblib_import: {
+            source_name: graph.name,
             source_url: graph.shareUrl,
             source_project_id: graph.projectId,
             space_id: graph.spaceId,

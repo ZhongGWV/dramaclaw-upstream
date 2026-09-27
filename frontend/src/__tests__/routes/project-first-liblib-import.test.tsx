@@ -33,6 +33,10 @@ vi.mock('@/lib/freezone-url', () => ({
   buildFreezoneCanvasUrl: () => null, openFreezoneProject: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { error: calls.error, success: vi.fn(), warning: vi.fn() } }));
+vi.mock('@/lib/project-naming', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/project-naming')>(),
+  previewLiblibProject: vi.fn(async () => ({ name: 'imported_project' })),
+}));
 import { Route } from '@/routes/_app/index';
 
 const shareUrl = 'https://www.liblib.tv/canvas/share?spaceId=42&projectId=0123456789abcdef0123456789abcdef';
@@ -59,6 +63,7 @@ async function submitCreate() {
   fireEvent.click(screen.getByRole('button', { name: /新建项目|创建项目/ }));
   const input = document.getElementById('project-liblib-share-url')!;
   fireEvent.change(input, { target: { value: shareUrl } });
+  await waitFor(() => expect(screen.getByRole('button', { name: '确认' })).toBeEnabled());
   fireEvent.click(screen.getByRole('button', { name: '确认' }));
   await waitFor(() => expect(calls.create).toHaveBeenCalledWith('imported_project'));
 }

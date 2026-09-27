@@ -2289,6 +2289,22 @@
     }
   },
   "project": {
+    "naming": {
+      "rename": "重命名",
+      "useOriginal": "使用 Liblib 原名",
+      "sources": "项目来源",
+      "openOriginal": "打开 Liblib 原项目",
+      "renameHint": "修改项目名称后，已有素材和画布仍可正常使用。",
+      "saved": "项目名称已更新",
+      "duplicate": "这个项目名称已存在，请换一个名称。",
+      "saveFailed": "重命名失败，请重试。",
+      "sourceLoadFailed": "读取项目来源失败，请重试。",
+      "noSources": "这个项目没有保存的 Liblib 导入链接。",
+      "unnamedSource": "Liblib 导入画布",
+      "retry": "重试",
+      "previewFailed": "无法读取原名称，你可以重试或手动填写项目名称。",
+      "readingOriginal": "正在读取 Liblib 原名称…"
+    },
     "create": "创建项目",
     "createCard": "新建项目",
     "actionsLabel": "项目操作",
@@ -2330,9 +2346,8 @@
     "liblibReimportHint": "素材会下载到当前项目；已在本地修改过的提示词、模型和生成结果会保留。",
     "liblibReimportSubmit": "导入并打开",
     "missingCreatedProjectId": "服务器未返回新项目 ID",
-    "nameNoChinese": "项目名称不能包含中文字符",
     "nameTooLong": "项目名称最多 64 个字符",
-    "nameInvalid": "项目名称只能包含英文字母、数字和下划线",
+    "nameInvalid": "项目名称支持中文、空格和标点，不能包含路径分隔符、控制字符或以下划线开头",
     "nameExistsActive": "已存在同名项目，请更换名称",
     "nameExistsArchived": "归档中已有同名项目，请先取消归档或更换名称",
     "nameExistsDeleted": "回收站中已有同名项目，请永久删除后再创建",

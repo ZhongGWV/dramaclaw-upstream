@@ -45,6 +45,10 @@ class ProjectCreate(BaseModel):
     name: str = Field(max_length=64)
 
 
+class LiblibProjectPreview(BaseModel):
+    share_url: str = Field(max_length=2048)
+
+
 class ProjectSummary(BaseModel):
     id: str = ""
     name: str

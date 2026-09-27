@@ -3,12 +3,12 @@
 > **新会话的第一件事是读这份文件。** 它只回答三个问题：现在有哪几条线在做、各自卡在哪、
 > 下一步做什么。取证与方案不在这里——在 `docs/guides/`；每条线的逐步记录在 `docs/agent/tasks/`。
 >
-> 最后更新：2026-09-26 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
+> 最后更新：2026-09-27 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
 > [`docs/agent/README.md`](README.md)
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 本机当前分支 `codex/sync-main-remotes`；本地模型/H3 修复 `1c8eaaa` 与远端 `0298aef` 正在合并，当前 HEAD 以 Git 为准。
+- 本机当前分支 `codex/sync-main-remotes`；合并提交 `60c22be` 已推送同名远端；中文项目名、拼音目录与 LibTV 原名功能已实现并获提交/推送授权，实时 HEAD / 差异以 Git 为准。
 - 历史隔离分支 `codex/sync-main-remotes`，`96bda53c`已合入四个TV Director提交并推送私有同名分支。
   后续协调提交后的HEAD以Git为准。`main=zhonggwv/main=f057a867`保持不动，公开fork/PR未更新。
 - 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
@@ -25,6 +25,7 @@
 
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
+| [project-chinese-names](tasks/project-chinese-names.md) | 中文项目名与拼音目录 | 待验收 | 中文重命名及 LibTV 原名功能完成；132 项回归与真实 API 通过，48 文件提交审计/密钥检查通过，推送结果见 Git |
 | [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | H3 引用 422 和数量提示修复已重启；26 项提交审计/密钥检查通过，本地提交结果见 Git，火山图片仍待单独验收 |
 | [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除；1fa3c1b 已推送 |
 | [h3-prompt-optimizer](tasks/h3-prompt-optimizer.md) | H3 参考图完整保留与提示词格式转换 | 待验收 | 本地/云端共用字段布局，去共用段重复、统一空行/音效标题；服务已重启，待用户试转 |

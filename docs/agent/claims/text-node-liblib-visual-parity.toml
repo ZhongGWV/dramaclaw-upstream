@@ -39,7 +39,7 @@ reason = "Expose text and vision model catalog and send ordered references."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models", "project-chinese-names"]
 reason = "Validate selected model and bounded text, image, video reference fields."
 
 [[claims]]

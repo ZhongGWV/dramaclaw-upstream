@@ -55,6 +55,7 @@
 | `frontend/src/__tests__/features/canvas/audio-transform.test.ts` | 独占 | 区间、速度和投影纯逻辑 |
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
 
 - 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 API schema, Freezone route and ops client：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
 
