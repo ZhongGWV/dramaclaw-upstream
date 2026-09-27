@@ -1,7 +1,7 @@
 version = 1
 slug = "local-stack"
 ledger = "docs/agent/tasks/local-stack.md"
-baseline = "8e024ac"
+baseline = "945baa9f"
 
 [[claims]]
 path = ".gitignore"
