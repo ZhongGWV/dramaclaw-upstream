@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "Asset": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "title": "Asset",
+      "type": "object"
+    },
+    "Character": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "names": {
+          "items": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Names",
+          "type": "array"
+        },
+        "appearance": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Appearance",
+          "type": "string"
+        },
+        "motive": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Motive",
+          "type": "string"
+        },
+        "knowledge": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Knowledge",
+          "type": "string"
+        },
+        "voice": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Voice",
+          "type": "string"
+        },
+        "arc": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Arc",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "names",
+        "appearance",
+        "motive",
+        "knowledge",
+        "voice",
+        "arc"
+      ],
+      "title": "Character",
+      "type": "object"
+    },
+    "Relation": {
+      "additionalProperties": false,
+      "properties": {
+        "fromId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$",
+          "title": "Fromid",
+          "type": "string"
+        },
+        "toId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$",
+          "title": "Toid",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fromId",
+        "toId",
+        "description"
+      ],
+      "title": "Relation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "characters": {
+      "items": {
+        "$ref": "#/$defs/Character"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Characters",
+      "type": "array"
+    },
+    "relations": {
+      "items": {
+        "$ref": "#/$defs/Relation"
+      },
+      "title": "Relations",
+      "type": "array"
+    },
+    "locations": {
+      "items": {
+        "$ref": "#/$defs/Asset"
+      },
+      "minItems": 1,
+      "title": "Locations",
+      "type": "array"
+    },
+    "props": {
+      "items": {
+        "$ref": "#/$defs/Asset"
+      },
+      "title": "Props",
+      "type": "array"
+    },
+    "worldRules": {
+      "items": {
+        "maxLength": 12000,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "title": "Worldrules",
+      "type": "array"
+    }
+  },
+  "required": [
+    "characters",
+    "relations",
+    "locations",
+    "props",
+    "worldRules"
+  ],
+  "title": "Bible",
+  "type": "object"
+}

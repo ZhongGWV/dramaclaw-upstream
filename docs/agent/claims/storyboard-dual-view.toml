@@ -50,19 +50,19 @@ reason = "Dual view projection, editor host, persistence and parity validation."
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split", "sync-main-remotes", "tv-director-implementation"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split", "sync-main-remotes", "tv-director-implementation"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "sync-main-remotes", "video-prompt-split"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "sync-main-remotes", "video-prompt-split", "tv-director-implementation"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]

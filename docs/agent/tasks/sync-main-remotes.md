@@ -2,7 +2,7 @@
 
 **状态**：执行中
 **最后更新**：2026-09-26
-**基线**：`1fa3c1bc`（目标私有分支最新远端；历史上游集成提交为 `a2418a65`）
+**基线**：`906355d7`（本轮方案提交；目标私有分支原远端为 `1fa3c1bc`）
 **认领者**：`codex/sync-director-20260926`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
@@ -61,6 +61,11 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 本轮手工业务改动仅三语 `translation.json` 的合并冲突；其他 main 路径只读导入。
 STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务可写项本轮不使用。
 
+集成门禁补充（实测后登记）：`.env.example` 独占追加两个可选配置说明，并校正与已合并实现一致的回环代理默认说明。
+`test_real_ce_repo_env_ratchet_is_clean` 报 `DIRECTOR_TEXT_MODEL` 和 `H3_PROMPT_SKILL_DIR` 未登记；
+采用注释模板记录真实含义，不扩大缺漏白名单、不改默认值、不改技能、模型或网关实现。
+回退只移除本轮注释，验证原有环境棘轮测试和零缺漏检查；这是提交集成所需的配置文档修复。
+
 | 路径 | 模式 | 作用 / 为什么必须改 |
 |---|---|---|
 | `docs/agent/STATE.md` | 协调 | 登记全局集成工作线与冲突顺序 |
@@ -117,7 +122,38 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 
 ## 进展记录
 
+### 2026-09-26 · 本轮集成验证收口，准备推送私有分支
+
+`.env.example`仅补充两个可选变量注释及回环代理默认说明，无任何运行态/模型参数变更。
+补充回归15项全部通过；合计本轮后端560项、前端127项通过。前端安装严格使用已锁版本，
+首次离线安装因包元数据访问被沙箱DNS限制，授权网络后 frozen-lockfile 成功，锁文件无额外漂移。
+
+实际验证命令（Python使用现有受锁运行环境，`PYTHONPATH=src`指向本worktree）：
+
+- `python -m pytest tests/director tests/test_tv_director.py tests/test_newapi_text_gateway.py tests/test_h3_prompt_optimizer.py tests/test_h3_stream.py tests/test_local_gateway.py tests/test_image_generation_selection.py -q`：545通过。
+- `python -m pytest tests/test_env_config_ratchet.py tests/test_dependency_license_gate.py -q`：修复模板缺漏后15通过。
+- `pnpm exec vitest run src/__tests__/director-execution.test.tsx src/__tests__/director-richtext.test.tsx src/__tests__/director-ui.test.tsx src/__tests__/i18n/locales-json.test.ts src/__tests__/storyboard.test.ts src/__tests__/storyboard-ui.test.tsx src/__tests__/storyboard-sync.test.tsx src/__tests__/h3-stream.test.ts src/__tests__/video-prompt-split.test.ts src/__tests__/stores/canvas-store-video-split.test.ts src/__tests__/routes/project-first-liblib-import.test.tsx src/__tests__/components/layout/project-navigation-routes.test.ts`：12文件127通过。
+- `pnpm build`：通过，5537模块，只有大chunk警告；`ruff check .`：通过。
+- `python3 scripts/check_frontend_i18n.py`、`python3 scripts/check_backend_i18n.py`、`python scripts/check_ce_port_closure.py`：通过。
+- `python3 scripts/lint_banned_words.py`、`python3 scripts/lint_ee_terms.py`、`python3 scripts/lint_ce_imports.py`、`pre-commit run --all-files`：通过。
+- `git diff --check`、`git diff --cached --check`、`python3 scripts/agent_guard.py check`：通过；29条工作线与scope相容。
+
+Director业务目录相对 `f057a867` 无差异；只合入已有实现，三语和协调冲突已审计，没有修改原有H3、故事板行为。
+接下来生成DCO合并提交，复核双方祖先后只推私有同名分支；公开PR和两个main保持原样。
+
+### 2026-09-26 · 合并与聚焦验证
+
+五个文本冲突已保留双方解决，config.py保留Director回环代理与目标Krea编辑模型两个不重叠增量。
+三语分别逐叶验证：6556个原键值不变，合入main的589个新增键值，合计7145，无重复键。
+Ruff、前端i18n零命中、后端474/29、11个CE端口、违禁词/EE/导入与pre-commit全通过。
+后端Director/文本/H3/本地网关聚焦545通过；前端12文件127通过；Node22 + pnpm11.5生产构建通过，
+仅既有大chunk警告。额外环境/依赖门禁14通过1失败，确认为上述两个缺少模板注释的配置名，已先补方案。
+全量测试和真实付费模型/Windows本轮未跑；不将集成通过表述为Director功能/文学质量全部完成。
+
 ### 2026-09-26 · TV Director 增量同步方案门
+
+方案与222条精确只读/协调导入范围已提交为 `906355d7`；三语共享互认及预检成功。
+此后仅按已预演的五个冲突推进，不扩大至其他业务功能。
 
 只读核对本地与远端、公开PR归属并安全快进干净目标工作区到 `1fa3c1bc`；guard为27工作线/597claims，无锁。
 预演确认五个冲突，源 main 已推送，不是待提交脏文件。下一步锁内预检、正常合并和集成验证；尚未声称完成。

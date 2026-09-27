@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "stage": "M07",
+  "privateLibTVSourceObtained": false,
+  "license": "MIT",
+  "copyright": "2025 0xsline",
+  "sources": [
+    {
+      "path": "references/opening-rules.md",
+      "sha256": "72b43ff9ca3d6eaaf91ad1a47f3328de010a8e9c06eb2a6e5819732a94b1b971"
+    },
+    {
+      "path": "references/rhythm-curve.md",
+      "sha256": "c462669c3224020604e627aa3d6a0c9fb72a5fd41ca730759232dfc073eaea98"
+    },
+    {
+      "path": "references/satisfaction-matrix.md",
+      "sha256": "1eba44d3d2701bb14073e55c6a563cf0a013d76e503da33b3dfacf02b80a46c6"
+    }
+  ],
+  "adaptation": "short-drama /plan remains the craft foundation. Observable LibTV outline sections are mapped to versioned host fields, not private prompts. Direct edits and planning share the same schema; semantic quality still needs review."
+}

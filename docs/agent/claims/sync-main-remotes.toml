@@ -1,7 +1,12 @@
 version = 1
 slug = "sync-main-remotes"
 ledger = "docs/agent/tasks/sync-main-remotes.md"
-baseline = "1fa3c1bc"
+baseline = "906355d7"
+
+[[claims]]
+path = ".env.example"
+mode = "exclusive"
+reason = "Document two observed optional runtime settings to close the merged env contract; preserve runtime defaults."
 
 [[claims]]
 path = "docs/agent/STATE.md"

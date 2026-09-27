@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 2,
+  "key": "studio/character-bible",
+  "stage": "M08",
+  "version": "2.1.0",
+  "purpose": "character-bible",
+  "applicable": [
+    "original"
+  ],
+  "excluded": [
+    "omni",
+    "directing"
+  ],
+  "method": "method.md",
+  "inputSchema": "schemas/input.json",
+  "outputSchema": "schemas/output.json",
+  "template": "templates/request.md",
+  "fixtures": "fixtures/contracts.json",
+  "provenance": "provenance.json",
+  "requiredReferences": [
+    {
+      "path": "references/ai-producibility.md",
+      "sourceId": "user-short-drama",
+      "originalPath": "references/ai-producibility.md",
+      "sha256": "9c16eef426382dc375bde8c76a0db2a9ed8f8b6da3c5d16c42cd79c33a0f2e84",
+      "when": "always"
+    }
+  ],
+  "ruleIds": [
+    "G01",
+    "G03",
+    "G06",
+    "G07",
+    "G08",
+    "G11",
+    "G18"
+  ],
+  "allowedTools": [],
+  "validators": [
+    "planning.M08"
+  ],
+  "costClasses": [
+    "text.generate"
+  ],
+  "checkpointKinds": [
+    "WAIT_OUTLINE"
+  ],
+  "maxSchemaRepairAttempts": 0,
+  "maxAutomaticRevisionAttempts": 0,
+  "compatibility": "Structured original preparation only; no source audit, episode capacity plan or private LibTV source claimed",
+  "files": {
+    "method.md": "12961a7e80141a9e6da01c81966b4e19ac01e02038cc9b33290cdc07b0435ab1",
+    "templates/request.md": "e64e9d119311bf169e2b86bb2cd67d6e79fafd07544351713924947d7448659c",
+    "schemas/input.json": "0a2e3c1043a234d9b5e4b398d070b53378f02dafbf4b2aa9497efbadbc21cd31",
+    "schemas/output.json": "ba12f18ba843820d7f1a0ce4852d1e8aaa716f283118d6c67473aa9b09df005f",
+    "fixtures/contracts.json": "771f92a5d741fe934f83c16d3d41d9a1eb460968a3806181d06a9507549fcfa0",
+    "LICENSE": "a42977a69c8c05840da8a8e2f9d8dff9f5c8346f236eeabf8c97fb0812f5fe50",
+    "references/ai-producibility.md": "9c16eef426382dc375bde8c76a0db2a9ed8f8b6da3c5d16c42cd79c33a0f2e84",
+    "provenance.json": "751dd46fa2705b6791a066e47df204509504b4b48f3834f292076cd08ec61251"
+  }
+}

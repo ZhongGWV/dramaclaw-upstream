@@ -56,19 +56,19 @@ reason = "H3 prompt preview and complete reference images."
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "storyboard-dual-view", "video-prompt-split", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "storyboard-dual-view", "video-prompt-split", "sync-main-remotes", "tv-director-implementation"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "storyboard-dual-view", "video-prompt-split", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "storyboard-dual-view", "video-prompt-split", "sync-main-remotes", "tv-director-implementation"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "video-prompt-split"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "video-prompt-split", "tv-director-implementation"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]

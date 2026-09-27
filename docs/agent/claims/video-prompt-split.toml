@@ -30,19 +30,19 @@ reason = "Timed prompt split integration."
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-liblib-parity", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-liblib-parity", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation"]
 reason = "Timed prompt split integration."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-liblib-parity", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-liblib-parity", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation"]
 reason = "Timed prompt split integration."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-liblib-parity", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-liblib-parity", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation"]
 reason = "Timed prompt split integration."
 
 [[claims]]

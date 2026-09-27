@@ -53,6 +53,10 @@ LibTV 画布导入不再丢节点语义，视频节点工具条按实测规格�
 
 ## 协调与冲突
 
+- 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
+  三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
+  最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。
+
 - 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 Freezone route：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
 
 - `origin/feat/canvas-video-reshoot-breakdown` 已有重拍、续写、breakdown、depth capture、工具条与大量生命周期测试，
