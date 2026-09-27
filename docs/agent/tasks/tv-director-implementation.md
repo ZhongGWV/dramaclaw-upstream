@@ -2,8 +2,8 @@
 
 **状态**：执行中
 **最后更新**：2026-09-27
-**基线**：`0298aefa4734c3d8e5a02362cbf068351833c343`（合并结果已同步本地主目录；私有同步分支已推，私有main未推）；历史实现起点e7b1fbce。保留同步线未提交交接和受保护资料。
-**认领者**：`codex/tv-director-commit-20260927`
+**基线**：`b5883b8f`（当前TV Director连续实现已提交本地main；本轮按用户新授权推送私有main）；历史实现起点e7b1fbce。保留同步线未提交交接和受保护资料。
+**认领者**：`codex/tv-director-push-20260927`
 **相关文档**：`docs/guides/liblib-tv-director-analysis.md`、`docs/guides/liblib-tv-director-development.md`、`docs/guides/tv-director-skill-fusion.md`、`docs/guides/tv-director/character-parity.md`、`docs/guides/tv-director/scene-parity.md`、`docs/guides/tv-director/prop-parity.md`
 **相关分支 / PR**：无
 **本轮详细证据**：`docs/guides/tv-director/batch-facts-pixels.md`；前轮编辑/媒体见`interaction-closure.md`，分集见`episode-parity.md`
@@ -69,6 +69,10 @@
 - **共享文件顺序**：当前无别的持锁者；本线持锁串行修改。复查发现 story-writer 对 `routeTree.gen.ts` 和项目导航均已有 wildcard 共享，无需改对方台账；新增路由源后由工具生成。API 注册/三语也已有 wildcard 共享，合并时由本线对本轮键负责。
 
 ## 实施方案
+
+### 2026-09-27 · 推送已提交代码
+
+用户在提交后明确要求push。本轮只将本地main的b5883b8f正常快进推送到既有tracking远端zhonggwv/main，不force、不pull/rebase、不推origin或其他分支、不部署。远端只读核验为私有仓库、main=f057a867；本地领先50个提交，包含此前已审计合并历史。远端同步分支已有新头4c9dee4f，本轮不合入也不更新。业务代码不改、不重跑收费模型；沿上一轮620后端/225前端/build与pre-commit结果。写入仅本台账/同名claim/STATE的推送交接，保留同步线旧diff及全部本地资料；提交目标固定为核验过的b5883b8f。普通push若因非快进拒绝即停止，成功后ls-remote比对目标SHA并handoff/release；回退必须另行授权，不自动回退远端。
 
 ### 2026-09-27 · 按用户授权提交当前实现
 
@@ -396,6 +400,14 @@ V4-Flash 联机验收分叉（2026-09-25）：定位到此前的 502 是本机 H
 - [x] 本轮道具`agent_guard.py check`为29线949claims，handoff通过（41归属脏路径）；收尾release再次强制检查。最终ruff、双端i18n、diff、gitleaks增量/相关目录复验通过。两个浏览器会话及三个自建临时服务已关闭，3001/18780/15173无监听；临时preview已删、证据保留。
 
 ## 进展记录
+
+### 2026-09-27 · 主目录同步前保存既有推送交接
+
+用户已确认将最新同步分支也合回当前main。这里只提交本线前次保留的推送记录/claim与STATE中本线段落，避免在脏工作树merge时覆盖；同步线既有两文件和STATE历史同步段由其单独落提交。业务代码和方法包不改，已有失败保留。本线暂存文件的密钥/guard/禁词检查后生成DCO检查点，再交给同步线合并；不stash、reset或丢弃文档，不携带本机运行态。
+
+### 2026-09-27 · 私有main推送完成
+
+按用户后续push授权，先用 `git ls-remote --heads zhonggwv main codex/sync-main-remotes` 与仓库可见性检查确认私有目标；main为f057a867，同步分支已有4c9dee4f但本轮不更新。执行正常 `git push zhonggwv b5883b8fb0d3037bfdbe81b66de021b1a126a528:refs/heads/main` 成功，远端从f057a867快进到b5883b8f。再次ls-remote与本地HEAD、tracking ref三者SHA完全一致；50个待推送提交均已发布到私有main。未强推、未推公开origin、未修改其他分支、未部署或收费测试；上轮代码验证结果不变。STATE/本台账/claim只在本地记录本次推送，不创建额外提交，同步线旧改动与受保护资料保持不动。功能/文学/全页像素欠项不因推送变成已验收；收尾执行guard及handoff/release。
 
 ### 2026-09-27 · 提交检查点
 
@@ -763,7 +775,7 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 
 ## 交接摘要
 
-- **最后完成到**：批量图片计划/批准/画布持久节点、M12全文和所有前集事实审计/人工核对、全页像素失败门；620后端/225前端/build。模型正9/9、负FAIL6/9；聊天局部2.3273%，整页14.6060%FAIL。人物场景道具分集旧diff均保留，0298aefa主目录未提交部署，不归档。
+- **最后完成到**：批量图片计划/批准/画布持久节点、M12全文和所有前集事实审计/人工核对、全页像素失败门；620后端/225前端/build。模型正9/9、负FAIL6/9；聊天局部2.3273%，整页14.6060%FAIL。人物场景道具分集等连续实现已提交b5883b8f并按用户新授权推送私有main；未部署、不归档，本次推送交接文档仅本地更新。
 - **下一步唯一动作**：读batch-facts-pixels §5/7，对比已留的final-welcome整页差异图和源站DOM，先建立不覆盖用户稿的两站同内容基准与页面状态矩阵，再修画布外壳/动态题材球/编辑器全态，不遮罩过门。事实线先复用负例原回包离线定位三段引证与遗漏原子主张；长篇分块需先写总费用/跨块状态合同，不自动重购或重发UNKNOWN。
 - **先读这些文件**：本台账最新计划与进展、batch-facts-pixels.md、media_batch.py/episode_facts.py/quality.py、DirectorMediaPanel/DirectorMediaNodes/useDirectorMedia、pixel_compare.py及相应测试；自动保存沿interaction-closure、文学失败沿episode/scene/prop旧指南。6适配包不等于24完整方法，开销不等于内容改善。
 - **不要动这些文件 / 决策**：现有 story/freezone/canvas 业务代码、用户源稿、研究 Cookie。

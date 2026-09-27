@@ -1,7 +1,7 @@
 version = 1
 slug = "tv-director-implementation"
 ledger = "docs/agent/tasks/tv-director-implementation.md"
-baseline = "0298aefa4734c3d8e5a02362cbf068351833c343"
+baseline = "b5883b8f"
 
 [[claims]]
 path = "tests/director/test_media_batch.py"
