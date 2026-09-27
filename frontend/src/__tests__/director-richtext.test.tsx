@@ -15,6 +15,87 @@ vi.mock('@/api/director', () => historyApi);
 afterEach(() => { cleanup(); localStorage.clear(); });
 
 describe('rich editor and Markdown save boundary', () => {
+  it('renders screenplay separators and speaker delivery line breaks without rewriting on open', async () => {
+    const raw = '# Episode\n\n- **Beats**: action\n\n---\n\n## Synopsis\n\nA choice.\n\n---\n\n## Screenplay\n\n### 1-1 | Room\n\n**Ada:**\n*(quietly)*\n“Look again.”';
+    expect(requiresSourceEditor(raw)).toBe(false);
+    const change = vi.fn();
+    render(<DirectorRichText value={raw} onChange={change} readOnly={false} label="Episode" screenplay />);
+    await act(async () => {});
+    const body = screen.getByRole('textbox');
+    expect(body.querySelectorAll('hr')).toHaveLength(2);
+    expect(body.querySelectorAll('br')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: '1-1 | Room' })).toBeVisible();
+    expect(change).not.toHaveBeenCalled();
+  });
+  it('keeps prop boundaries and episode labels through editable Markdown roundtrip', async () => {
+    const change = vi.fn(), section = vi.fn();
+    const raw = '# Prop list\n\n## Ada’s phone\n\n- **Type**: Technology\n- **Dramatic function**: Receives a message.\n- **Usage boundaries**: Ada retains this phone, not Ben’s.\n- **First appearance**: EP02\n- **Key episodes**: EP02 / EP03\n\n## Ben’s phone\n\n- **Type**: Evidence\n- **Dramatic function**: Replays the recording.\n- **Usage boundaries**: Not sent; replay does not transfer the file.\n- **First appearance**: EP03\n- **Key episodes**: EP03';
+    render(<DirectorRichText value={raw} onChange={change} readOnly={false} label="Props"
+      sections={[{ id: 'scenes', label: 'Scenes', selected: false }, { id: 'props', label: 'Props', selected: true }]} onSection={section} />);
+    await act(async () => {});
+    expect(screen.getByRole('textbox').querySelectorAll('li strong')).toHaveLength(10);
+    expect(screen.getByRole('button', { name: 'Ada’s phone' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Ben’s phone' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Scenes' }));
+    expect(section).toHaveBeenCalledWith('scenes');
+    expect(change).not.toHaveBeenCalled();
+    const editor = new Editor({ extensions: richTextExtensions(), content: raw, contentType: 'markdown' });
+    editor.commands.setTextSelection({ from: 1, to: 5 });
+    editor.commands.toggleBold();
+    const saved = editor.getMarkdown();
+    expect(saved).toContain('Ada retains this phone, not Ben’s.');
+    expect(saved).toContain('Not sent; replay does not transfer the file.');
+    expect(saved).toContain('EP02 / EP03');
+    expect((saved.match(/\*\*First appearance\*\*/g) ?? [])).toHaveLength(2);
+    editor.destroy();
+  });
+
+  it('renders the five scene fields and switches sections without rewriting the document', async () => {
+    const change = vi.fn(), section = vi.fn();
+    const raw = '# Scene list\n\n## Meeting room\n\n- **Type**: Interior\n- **Dramatic function**: The agreement is signed.\n- **Spatial constraints on action**: The door stays closed until Ada opens it.\n- **Reusable action positions**: The same table in both episodes.\n- **Key episodes**: EP01 / EP02\n\n## Courtyard\n\n- **Type**: Exterior';
+    const view = render(<DirectorRichText value={raw} onChange={change} readOnly={false} label="Scenes"
+      sections={[{ id: 'characters', label: 'Characters', selected: false }, { id: 'scenes', label: 'Scenes', selected: true }]} onSection={section} />);
+    await act(async () => {});
+    expect(screen.getByRole('textbox').querySelectorAll('h2')).toHaveLength(2);
+    expect(screen.getByRole('textbox').querySelectorAll('li strong')).toHaveLength(6);
+    expect(screen.getByRole('button', { name: 'Meeting room' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Characters' }));
+    expect(section).toHaveBeenCalledWith('characters');
+    expect(change).not.toHaveBeenCalled();
+    view.rerender(<DirectorRichText value={raw} onChange={change} readOnly label="Scenes" />);
+    expect(screen.getByRole('textbox')).toHaveAttribute('contenteditable', 'false');
+    expect(screen.getByRole('textbox')).toHaveTextContent('EP01 / EP02');
+  });
+
+  it('uses heading positions for duplicate character names and never edits on navigation', async () => {
+    const change = vi.fn(), jump = vi.fn();
+    const original = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = jump;
+    try {
+      render(<DirectorRichText value={'# Character roster\n\n## Lin\n\n- **Type**: Main\n\n## Lin\n\n- **Type**: Supporting'}
+        onChange={change} readOnly={false} label="Characters" sections={[{ id: 'characters', label: 'Characters', selected: true }]} />);
+      await act(async () => {});
+      const names = screen.getAllByRole('button', { name: 'Lin' });
+      expect(names).toHaveLength(2);
+      fireEvent.click(names[1]);
+      expect(names[1]).toHaveAttribute('aria-current', 'location');
+      expect(names[0]).not.toHaveAttribute('aria-current');
+      expect(jump).toHaveBeenCalledOnce();
+      const scroller = screen.getByRole('textbox').closest('.dc-rich-scroll')!;
+      const headingDom = screen.getByRole('textbox').querySelectorAll('h2');
+      vi.spyOn(headingDom[0], 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect);
+      vi.spyOn(headingDom[1], 'getBoundingClientRect').mockReturnValue({ top: 400 } as DOMRect);
+      // A bottom-clamped smooth scroll must not highlight the previous person.
+      fireEvent.scroll(scroller);
+      expect(names[1]).toHaveAttribute('aria-current', 'location');
+      fireEvent.wheel(scroller);
+      fireEvent.scroll(scroller);
+      expect(names[0]).toHaveAttribute('aria-current', 'location');
+      expect(change).not.toHaveBeenCalled();
+      expect(screen.getByRole('textbox').querySelectorAll('li strong')).toHaveLength(2);
+    } finally { HTMLElement.prototype.scrollIntoView = original; }
+  });
+
   it('does not save or normalize content on open, zoom or source view changes', async () => {
     const change = vi.fn(), raw = '# Title\n\nOriginal text.\n\n';
     render(<DirectorRichText value={raw} onChange={change} readOnly={false} label="Outline" />);

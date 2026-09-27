@@ -3,7 +3,7 @@
 > **新会话的第一件事是读这份文件。** 它只回答三个问题：现在有哪几条线在做、各自卡在哪、
 > 下一步做什么。取证与方案不在这里——在 `docs/guides/`；每条线的逐步记录在 `docs/agent/tasks/`。
 >
-> 最后更新：2026-09-26 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
+> 最后更新：2026-09-27 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
 > [`docs/agent/README.md`](README.md)
 
 ## 一、仓库当前形态（接手前必须核对）
@@ -32,7 +32,7 @@
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
 | [sync-main-remotes](tasks/sync-main-remotes.md) | 私有同步分支合入 TV Director；历史上游同步另行等待 | 已阻塞 | 本轮私有分支已交付96bda53c，560后端/127前端/build及门禁通过；仅历史公开PR等审核，未来同步须重审，禁止把旧origin/main推回私有main |
-| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | cb3833ee已推送私有main（未deploy）；471后端/78前端/build/提交钩子通过。已保存大纲证据审查接通，但6笔审稿全漏关键错，未过文学门、不能自动放行；M07 2.2.0保留short-drama根基。下一步literary-benchmark §9.5原子事实确认+最小正反反例；UI/M10/Windows/完整退出门与素材再分发许可仍未全过 |
+| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。本线连续增量按授权提交本地main，提交号以Git为准；未push/部署 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
@@ -83,7 +83,7 @@
 
 ## 四、恢复顺序（不是功能优先级）
 
-用户最新优先级（2026-09-26）：`tv-director-implementation` 结构是基础，文学质量最重要，须多套真实样本尽量对齐；short-drama是根基。集数/时长由用户决定，30秒仅历史测试值。literary-benchmark §1–§8保留五套/14请求/LibTV完整大纲对照，§9新增已保存大纲独立审查及6笔真实漏判证据；引用格式通过仍非事实正确，须先补原子事实确认和正反例，再评审模型对照。UI/布局/操作全对齐及M10等完整目标保留，不从测试数推完成率；失败实验不晋级，不重买旧UNKNOWN。
+用户最新优先级（2026-09-27）：提交当前TV Director连续实现，不push/部署。批量图片/画布恢复、M12全文事实与三视口像素检查已落地，失败与剩余项以batch-facts-pixels为准；收尾释放锁后接手须按Git更新基线。下一步同内容全态像素、长篇审计和语义质量，不重复实现已完成的批次链。short-drama仍为根基；时长由用户决定，不重买旧UNKNOWN，不从提交或测试数推全产品完成率。
 
 1. 交接协议与 handoff 回归修复已独立提交并推送。
 2. 只读分类 `legacy-unassigned-diff`，任何未确认归属的文件继续保持隔离。

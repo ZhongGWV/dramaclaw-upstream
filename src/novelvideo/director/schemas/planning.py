@@ -163,6 +163,23 @@ class Character(ContractModel):
     knowledge: Text
     voice: Text
     arc: Text
+    role: Literal["protagonist", "main", "supporting"]
+    setting: Text
+    dramatic_function: Text
+    tags: list[Text] = Field(min_length=1, max_length=8)
+    speech_flaw: Text | None
+    memorable_detail: Text
+    pressure_response: Text
+    address_rules: Text | None
+    first_episode_id: Identifier
+    key_episode_ids: list[Identifier] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def distinct_names_and_episodes(self) -> Character:
+        for values in (self.names, self.key_episode_ids):
+            if len(set(values)) != len(values):
+                raise ValueError("CHARACTER_DUPLICATE_REFERENCE")
+        return self
 
 
 class Relation(ContractModel):
@@ -177,11 +194,72 @@ class Asset(ContractModel):
     description: Text
 
 
-class Bible(ContractModel):
+class CharacterDocument(ContractModel):
+    character_version: Literal[2]
     characters: list[Character] = Field(min_length=1, max_length=100)
     relations: list[Relation]
-    locations: list[Asset] = Field(min_length=1)
-    props: list[Asset]
+
+    @model_validator(mode="after")
+    def character_links(self) -> CharacterDocument:
+        ids = [item.id for item in self.characters]
+        if len(ids) != len(set(ids)):
+            raise ValueError("DUPLICATE_ENTITY_ID")
+        if any(
+            row.from_id not in ids or row.to_id not in ids or row.from_id == row.to_id
+            for row in self.relations
+        ):
+            raise ValueError("RELATION_ENTITY_MISSING")
+        return self
+
+
+class Scene(ContractModel):
+    id: Identifier
+    name: Text
+    type: Literal["interior", "exterior", "mixed", "unknown"]
+    dramatic_function: Text
+    spatial_constraints: Text
+    reusable_positions: Text
+    key_episode_ids: list[Identifier] = Field(min_length=1, max_length=100)
+
+
+class SceneDocument(ContractModel):
+    scene_version: Literal[1]
+    locations: list[Scene] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def distinct_locations(self) -> SceneDocument:
+        ids = [item.id for item in self.locations]
+        if len(ids) != len(set(ids)):
+            raise ValueError("SCENE_DUPLICATE_ID")
+        return self
+
+
+class Prop(ContractModel):
+    id: Identifier
+    name: Text
+    type: Text
+    dramatic_function: Text
+    usage_boundary: Text
+    first_episode_id: Identifier
+    key_episode_ids: list[Identifier] = Field(min_length=1, max_length=100)
+
+
+class PropDocument(ContractModel):
+    prop_version: Literal[1]
+    props: list[Prop] = Field(max_length=100)
+    empty_reason: Text | None
+
+    @model_validator(mode="after")
+    def distinct_props_and_honest_empty(self) -> PropDocument:
+        ids = [item.id for item in self.props]
+        if len(ids) != len(set(ids)):
+            raise ValueError("PROP_DUPLICATE_ID")
+        if (not self.props) != (self.empty_reason is not None):
+            raise ValueError("PROP_EMPTY_REASON_MISMATCH")
+        return self
+
+
+class Bible(CharacterDocument, SceneDocument, PropDocument):
     world_rules: list[Text]
 
     @model_validator(mode="after")
@@ -242,6 +320,16 @@ class OutlineMethodContext(PlanningMethodContext):
 
     stage: Literal["M07"]
     mode: Literal["original", "adaptation"]
+
+
+class CharacterMethodContext(PlanningMethodContext):
+    """The same character craft serves preparation and source-grounded edits."""
+
+    stage: Literal["M08"]
+    mode: Literal["original", "adaptation"]
+    document_kind: Literal["preparation", "characters", "scenes", "props"] = (
+        "preparation"
+    )
 
 
 class WorkflowExpected(WireContract):
