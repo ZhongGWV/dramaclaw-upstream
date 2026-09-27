@@ -1,8 +1,8 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：执行中
+**状态**：已阻塞
 **最后更新**：2026-09-26
-**基线**：`906355d7`（本轮方案提交；目标私有分支原远端为 `1fa3c1bc`）
+**基线**：`96bda53c`（TV Director 合并已推私有同名分支；原目标远端为 `1fa3c1bc`）
 **认领者**：`codex/sync-director-20260926`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
@@ -122,6 +122,17 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 
 ## 进展记录
 
+### 2026-09-26 · 本轮私有分支同步完成
+
+合并提交 `96bda53cb7ae6757d0d9c1613194053b28f3691f` 已正常推送到
+`zhonggwv/codex/sync-main-remotes`，ls-remote与本地HEAD完全一致；DCO与双方祖先检查通过。
+私有 `main` 仍为 `f057a8678de7faf0adbf82b6035b324821af53f8`，未改写；公开fork/PR未推送。
+本地该分支upstream已纠正为同名远端，避免默认push误发main；目标工作区干净、锁正常释放。
+主检出仍在main，仅有原受保护未跟踪资料，本轮未触碰。560后端/127前端与构建结果见下节。
+
+用户本轮“也提交到此分支”已完成。本台账仍留活动索引的“已阻塞”仅指历史双main同步等待上游审核，
+不表示此次私有分支交付失败；下一轮必须重新比较所有分支，不得执行旧交接中的直接覆盖命令。
+
 ### 2026-09-26 · 本轮集成验证收口，准备推送私有分支
 
 `.env.example`仅补充两个可选变量注释及回环代理默认说明，无任何运行态/模型参数变更。
@@ -239,20 +250,20 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 - [x] 完成 claim 与共享互认后 acquire/preflight。
 - [x] 执行合并、解决文本与语义冲突并完成全量验证。
-- [ ] 上游维护者审核并合入 PR #717；随后 fetch `origin/main`，把它的最终 SHA 快进推到 `zhonggwv/main`。
+- [x] 用户本轮要求的 TV Director 四个 main 提交已合并、验证并推送私有 `codex/sync-main-remotes`。
+- [ ] 历史上游维护者审核 PR #717；合入后重新审计双方 main 与当前私有集成分支，另行取得同步授权。
 
 ## 阻塞
 
-`dramaclaw/dramaclaw` 对当前账号只读；PR #717 虽可合并但必须由上游维护者审核，且当前账号无权开启
-auto-merge。阻塞解除条件：PR 合入；不要在此之前单独移动 `zhonggwv/main`。
+本轮私有分支交付无阻塞。历史 `dramaclaw/dramaclaw` 审核/合入权限仍在上游维护者，PR #717仍OPEN；
+私有main已经按后续用户请求独立前进。阻塞解除也不代表获准把私有新增Director及素材发布到公开fork。
 
 ## 交接摘要
 
-- **最后完成到**：合并提交 `a2418a65` 全量验证通过并已推送到两个 PR 集成分支；upstream PR #717 等审核。
-- **下一步唯一动作**：确认 PR #717 已合入，fetch origin，验证其最终 main 含 `a2418a65`，再执行
-  `git push zhonggwv origin/main:main` 并用两次 `ls-remote` 核对同 SHA。
+- **最后完成到**：用户本轮指定的私有分支已含全部四个Director提交，合并为 `96bda53c`并推送核验；目标干净。
+- **下一步唯一动作**：如用户再次要求历史双main同步，先只读检查PR #717和三方最新Git差异，提出新方案与发布范围。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
-- **不要动这些文件 / 决策**：不强推、不 rebase、不提前移动 fork main，不把主工作区未跟踪资料复制进来。
+- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork，不改main，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 
 ### 2026-09-26 · 故事板共享协调
 

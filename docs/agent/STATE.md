@@ -8,8 +8,8 @@
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 当前隔离分支 `codex/sync-main-remotes`，目标远端基线 `1fa3c1bc`，方案提交 `906355d7`。
-  本轮合并 `main=zhonggwv/main=f057a867` 的四个 TV Director 提交；仅推私有同名分支，不更新公开PR或两个main。
+- 当前隔离分支 `codex/sync-main-remotes`，`96bda53c`已合入四个TV Director提交并推送私有同名分支。
+  后续协调提交后的HEAD以Git为准。`main=zhonggwv/main=f057a867`保持不动，公开fork/PR未更新。
 - 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
   研究与实现边界、失败模型实验照原台账保留。主检出的 `_to_delete/` 与 `曹操.md` 仍受保护，
   `.playwright-cli/`、本地配置与付费回包继续忽略。备份与逐组验证见 `docs/agent/archive/git-sync-preparation.md`。
@@ -31,7 +31,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 私有同步分支合入 TV Director；历史上游同步另行等待 | 执行中 | 当前目标远端1fa3c1bc，main=f057a867；正常merge保留双方，验证后仅推私有同名分支，不更新公开PR或main |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 私有同步分支合入 TV Director；历史上游同步另行等待 | 已阻塞 | 本轮私有分支已交付96bda53c，560后端/127前端/build及门禁通过；仅历史公开PR等审核，未来同步须重审，禁止把旧origin/main推回私有main |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | cb3833ee已推送私有main（未deploy）；471后端/78前端/build/提交钩子通过。已保存大纲证据审查接通，但6笔审稿全漏关键错，未过文学门、不能自动放行；M07 2.2.0保留short-drama根基。下一步literary-benchmark §9.5原子事实确认+最小正反反例；UI/M10/Windows/完整退出门与素材再分发许可仍未全过 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
@@ -61,7 +61,7 @@
 
 | 路径 / 区域 | 本地工作线 | 外部重叠 | 当前处理规则 |
 |---|---|---|---|
-| 视频冲突文件、环境变量/许可证清单、story 能力与 runner 合同测试 | sync-main-remotes 最终集成 | `origin/main` 29 个独有提交与 fork 50 个独有提交 | 隔离 worktree 保留两边语义；文本冲突外仅修完整回归证明的窄语义缺口，验证后同一 SHA 依次推两个 main |
+| 三语翻译、配置文档、协调台账；历史上游集成热点 | sync-main-remotes 最终集成 | 私有main的4个Director提交与目标46个独有提交 | 96bda53c已保留双方历史并推私有分支；公开PR仍在另一个fork，本轮不更新，未来双main同步须重新审计/授权 |
 | `Canvas.tsx`、`index.css`、`imageData.ts`、`useCanvasSync.ts` | LOD + LibTV 画布 | `origin/perf/canvas-pan-lod-culling` | LOD 来源审计完成前不再写这 4 个文件 |
 | `VideoNode.tsx`、`canvasNodes.ts`、`nodeRegistry.ts`、`NodeActionToolbar.tsx` 等 | LibTV + depth / 拉片接入 | `origin/feat/canvas-video-reshoot-breakdown` | 先做行为与测试的三方差异，不按文件新旧直接取舍 |
 | `VideoOperationsPanel.tsx`、`PromptMentionEditor.tsx`、H3 工作台适配器 | MiniMax H3 引用顺序 | `codex/minimax-h3-liblib-parity`、旧 CTA 分支 | H3 已集成；sync-main-remotes 只修候选签名刷新与既有素材替换等待态的 effect 顺序，不改 Mixed 协议 |

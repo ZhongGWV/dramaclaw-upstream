@@ -1,7 +1,7 @@
 version = 1
 slug = "sync-main-remotes"
 ledger = "docs/agent/tasks/sync-main-remotes.md"
-baseline = "906355d7"
+baseline = "96bda53c"
 
 [[claims]]
 path = ".env.example"
