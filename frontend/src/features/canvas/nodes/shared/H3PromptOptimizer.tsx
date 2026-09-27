@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Button } from '@/components/ui/button';
 import { fetchFreezoneTextModels, streamFreezoneH3, formatFreezoneH3Locally } from '@/api/ops';
 import { readUrl } from '@/lib/url-params';
+import { backendErrorToastMessage } from '@/lib/api-errors';
 import { useCanvasStore } from '@/stores/canvasStore';
 import type { ReferenceMediaItem } from '@/features/canvas/nodes/VideoNode';
 import type { VideoGenMode } from '@/features/canvas/domain/canvasNodes';
@@ -114,7 +115,7 @@ export function H3PromptOptimizer(props: Props) {
       setDraft(result.generated_text);
       setValidated(true);
     } catch (e) {
-      if (request.current === version) setError(e instanceof Error ? e.message : String(e));
+      if (request.current === version) setError(backendErrorToastMessage(e, t));
     } finally {
       if (request.current === version) setBusy(false);
     }

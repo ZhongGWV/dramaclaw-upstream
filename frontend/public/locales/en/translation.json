@@ -2695,6 +2695,15 @@
     "loading": "Loading...",
     "back": "Back",
     "error": "Something went wrong",
+    "referenceCountExceeded": "Too many references: {{details}}. Remove references and try again.",
+    "referenceCountDetail": "{{kind}}: {{actual}} currently, maximum {{limit}}",
+    "referenceKinds": {
+      "total": "Total references (including text)",
+      "media": "Media (images, videos and audio)",
+      "image": "Images",
+      "video": "Videos",
+      "audio": "Audio"
+    },
     "novelImportRequired": "Please import a novel first",
     "insufficientCredits": "Insufficient credits. Please contact your administrator to recharge.",
     "billingRuleNotConfigured": "Billing rule is not configured. Please contact an administrator to set credit pricing.",

@@ -2695,6 +2695,15 @@
     "loading": "加载中...",
     "back": "返回",
     "error": "出错了",
+    "referenceCountExceeded": "素材引用超了：{{details}}。请减少引用后重试。",
+    "referenceCountDetail": "{{kind}}当前 {{actual}} 个，最多允许 {{limit}} 个",
+    "referenceKinds": {
+      "total": "引用总数（含文本）",
+      "media": "媒体素材（图片、视频、音频）",
+      "image": "图片",
+      "video": "视频",
+      "audio": "音频"
+    },
     "novelImportRequired": "请先导入小说",
     "insufficientCredits": "积分不足，请联系管理员充值",
     "billingRuleNotConfigured": "计费规则未配置，请联系管理员设置积分规则",

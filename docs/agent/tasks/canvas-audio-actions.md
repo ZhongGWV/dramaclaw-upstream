@@ -178,3 +178,6 @@ GET 422，定位为结果路由 `Literal` 漏枚举并补回归测试；修复�
 
 ### 2026-09-27 · 多供应商模型接入协调
 用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/src/api/ops.ts, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/api/routes/freezone.py。
+
+### 2026-09-27 · 引用合同串行协调
+既有 schemas 实现已提交；允许 multi-provider-models 串行修复 H3 格式绑定数量校验，保持本线媒体生成合同，由该线最终集成。

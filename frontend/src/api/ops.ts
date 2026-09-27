@@ -2,6 +2,7 @@ import { rememberTextModels, rememberMediaDefault, type CatalogModel } from '@/l
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { apiCall, apiCallEnvelope, apiClient } from "./client";
+import { responseWithBackendError } from '@/lib/api-errors';
 import { readReferenceMediaLimits, type ReferenceMediaLimits } from "./referenceMediaLimits";
 
 // Per-node generation history -------------------------------------------- //
@@ -2441,11 +2442,11 @@ export async function streamFreezoneH3(
   signal: AbortSignal,
 ): Promise<FreezoneTextGenerateResult> {
   const { readH3Stream } = await import('./h3-stream');
-  const response = await apiClient(`projects/${encodeURIComponent(project)}/freezone/text/stream-h3`, {
+  const response = await responseWithBackendError(apiClient(`projects/${encodeURIComponent(project)}/freezone/text/stream-h3`, {
     method: 'POST', timeout: false, retry: 0, signal,
     json: { prompt: payload.prompt, model: payload.model ?? '',
       references: payload.references ?? [], h3_options: payload.h3Options },
-  });
+  }));
   return readH3Stream(response, onText);
 }
 

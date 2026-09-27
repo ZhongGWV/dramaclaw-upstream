@@ -319,6 +319,25 @@ def text_writer_request_references(
     ]
 
 
+def validate_h3_reference_bindings(
+    references: Sequence[Mapping[str, str]], options: Mapping[str, Any],
+) -> None:
+    """Validate label identity without opening media for a format-only request."""
+    kinds = options["reference_order"]
+    if len(references) < len(kinds):
+        raise ValueError("missing H3 reference attachments")
+    for index, ref in enumerate(references):
+        image, video = bool(ref.get("image_url")), bool(ref.get("video_url"))
+        if image and video:
+            raise ValueError("H3 reference must bind exactly one media type")
+        if index < len(kinds):
+            actual = "video" if video else "image" if image else "audio"
+            if kinds[index] != actual:
+                raise ValueError("H3 reference order does not match attachments")
+        elif image or video:
+            raise ValueError("H3 reference counts do not match attachments")
+
+
 async def _text_writer_reference_parts(
     references: Sequence[Mapping[str, str]], project_dir: Path
 ) -> list[str | BinaryContent]:

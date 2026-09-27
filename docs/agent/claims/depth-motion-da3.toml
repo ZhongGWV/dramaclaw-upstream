@@ -48,7 +48,7 @@ reason = "Task-center labels for both analysis task types share one mapping."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Depth and breakdown request contracts live in the shared API schema module."
 
 [[claims]]

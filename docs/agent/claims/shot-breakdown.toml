@@ -64,7 +64,7 @@ reason = "Expose breakdown task lifecycle."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Breakdown request and result schemas."
 
 [[claims]]

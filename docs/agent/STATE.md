@@ -8,7 +8,7 @@
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 本机实际分支 `codex/sync-main-remotes`，本轮业务提交基线 `969d76d`（文档提交后的实际 HEAD 以 Git 为准）；下述 main 同步记录为历史状态。
+- 本机实际分支 `codex/sync-main-remotes`，本轮业务提交基线 `53ca321`（文档提交后的实际 HEAD 以 Git 为准）；下述 main 同步记录为历史状态。
 - 历史分支 `main`；画布架构/LibTV 基线 `3238af61`、动作注册表 + 音频截取/变速 `0f20e8ac`、
   音频智能/自定义切分 `4b578509`、创意片头取证 `bb0bf189` 均已作为独立提交推送，当前与
   `zhonggwv/main` 同步；来源、决策和验证可从对应台账追溯。
@@ -27,7 +27,7 @@
 
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
-| [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | 正式设置正常，两项火山文本在新密钥下实测成功；火山图片待真实生成验收 |
+| [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | H3 引用 422 和数量提示修复已重启；26 项提交审计/密钥检查通过，本地提交结果见 Git，火山图片仍待单独验收 |
 | [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除；1fa3c1b 已推送 |
 | [h3-prompt-optimizer](tasks/h3-prompt-optimizer.md) | H3 参考图完整保留与提示词格式转换 | 待验收 | 本地/云端共用字段布局，去共用段重复、统一空行/音效标题；服务已重启，待用户试转 |
 | [h3-completion-recovery](tasks/h3-completion-recovery.md) | H3 完成结果认领及超时恢复 | 待验收 | 按任务 ID 认领修复并重启生效；545秒成品已接回、任务恢复完成，待下次正常生成通知验收 |

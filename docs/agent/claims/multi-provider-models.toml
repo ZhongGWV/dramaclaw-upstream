@@ -1,7 +1,7 @@
 version = 1
 slug = "multi-provider-models"
 ledger = "docs/agent/tasks/multi-provider-models.md"
-baseline = "1fa3c1b"
+baseline = "53ca321"
 
 [[claims]]
 path = "src/novelvideo/local_model_catalog.py"
@@ -161,3 +161,25 @@ path = "frontend/src/features/canvas/application/nodeFactory.ts"
 mode = "shared"
 shared_with = ["*"]
 reason = "Apply configured defaults only when creating a new node."
+
+[[claims]]
+path = "src/novelvideo/api/schemas.py"
+mode = "shared"
+shared_with = ["*"]
+reason = "H3 format reference contract and actionable HTTP errors."
+
+[[claims]]
+path = "frontend/src/lib/api-errors.ts"
+mode = "shared"
+shared_with = ["*"]
+reason = "H3 format reference contract and actionable HTTP errors."
+
+[[claims]]
+path = "tests/test_text_reference_contract.py"
+mode = "exclusive"
+reason = "H3 format reference contract and actionable HTTP errors."
+
+[[claims]]
+path = "frontend/src/__tests__/h3-request-contract.test.ts"
+mode = "exclusive"
+reason = "H3 format reference contract and actionable HTTP errors."

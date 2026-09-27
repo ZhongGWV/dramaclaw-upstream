@@ -2600,6 +2600,15 @@
     "back": "Quay lại",
     "error": "Đã có lỗi xảy ra",
     "novelImportRequired": "Vui lòng nhập truyện trước",
+    "referenceCountExceeded": "Quá nhiều tư liệu tham chiếu: {{details}}. Hãy giảm số lượng rồi thử lại.",
+    "referenceCountDetail": "{{kind}}: hiện có {{actual}}, tối đa {{limit}}",
+    "referenceKinds": {
+      "total": "Tổng tham chiếu (gồm văn bản)",
+      "media": "Tư liệu (ảnh, video và âm thanh)",
+      "image": "Ảnh",
+      "video": "Video",
+      "audio": "Âm thanh"
+    },
     "insufficientCredits": "Không đủ credits. Vui lòng liên hệ quản trị viên để nạp thêm.",
     "billingRuleNotConfigured": "Chưa cấu hình quy tắc tính phí. Vui lòng liên hệ quản trị viên để thiết lập giá credits.",
     "billingRuleNotConfiguredShort": "Cấu hình",
