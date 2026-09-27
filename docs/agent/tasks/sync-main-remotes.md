@@ -1,13 +1,42 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：已阻塞
-**最后更新**：2026-09-25
-**基线**：`a2418a65`（已验证合并提交）；原两个 main 均为其祖先，上游 review 前不提前移动 fork main
-**认领者**：`codex/sync-main-remotes-20260924`
+**状态**：执行中
+**最后更新**：2026-09-26
+**基线**：`1fa3c1bc`（目标私有分支最新远端；历史上游集成提交为 `a2418a65`）
+**认领者**：`codex/sync-director-20260926`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 本轮增量：将已推送的 TV Director 提交同步到本分支
+
+用户最新要求是把 main 的四个已提交改动也交付到 `codex/sync-main-remotes`。
+当前 `main=zhonggwv/main=f057a867`，目标远端 `1fa3c1bc`；共同祖先 `e7b1fbce`，
+两边独有提交数为 4 / 46。目标干净 worktree 已安全快进，保留远端新增的 14 个画布/H3提交。
+本轮只更新私有 `ZhongGWV/dramaclaw` 的该分支，不修改任一 main，也不更新公开 fork 或 PR #717。
+PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`。
+
+范围与步骤：
+
+1. 完成方案、精确 scope、guard 后，以目标分支为第一父提交正常 merge `f057a867`；不用 cherry-pick、rebase、force。
+2. merge-tree 在最新远端上只报告五个文本冲突：STATE、本地栈台账、zh/en/vi翻译。
+   前两者保留双方事实并校正当前状态；翻译按键合并，禁止丢失 storyboard/H3 或 director 键。
+   其余 main 增量仅只读导入，精确路径见 claim；不重新实现或修改文学生成方法。
+3. 自动合并的 `config.py`、路由、DESIGN按双方 diff核对；不动既有画布行为。
+   incoming Director 的 scope若与目标既有范围重叠，仅协调双方claim/台账为串行共享，不夺取所有权。
+4. 验证：后端 Director/文本网关及 H3 聚焦测试；前端 Director/三语/故事板/H3/拆分聚焦测试；
+   `pnpm build`、Ruff、i18n、CE闭合、违禁词/EE/导入门禁、pre-commit、gitleaks、DCO与双方祖先关系。
+   发现语义冲突先补计划；不以旧测试结果当作本轮通过，不触发收费模型或浏览器生成。
+5. 带 DCO生成合并提交，显式推 `zhonggwv HEAD:refs/heads/codex/sync-main-remotes`；
+   ls-remote核对SHA，同时确认私有 main未移动。修正本分支upstream到同名远端，防误推 main。
+
+验收：原两边提交均为祖先，受影响集成验证通过，目标远端含全部四个 main 提交；主工作区与凭据不变。
+风险/回退：自动合并仍可能语义冲突；三语逐叶键比对双方，构建验证路由/类型。推送前可停止保留本地合并；
+如需要撤销，另行批准显式 revert，不重写历史。原“两个main同SHA”目标是历史任务，仍等待上游审核，
+本轮不据此扩大权限；未来同步不得以旧 `origin/main` 覆盖现已独立前进的私有 main。
+
+### 历史目标（本轮不执行）
 
 把 `origin/main` 与 `zhonggwv/main` 的两条分叉历史合并为同一个提交：保留上游 29 个独有提交、
 保留 fork 50 个独有提交，解决交叉热点后验证，并最终让两个远端的 `main` 指向完全相同的 SHA。
@@ -28,6 +57,9 @@
 - 图2所需 H3 提交 `0bb2410b`、`51573f75`、`ec79e9fe` 均在 fork 历史；上游的付款、媒体归档、引用校验和视频续写提交均在 `origin/main` 历史。
 
 ## 写入边界
+
+本轮手工业务改动仅三语 `translation.json` 的合并冲突；其他 main 路径只读导入。
+STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务可写项本轮不使用。
 
 | 路径 | 模式 | 作用 / 为什么必须改 |
 |---|---|---|
@@ -84,6 +116,11 @@
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-26 · TV Director 增量同步方案门
+
+只读核对本地与远端、公开PR归属并安全快进干净目标工作区到 `1fa3c1bc`；guard为27工作线/597claims，无锁。
+预演确认五个冲突，源 main 已推送，不是待提交脏文件。下一步锁内预检、正常合并和集成验证；尚未声称完成。
 
 ### 2026-09-24 · 上游 PR 可合并但等待必需审核
 
