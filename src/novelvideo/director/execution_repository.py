@@ -235,6 +235,7 @@ class ExecutionRepository:
                 "status": row["status"],
                 "output": row["output_text"],
                 "outputHash": json.loads(row["response_json"]).get("output_sha256"),
+                "factAudit": json.loads(row["response_json"]).get("factAudit"),
                 "readOnly": True,
             }
 
@@ -270,6 +271,18 @@ class ExecutionRepository:
                 ],
                 "nextSeq": rows[-1]["seq"] if rows else after,
             }
+
+    def progress(self, work_id: str, run_id: str, token: str, event_type: str, payload: dict) -> int:
+        """Append previews only; a delta never mutates a document or approves a draft."""
+        if event_type not in {"method.loaded", "model.started", "text.delta"}:
+            raise ValueError("INVALID_PROGRESS_EVENT")
+        with self.transaction() as db:
+            row = self.operation(db, work_id, run_id)
+            if row["lease_token"] != token:
+                raise ExecutionFault("INVALID_DISPATCH_LEASE")
+            if row["status"] not in {"dispatching", "cancel_requested"}:
+                return 0
+            return self.event(db, work_id, row["session_id"], event_type, payload, run_id)
 
     def claim(self, work_id: str, run_id: str) -> tuple[str, dict] | None:
         with self.transaction() as db:
@@ -468,6 +481,20 @@ class ExecutionRepository:
                         )
                     else:
                         candidate = output
+                        candidate_output = output
+                        fact_audit = None
+                        if snapshot["parameters"].get("factBoundary"):
+                            from .fact_guard import inspect as inspect_facts
+
+                            try:
+                                candidate_output, fact_audit = inspect_facts(output, snapshot["parameters"]["factBoundary"])
+                            except (ValueError, KeyError, TypeError, AttributeError):
+                                fact_audit = {"passed": False, "issues": [{"code": "FACT_EVIDENCE_INVALID"}]}
+                            response["factAudit"] = fact_audit
+                        if snapshot["parameters"].get("output_contract") == "episode-screenplay/1.0.0":
+                            from .episode_format import inspect_episode
+
+                            response["episodeFormat"] = inspect_episode(output)
                         if (
                             snapshot["parameters"].get("output_contract")
                             == "story-outline/2.2.0"
@@ -484,11 +511,61 @@ class ExecutionRepository:
                                 }
                             except (ValueError, KeyError, TypeError):
                                 candidate = None
+                        elif (
+                            snapshot["parameters"].get("output_contract")
+                            == "character-biographies/2.2.0"
+                        ):
+                            from .characters import parse_characters, render_characters
+
+                            try:
+                                root = snapshot["parameters"]["characterRoot"]
+                                artifact = parse_characters(candidate_output, root)
+                                candidate = render_characters(artifact, root)
+                                response["characters"] = {
+                                    "contract": "character-biographies/2.2.0",
+                                    "artifactHash": digest(artifact),
+                                }
+                            except (ValueError, KeyError, TypeError):
+                                candidate = None
+                        elif (
+                            snapshot["parameters"].get("output_contract")
+                            == "scene-design/1.0.0"
+                        ):
+                            from .scenes import parse_scenes, render_scenes
+
+                            try:
+                                root = snapshot["parameters"]["sceneRoot"]
+                                artifact = parse_scenes(candidate_output, root)
+                                candidate = render_scenes(artifact, root)
+                                response["scenes"] = {
+                                    "contract": "scene-design/1.0.0",
+                                    "artifactHash": digest(artifact),
+                                }
+                            except (ValueError, KeyError, TypeError):
+                                candidate = None
+                        elif (
+                            snapshot["parameters"].get("output_contract")
+                            == "prop-design/1.0.0"
+                        ):
+                            from .props import parse_props, render_props
+
+                            try:
+                                root = snapshot["parameters"]["propRoot"]
+                                artifact = parse_props(output, root)
+                                candidate = render_props(artifact, root)
+                                response["props"] = {
+                                    "contract": "prop-design/1.0.0",
+                                    "artifactHash": digest(artifact),
+                                }
+                            except (ValueError, KeyError, TypeError):
+                                candidate = None
+                        if fact_audit and not fact_audit["passed"]:
+                            candidate = None
                         if candidate is None:
                             status, cost_status, error_code = (
                                 "failed",
                                 "settlement_pending",
-                                "PLANNING_OUTPUT_INVALID",
+                                "SOURCE_FACT_UNGROUNDED" if fact_audit and not fact_audit["passed"] else "PLANNING_OUTPUT_INVALID",
                             )
                         else:
                             change_id = self._propose_output(

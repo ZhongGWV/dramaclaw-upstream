@@ -1,7 +1,137 @@
 version = 1
 slug = "tv-director-implementation"
 ledger = "docs/agent/tasks/tv-director-implementation.md"
-baseline = "e7b1fbce7ee814fb3fd7343b74f68d331f24ec70"
+baseline = "0298aefa4734c3d8e5a02362cbf068351833c343"
+
+[[claims]]
+path = "tests/director/test_media_batch.py"
+mode = "exclusive"
+reason = "Atomic batch planning, approval subset, nodes and recovery."
+
+[[claims]]
+path = "tests/director/test_episode_facts.py"
+mode = "exclusive"
+reason = "Full episode evidence coverage and state-transition audit."
+
+[[claims]]
+path = "tests/director/live_episode_facts.py"
+mode = "exclusive"
+reason = "Explicit bounded real-model full-episode audit evidence."
+
+[[claims]]
+path = "tests/director/pixel_compare.py"
+mode = "exclusive"
+reason = "Reproducible unmasked full-page pixel comparison."
+
+[[claims]]
+path = "frontend/src/__tests__/director-media-batch.test.tsx"
+mode = "exclusive"
+reason = "Batch plan to persistent canvas nodes and approval."
+
+[[claims]]
+path = "frontend/src/__tests__/director-facts.test.tsx"
+mode = "exclusive"
+reason = "Full episode fact report and individual review evidence."
+
+[[claims]]
+path = "docs/guides/tv-director/batch-facts-pixels.md"
+mode = "exclusive"
+reason = "Three-gap implementation and evidence matrix."
+
+[[claims]]
+path = "tests/director/test_fact_guard.py"
+mode = "exclusive"
+reason = "Source evidence validation for high-risk design fields."
+
+[[claims]]
+path = "tests/director/test_media.py"
+mode = "exclusive"
+reason = "Frozen Director media intents and idempotent submission."
+
+[[claims]]
+path = "frontend/src/__tests__/director-media.test.tsx"
+mode = "exclusive"
+reason = "Media selection, parameters, approval and request recovery."
+
+[[claims]]
+path = "frontend/src/__tests__/director-autosave.test.tsx"
+mode = "exclusive"
+reason = "Serialized autosave, idempotent recovery, conflicts and editor navigation."
+
+[[claims]]
+path = "docs/guides/tv-director/interaction-closure.md"
+mode = "exclusive"
+reason = "Verified editor, media and source-fact interaction closure."
+
+[[claims]]
+path = "tests/director/test_streaming.py"
+mode = "exclusive"
+reason = "True provider deltas, durable recovery and interrupted-output tests."
+
+[[claims]]
+path = "tests/director/test_episode_format.py"
+mode = "exclusive"
+reason = "Episode delivery elements and continuity context tests."
+
+[[claims]]
+path = "tests/director/live_episodes.py"
+mode = "exclusive"
+reason = "Bounded explicit live episode and revision evidence."
+
+[[claims]]
+path = "frontend/src/__tests__/director-streaming.test.tsx"
+mode = "exclusive"
+reason = "Streaming conversation, recovery and targeted episode actions."
+
+[[claims]]
+path = "docs/guides/tv-director/episode-parity.md"
+mode = "exclusive"
+reason = "Observed episode format and streaming parity evidence."
+
+[[claims]]
+path = "tests/director/test_props.py"
+mode = "exclusive"
+reason = "Prop element contracts, projection, approvals and downstream continuity."
+
+[[claims]]
+path = "tests/director/live_props.py"
+mode = "exclusive"
+reason = "Explicit bounded synthetic prop quality tests with full request evidence."
+
+[[claims]]
+path = "docs/guides/tv-director/prop-parity.md"
+mode = "exclusive"
+reason = "Observed prop elements, UI geometry and honest parity findings."
+
+[[claims]]
+path = "tests/director/test_scenes.py"
+mode = "exclusive"
+reason = "Scene contract, projection, draft and downstream context regressions."
+
+[[claims]]
+path = "tests/director/live_scenes.py"
+mode = "exclusive"
+reason = "Explicit bounded scene generation with isolated complete request evidence."
+
+[[claims]]
+path = "docs/guides/tv-director/scene-parity.md"
+mode = "exclusive"
+reason = "Observed scene elements, geometry and tested parity boundaries."
+
+[[claims]]
+path = "tests/director/test_characters.py"
+mode = "exclusive"
+reason = "Character element, projection, source and execution regression contracts."
+
+[[claims]]
+path = "tests/director/live_characters.py"
+mode = "exclusive"
+reason = "Opt-in bounded character sample with complete safe request and response evidence."
+
+[[claims]]
+path = "docs/guides/tv-director/character-parity.md"
+mode = "exclusive"
+reason = "Observed character fields, measured UI and verified parity boundaries."
 
 [[claims]]
 path = "docs/agent/archive/git-sync-preparation.md"

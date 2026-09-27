@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 /** Markdown remains the save boundary; never rewrite a document merely on open. */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
@@ -11,28 +11,33 @@ import TaskItem from '@tiptap/extension-task-item';
 import { useTranslation } from 'react-i18next';
 import { DirectorReferenceIcon, ChevronDown } from './DirectorReferenceIcon';
 
-export function richTextExtensions() {
+export function richTextExtensions(screenplay = false) {
   return [StarterKit.configure({ link: { openOnClick: false, autolink: false }, trailingNode: false }),
-    Markdown.configure({ markedOptions: { gfm: true, breaks: false } }), TableKit, TaskList, TaskItem.configure({ nested: true })];
+    Markdown.configure({ markedOptions: { gfm: true, breaks: screenplay } }), TableKit, TaskList, TaskItem.configure({ nested: true })];
 }
 
 // Unknown source constructs must remain editable without passing through a lossy parser.
 export function requiresSourceEditor(text: string): boolean {
-  return /(^---\s*\n|<\/?[a-zA-Z!][^>]*>|!\[|\[\^[^\]]+\]|^\s*\[[^\]]+\]:|\$\$)/m.test(text);
+  // A screenplay's internal horizontal rules are not YAML front matter.
+  return /^---\s*\n/.test(text) || /(<\/?[a-zA-Z!][^>]*>|!\[|\[\^[^\]]+\]|^\s*\[[^\]]+\]:|\$\$)/m.test(text);
 }
 
-export function DirectorRichText({ value, onChange, readOnly, label, onSelection, sections = [], onSection }: {
+export function DirectorRichText({ value, onChange, readOnly, label, onSelection, sections = [], onSection, screenplay = false }: {
   value: string; onChange: (text: string) => void; readOnly: boolean; label: string;
   onSelection?: (text: string) => void; sections?: Array<{ id: string; label: string; selected: boolean }>;
   onSection?: (id: string) => void;
+  screenplay?: boolean;
 }) {
   const { t } = useTranslation();
   const [source, setSource] = useState(() => requiresSourceEditor(value));
   const [zoom, setZoom] = useState(100);
   const [menu, setMenu] = useState<'heading' | 'list' | null>(null);
   const [selection, setSelection] = useState('');
+  const [activeHeading, setActiveHeading] = useState<number | null>(null);
+  const scroll = useRef<HTMLDivElement>(null);
+  const navigationTarget = useRef<number | null>(null);
   const [, render] = useState(0);
-  const extensions = useMemo(richTextExtensions, []);
+  const extensions = useMemo(() => richTextExtensions(screenplay), [screenplay]);
   const editor = useEditor({ extensions, content: source ? '' : value, contentType: 'markdown', editable: !readOnly,
     editorProps: {
       attributes: { role: 'textbox', 'aria-label': t('director.documentBody'), 'aria-multiline': 'true', class: 'dc-rich-body' },
@@ -58,6 +63,31 @@ export function DirectorRichText({ value, onChange, readOnly, label, onSelection
   }, [editor, value, source]);
   const headings: Array<{ title: string; pos: number; level: number }> = [];
   if (editor && !source) editor.state.doc.descendants((node, pos) => { if (node.type.name === 'heading') headings.push({ title: node.textContent, pos, level: node.attrs.level as number }); });
+  const jumpToHeading = (pos: number) => {
+    const dom = editor?.view.nodeDOM(pos);
+    if (dom instanceof HTMLElement) {
+      navigationTarget.current = pos;
+      dom.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      setActiveHeading(pos);
+    }
+  };
+  const followScroll = () => {
+    if (!scroll.current || !editor || source) return;
+    // A short final section cannot reach the viewport top. Keep the clicked
+    // destination selected until the user starts scrolling independently.
+    if (navigationTarget.current !== null) return;
+    const top = scroll.current.getBoundingClientRect().top + 24;
+    let pos = headings[0]?.pos ?? null;
+    for (const item of headings) {
+      const dom = editor.view.nodeDOM(item.pos);
+      if (dom instanceof HTMLElement && dom.getBoundingClientRect().top <= top) pos = item.pos;
+    }
+    setActiveHeading(pos);
+  };
+  const headingButtons = headings.map(item => <button key={item.pos} type="button"
+    style={{ paddingLeft: 8 + (item.level - 1) * 8 }} title={item.title}
+    aria-current={(activeHeading ?? headings[0]?.pos) === item.pos ? 'location' : undefined}
+    onClick={() => jumpToHeading(item.pos)}>{item.title}</button>);
   const format = (kind: 'Bold' | 'Italic' | 'Strike') => {
     if (!editor) return;
     if (kind === 'Bold') editor.chain().focus().toggleBold().run();
@@ -79,9 +109,13 @@ export function DirectorRichText({ value, onChange, readOnly, label, onSelection
       </div><i />
       {(['Bold', 'Italic', 'Strike'] as const).map(name => <button type="button" key={name} disabled={source || readOnly} aria-label={t(`director.surface.${name.toLowerCase()}`)} aria-pressed={editor?.isActive(name.toLowerCase()) ?? false} onMouseDown={e => e.preventDefault()} onClick={() => format(name)}><DirectorReferenceIcon name={name} /></button>)}
     </div>
-    <div className="dc-rich-scroll" onClick={() => { if (menu) setMenu(null); }}>
+    <div className="dc-rich-scroll" ref={scroll} onScroll={followScroll}
+      onWheel={() => { navigationTarget.current = null; }} onTouchStart={() => { navigationTarget.current = null; }}
+      onPointerDown={event => { if (!(event.target as HTMLElement).closest('nav')) navigationTarget.current = null; }}
+      onKeyDown={event => { if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) navigationTarget.current = null; }}
+      onClick={() => { if (menu) setMenu(null); }}>
       <nav className="dc-rich-outline" aria-label={t('director.sections')}>
-        {sections.length ? sections.map(section => <div key={section.id}><button type="button" aria-current={section.selected ? 'page' : undefined} onClick={() => { if (!section.selected) onSection?.(section.id); }}>{section.label}</button>{section.selected && <div className="dc-rich-headings">{headings.map(item => <button key={item.pos} type="button" style={{ paddingLeft: 8 + (item.level - 1) * 8 }} title={item.title} onClick={() => { const dom = editor?.view.nodeDOM(item.pos); if (dom instanceof HTMLElement) dom.scrollIntoView({ block: 'start', behavior: 'smooth' }); }}>{item.title}</button>)}</div>}</div>) : <><strong>{label}</strong><div className="dc-rich-headings">{headings.map(item => <button type="button" key={item.pos} onClick={() => { const dom = editor?.view.nodeDOM(item.pos); if (dom instanceof HTMLElement) dom.scrollIntoView({ block: 'start' }); }}>{item.title}</button>)}</div></>}
+        {sections.length ? sections.map(section => <div key={section.id}><button type="button" aria-current={section.selected ? 'page' : undefined} onClick={() => { if (!section.selected) onSection?.(section.id); }}>{section.label}</button>{section.selected && <div className="dc-rich-headings">{headingButtons}</div>}</div>) : <><strong>{label}</strong><div className="dc-rich-headings">{headingButtons}</div></>}
       </nav>
       <article className="dc-rich-paper" style={{ zoom: zoom / 100 }}><h2>{label}</h2>
         {source ? <><p className="dc-planning-hint">{requiresSourceEditor(value) && t('director.surface.sourcePreserved')}</p><textarea className="dc-source-editor" aria-label={t('director.documentBody')} value={value} readOnly={readOnly} onChange={e => onChange(e.target.value)} /></> : <EditorContent editor={editor} />}

@@ -34,8 +34,8 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 最新Director合入同名私有分支；历史双main同步另行处理 | 执行中 | 4c9dee4f保留目标模型/H3/中文项目名，正常合入main的b5883b8f；唯一预演冲突STATE，三语逐叶和双方业务逐blob核验后跑集成回归，只推同名分支 |
-| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | cb3833ee已推送私有main（未deploy）；471后端/78前端/build/提交钩子通过。已保存大纲证据审查接通，但6笔审稿全漏关键错，未过文学门、不能自动放行；M07 2.2.0保留short-drama根基。下一步literary-benchmark §9.5原子事实确认+最小正反反例；UI/M10/Windows/完整退出门与素材再分发许可仍未全过 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 最新Director合入同名私有分支；历史双main同步另行处理 | 执行中 | 已保留4c9dee4f并合入b5883b8f；三语7325键及双方85/42独有路径无丢失，794后端/276前端/build与门禁通过；待DCO提交并只推同名私有分支 |
+| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。b5883b8f已推私有main，本轮合入同步分支；未部署 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
@@ -86,7 +86,7 @@
 
 ## 四、恢复顺序（不是功能优先级）
 
-用户最新优先级（2026-09-26）：`tv-director-implementation` 结构是基础，文学质量最重要，须多套真实样本尽量对齐；short-drama是根基。集数/时长由用户决定，30秒仅历史测试值。literary-benchmark §1–§8保留五套/14请求/LibTV完整大纲对照，§9新增已保存大纲独立审查及6笔真实漏判证据；引用格式通过仍非事实正确，须先补原子事实确认和正反例，再评审模型对照。UI/布局/操作全对齐及M10等完整目标保留，不从测试数推完成率；失败实验不晋级，不重买旧UNKNOWN。
+用户最新优先级（2026-09-27）：main的b5883b8f已推；本轮按新授权同步至codex/sync-main-remotes，保留目标已有模型/H3/中文名功能，只推该私有分支、不部署。批量图片/画布恢复、M12全文事实与三视口像素检查已落地，失败与剩余项以batch-facts-pixels为准。后续同内容全态像素、长篇审计和语义质量仍需实施；short-drama为根基，不从同步成功或测试数推产品完成率。
 
 1. 交接协议与 handoff 回归修复已独立提交并推送。
 2. 只读分类 `legacy-unassigned-diff`，任何未确认归属的文件继续保持隔离。

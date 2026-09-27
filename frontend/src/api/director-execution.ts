@@ -23,12 +23,15 @@ export interface ExecutionLimits {
   timeoutSeconds: number;
 }
 
+export type ExecutionParameterValue = string | number | boolean | null
+  | ExecutionParameterValue[] | { [key: string]: ExecutionParameterValue };
+
 export interface ExecutionQuote {
   quoteId: string;
   requestHash: string;
   inputHash: string;
   docKey: string;
-  parameters: Record<string, string | number | null>;
+  parameters: Record<string, ExecutionParameterValue>;
   limits: ExecutionLimits;
   estimateMinor: number | null;
   currency: string | null;
@@ -43,11 +46,12 @@ export interface ExecutionRun {
   status: 'queued' | 'dispatching' | 'cancel_requested' | 'unknown' | 'cancelled' | 'failed' | 'succeeded' | 'stale';
   requestHash: string;
   docKey: string;
-  parameters: Record<string, string | number | null>;
+  parameters: Record<string, ExecutionParameterValue>;
   limits: ExecutionLimits;
   errorCode: string | null;
   changeId: string | null;
   response: { output_sha256?: string; output_chars?: number; change_id?: string;
+    episodeFormat?: { contract: string; missing: string[]; sceneCount: number; qualityVerified: false };
     review?: { id: string; status: 'PASS' | 'FAIL' | 'UNAVAILABLE' | 'UNKNOWN' | 'REVIEWED' };
     usage?: { inputTokens: number; outputTokens: number; requests: number; finishReason: string | null; reportedModel?: string } };
   cost: { status: string; estimateMinor: number | null; reservedMinor: number | null;
@@ -95,12 +99,22 @@ export const getExecutionCapability = (project: string) => apiCall<ExecutionCapa
 export const listExecutionRuns = (project: string, workId: string) =>
   apiCall<ExecutionRun[]>(`${base(project)}/works/${encodeURIComponent(workId)}/runs`);
 
+export interface ExecutionEvent {
+  seq: number; eventId: string; type: string; sessionId: string; runId: string | null;
+  payload: { text?: string; key?: string; version?: string; revision?: string; model?: string; stream?: boolean; references?: string[] };
+  createdAt: number;
+}
+export interface ExecutionEvents { schemaVersion: 2; events: ExecutionEvent[]; nextSeq: number }
+export const getExecutionEvents = (project: string, workId: string, afterSeq: number, signal?: AbortSignal) =>
+  apiCall<ExecutionEvents>(`${base(project)}/works/${encodeURIComponent(workId)}/events?after_seq=${afterSeq}`, { signal });
+
 export interface RetainedResult {
   runId: string;
   status: ExecutionRun['status'];
   output: string | null;
   outputHash: string | null;
   readOnly: true;
+  factAudit?: { passed: boolean; issues: Array<{ code: string; entityId?: string; field?: string; value?: string }> } | null;
 }
 export const getRetainedResult = (project: string, workId: string, runId: string) =>
   apiCall<RetainedResult>(`${base(project)}/works/${encodeURIComponent(workId)}/runs/${encodeURIComponent(runId)}/result`);

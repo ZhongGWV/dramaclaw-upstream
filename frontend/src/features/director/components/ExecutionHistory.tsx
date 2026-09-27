@@ -10,9 +10,12 @@ export function ExecutionHistory({ runs, busy, onAction, onViewResult }: {
   onViewResult?: (run: ExecutionRun) => void;
 }) {
   const { t } = useTranslation();
-  return <>{runs.map((run) => <section className="dc-message dc-execution-card" key={run.id}
-    aria-label={t('director.execution.runLabel', { stage: run.docKey })}>
-    <strong>{run.parameters.stage ? t(`director.planning.stage.${run.parameters.stage}`) : <>{t(run.parameters.purpose === 'review' ? 'director.review.task' : 'director.run')} · {run.docKey}</>}</strong>
+  return <>{runs.map((run) => {
+    const documentLabel = ['outline', 'characters', 'scenes', 'props'].includes(run.docKey)
+      ? t(`director.section.${run.docKey}`) : run.docKey;
+    return <section className="dc-message dc-execution-card" key={run.id}
+    aria-label={t('director.execution.runLabel', { stage: documentLabel })}>
+    <strong>{run.parameters.stage ? t(`director.planning.stage.${run.parameters.stage}`) : <>{t(run.parameters.purpose === 'review' ? 'director.review.task' : 'director.run')} · {documentLabel}</>}</strong>
     <p role="status">{run.parameters.stage && run.status === 'succeeded' ? t('director.planning.stageSaved') : run.response.review ? t('director.review.finished', { status: run.response.review.status }) : t(`director.execution.status.${run.status}`)}</p>
     <small>{t('director.execution.costLabel')}: {run.cost.actualMinor == null
       ? t('director.execution.costUnknown')
@@ -37,5 +40,5 @@ export function ExecutionHistory({ runs, busy, onAction, onViewResult }: {
       {run.canResume && !run.parameters.stage && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.resume')}>{t('director.execution.resumeQueued')}</button>}
       {run.requiresReconciliation && run.status !== 'unknown' && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.resume')}>{t('director.execution.markUnknown')}</button>}
     </div>
-  </section>)}</>;
+  </section>; })}</>;
 }

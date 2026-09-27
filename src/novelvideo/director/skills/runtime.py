@@ -21,6 +21,7 @@ from ..schemas.planning import (
     PLANNING_OUTPUTS,
     PlanningMethodContext,
     OutlineMethodContext,
+    CharacterMethodContext,
 )
 
 BUNDLE_ROOT = Path(__file__).parent / "builtin"
@@ -47,14 +48,16 @@ class Reference(ContractModel):
     source_id: Literal["user-short-drama"]
     original_path: str
     sha256: Sha256
-    when: Literal["always", "first_episode", "next_hook"]
+    when: Literal[
+        "always", "first_episode", "next_hook", "characters", "scenes", "props"
+    ]
 
 
 class Manifest(ContractModel):
     schema_version: Literal[2]
     key: str
     stage: Literal["M03", "M07", "M08", "M09", "M11", "M12"]
-    version: Literal["2.1.0", "2.2.0"]
+    version: Literal["2.1.0", "2.2.0", "2.3.0", "2.3.1", "2.4.0", "2.4.1", "2.4.2"]
     purpose: str
     applicable: list[Literal["original", "adaptation"]]
     excluded: list[Literal["omni", "directing"]]
@@ -170,6 +173,8 @@ def load_package(stage: str) -> dict:
         context_type = (
             OutlineMethodContext
             if stage == "M07"
+            else CharacterMethodContext
+            if stage == "M08"
             else PlanningMethodContext
             if stage in PLANNING_OUTPUTS
             else MethodContext
@@ -220,6 +225,10 @@ def compile_method(context: MethodContext | PlanningMethodContext) -> dict:
     for ref in manifest.required_references:
         enabled = (
             ref.when == "always"
+            or ref.when in {"characters", "scenes", "props"}
+            and context.stage == "M08"
+            and getattr(context, "document_kind", "preparation")
+            in {"preparation", ref.when}
             or ref.when == "first_episode"
             and context.episode_ordinal == 1
             or ref.when == "next_hook"

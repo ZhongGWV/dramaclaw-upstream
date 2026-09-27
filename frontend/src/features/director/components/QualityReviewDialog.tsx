@@ -30,6 +30,18 @@ export function QualityReviewDialog({ work, ordinal, report, busy, error, onClos
     <div className="dc-quality-report">
       <strong>{t('director.review.status', { status: report.review?.status ?? t('director.review.notReviewed'), version: report.version })}</strong>
       {report.blockers.map((code) => <p className="dc-quality-blocker" key={code}>{t(`director.quality.${code}`, { defaultValue: code })}</p>)}
+      {report.review?.episodeFacts && <section className="dc-episode-facts" aria-label={t('director.episodeFacts.title')}>
+        <h3>{t('director.episodeFacts.title')} · {report.review.episodeFacts.status}</h3>
+        <p>{t('director.episodeFacts.coverage', report.review.episodeFacts.coverage)}</p><p>{t('director.episodeFacts.hint')}</p>
+        {report.review.episodeFacts.issues.length > 0 && <details open><summary>{t('director.episodeFacts.issues')}</summary>{report.review.episodeFacts.issues.map((issue, i) => <p key={i}>{issue.unitId} · {issue.code}</p>)}</details>}
+        {report.review.episodeFacts.units.map(unit => <details key={unit.id} open={!unit.valid || unit.facts.some(f => f.status === 'CONTRADICTED')}>
+          <summary>{unit.id} · {unit.inputId} · {unit.disposition}</summary><blockquote>{unit.text}</blockquote><p>{unit.explanation}</p>
+          {unit.facts.map((fact, i) => <article key={i}><strong>{fact.subject} · {fact.relation} · {fact.value} · {fact.status}</strong><p>{fact.layer} · {fact.explanation}</p>
+            {(fact.before || fact.after) && <p>{t('director.episodeFacts.before')}: {fact.before || '—'} → {t('director.episodeFacts.after')}: {fact.after || '—'}</p>}
+            {fact.evidence.map((ref, j) => <blockquote key={j}>{ref.inputId} [{ref.start}:{ref.end}]: {ref.quote}</blockquote>)}
+          </article>)}
+        </details>)}
+      </section>}
       {report.review?.checks.map((check) => <details key={check.id} open={check.status !== 'PASS'}>
         <summary>{t(`director.review.checks.${check.id}`)} · {check.status}</summary><p>{check.validationErrorCode ? t('director.review.invalidEvidence') : check.explanation}</p>
         {check.evidence.map((item, i) => <blockquote key={i}>{item.inputId}: {item.quote}</blockquote>)}
@@ -45,7 +57,7 @@ export function QualityReviewDialog({ work, ordinal, report, busy, error, onClos
         </details>)}
       </section>}
       {report.ready_for_human_review && report.requiredHumanChecks.map((id) => <label className="dc-field-label" key={id}>
-        {t(`director.review.checks.${id}`)}<textarea value={evidence[id] ?? ''} disabled={busy} minLength={10} maxLength={4000}
+        {id.startsWith('fact-') ? `${t('director.episodeFacts.checks')} · ${id}: ${report.review?.episodeFacts?.units.find(u => u.id === id)?.text ?? ''}` : t(`director.review.checks.${id}`)}<textarea value={evidence[id] ?? ''} disabled={busy} minLength={10} maxLength={4000}
           placeholder={t('director.review.evidenceHint')} onChange={(event) => { intent.current = null; setEvidence({ ...evidence, [id]: event.target.value }); }} />
       </label>)}
     </div>
