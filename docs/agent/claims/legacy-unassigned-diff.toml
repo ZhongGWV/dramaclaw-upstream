@@ -43,7 +43,7 @@ reason = "Historical outline work shares LibTV fallback-node display and filters
 [[claims]]
 path = "frontend/src/features/freezone/CanvasesTab.tsx"
 mode = "shared"
-shared_with = ["minimax-h3-canvas-defaults", "liblib-canvas-parity"]
+shared_with = ["minimax-h3-canvas-defaults", "liblib-canvas-parity", "project-chinese-names"]
 reason = "Historical canvas-selector work shares the LibTV import entry."
 
 [[claims]]
@@ -55,7 +55,7 @@ reason = "Historical URL helper shares direct navigation to imported canvases."
 [[claims]]
 path = "frontend/src/routes/_app/index.tsx"
 mode = "shared"
-shared_with = ["liblib-first-import", "liblib-canvas-parity"]
+shared_with = ["liblib-first-import", "liblib-canvas-parity", "project-chinese-names"]
 reason = "Historical project-card work shares the LibTV import dialog."
 
 [[claims]]

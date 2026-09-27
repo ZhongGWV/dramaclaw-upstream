@@ -1,3 +1,4 @@
+import { textModelPresentation } from '@/lib/local-model-catalog';
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -7,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Button } from '@/components/ui/button';
 import { fetchFreezoneTextModels, streamFreezoneH3, formatFreezoneH3Locally } from '@/api/ops';
 import { readUrl } from '@/lib/url-params';
+import { backendErrorToastMessage } from '@/lib/api-errors';
 import { useCanvasStore } from '@/stores/canvasStore';
 import type { ReferenceMediaItem } from '@/features/canvas/nodes/VideoNode';
 import type { VideoGenMode } from '@/features/canvas/domain/canvasNodes';
@@ -41,14 +43,10 @@ export function H3PromptOptimizer(props: Props) {
   const signature = JSON.stringify([project, canvas, props.id, props.prompt, props.genMode, props.durationSec, props.references, props.upstreamText]);
   const latest = useRef(signature);
   latest.current = signature;
-  const hasVideo = props.references.some(r => r.kind === 'video');
-  const hasImage = props.references.some(r => r.kind === 'image');
   const hasAudio = props.references.some(r => r.kind === 'audio');
-  const textOnlyModel = /(?:^|\/)DeepSeek-/i.test(model);
+  const textOnlyModel = model !== 'local-h3-format';
   const localMode = model === 'local-h3-format';
-  const compatible = useMemo(() => ['local-h3-format', ...models.filter(m => /(?:^|\/)DeepSeek-/i.test(m) || (hasVideo
-    ? /^Qwen\/Qwen3-VL-/.test(m)
-    : hasImage ? m === 'zai-org/GLM-4.5V' || /^Qwen\/Qwen3-VL-/.test(m) : true))], [models, hasImage, hasVideo]);
+  const compatible = useMemo(() => ['local-h3-format', ...models], [models]);
 
   useEffect(() => () => { request.current += 1; controller.current?.abort(); }, []);
   useEffect(() => {
@@ -117,7 +115,7 @@ export function H3PromptOptimizer(props: Props) {
       setDraft(result.generated_text);
       setValidated(true);
     } catch (e) {
-      if (request.current === version) setError(e instanceof Error ? e.message : String(e));
+      if (request.current === version) setError(backendErrorToastMessage(e, t));
     } finally {
       if (request.current === version) setBusy(false);
     }
@@ -152,7 +150,7 @@ export function H3PromptOptimizer(props: Props) {
           <label className="flex items-center gap-2 text-sm">{t('node.h3Format.model')}
             <select className="max-w-[min(420px,65vw)] rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-field)] p-2 text-text-dark" value={model} disabled={busy || loadingModels} onChange={e => setModel(e.target.value)}>
               {!compatible.length && <option value="">{t('node.h3Format.noModel')}</option>}
-              {compatible.map(m => <option key={m} value={m}>{m === 'local-h3-format' ? t('node.h3Format.local') : m.split('/').pop()}</option>)}
+              {compatible.map(m => <option key={m} value={m}>{m === 'local-h3-format' ? t('node.h3Format.local') : `${textModelPresentation(m).label} · ${textModelPresentation(m).providerLabel}`}</option>)}
             </select>
           </label>
           <Button disabled={busy || (!localMode && loadingModels) || !model || props.disabled} onClick={() => void convert()}>

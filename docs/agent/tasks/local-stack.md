@@ -1,9 +1,9 @@
 # 命令行 CE 本地栈：local_gateway + 本地 ComfyUI 图像
 
 **状态**：待验收
-**最后更新**：2026-09-26
-**基线**：`8e024ac`；`codex/sync-main-remotes`，保留文本节点工作线等既有脏改动
-**认领者**：`codex/krea-edit-20260926`
+**最后更新**：2026-09-27
+**基线**：`945baa9f`；刚完成集成的codex/sync-main-remotes，主目录main及其既有未提交文档不动。
+**认领者**：`codex/local-restart-20260927`
 **相关文档**：`启动说明.md`（仓库根目录，可移植安装说明）
 **相关分支 / PR**：`main`（`54b7e30e`、`5cb7af29`）；来源分支 `codex/local-stack-startup-fix`
 
@@ -70,6 +70,12 @@
 
 ## 实施方案（后续）
 
+### 2026-09-27 · 用户要求重启项目
+
+本机四端均无监听，实际网络健康检查也连接失败，无需终止其他进程。用户随后明确选择945baa9f；复用主目录既有配置/数据与.env，不切换主目录分支、不迁移项目、不运行付费生成、不修改业务代码。目标worktree没有.env/.venv：.env仅用被忽略的符号链接复用；独立.venv按现有uv.lock以frozen/dev安装并复用缓存，不改主目录共享虚拟环境（目录型ignore不适合.venv符号链接）。明确数据/配置目录并让当前分支使用自己的src；沿原start-local-stack脚本启动ComfyUI、gateway、API和前端，使用既有8781/5173/3001/8188端口。
+
+本轮手工跟踪写入仅STATE/本台账/同名claim的运行交接；日志和链接属于忽略运行态，不提交凭据或机器路径。先核验原配置和工具可用性、无端口所有者，再启动；健康验收为四端及前端代理HTTP200、API项目读取恢复，进程cwd和源模块指向目标版本。若启动失败只处理本次启动进程，保留原配置和数据，说明真实失败，不清库、不重置；未复验图片/视频供应商效果。停止可以在本次启动终端Ctrl+C，脚本只收回自己启动的进程。
+
 1. 用一台无作者路径假设的环境按说明启动，记录 ComfyUI、gateway、API 与前端健康检查结果。
 2. 记录 Krea 2 Turbo Int8 的机器配置、耗时与质量结论；它仍是实验选项。
 3. 后续同步 `origin/main` 时，在新版生成器上同时保留归档直拷与本地 multipart / 绕代理语义。
@@ -88,6 +94,12 @@
 - 回退按网关、启动脚本、生成器适配三个独立提交进行；本机私有目录不纳入 Git 回退。
 
 ## 进展记录
+
+### 2026-09-27 · 最新同步分支启动并恢复原数据
+
+用户明确选择945baa9f版本。启动前四端实际均未监听；独立worktree以 `uv sync --frozen --group dev` 安装194个锁定包，.env只链接原文件，配置和数据目录明确指向原主目录，未迁移或清空数据库。按原 `bash scripts/start-local-stack.sh` 拉起ComfyUI/网关/API/前端，运行目录核验为该worktree及其frontend，项目代码无改动。
+
+实际健康结果：8188/system_stats、3001/healthz、8781/api/v1/config、5173首页与5173/api/v1/config均HTTP200，网关ok=true且密钥配置存在（未输出值）；项目接口HTTP200，按真实data字段读取6个原有项目。未创建任何生成任务。日志保存在被忽略的本机配置目录；部分ComfyUI插件缺triton、AppleSilicon-FP8加速内核编译失败而禁用，服务已就绪，但依赖这些插件的具体图片工作流未测，不宣称全部图像功能验收。用户新增要求同步主目录main，由sync-main-remotes线另行保护原5份未提交交接后执行；本线只提交运行交接，不复制环境、日志或凭据。
 
 ### 2026-09-26 · 按用户要求排除工作流 JSON 后提交
 
@@ -260,8 +272,8 @@ Depth、拉片和 LibTV endpoint 均未写入。
 
 ## 交接摘要
 
-- **最后完成到**：本机 FP8 文生图及参考图编辑均实测成功，63 项针对性回归通过；启动后工作流与模型目录正确。
-- **下一步唯一动作**：用户在图片节点选择 Krea 2 Turbo（本地 ComfyUI）进行实际创作验收；Mac INT8 基准另行开展。
+- **最后完成到**：2026-09-27按用户选定945baa9f重启成功，四端/前端代理HTTP200且原6项目可读取；未生成媒体。旧Windows图像验收与本机Mac插件警告分开保留。
+- **下一步唯一动作**：用户访问5173使用已启动工作台；需要Mac具体图片工作流时先确认triton/FP8插件兼容，不将服务健康等同图片效果通过。
 - **先读这些文件**：`local_gateway.py`、`start-local-stack.sh`、`启动说明.md`、上游生成器 diff。
 - **不要动这些文件 / 决策**：不要把路由泛化；不要整文件覆盖 `nanobanana_grid.py`。
 
@@ -278,3 +290,9 @@ Depth、拉片和 LibTV endpoint 均未写入。
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
 
 2026-09-26 协调：h3-prompt-optimizer 在既有模型选择上串行加入 gateway SSE 透传与回归；最终集成由 H3 工作线负责，不改其他网关行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：src/novelvideo/local_gateway.py, src/novelvideo/generators/nanobanana_grid.py, frontend/src/components/settings/settings-dialog.tsx, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/api/routes/freezone.py。
+
+2026-09-27 协调：multi-provider-models 后续串行补齐云视频首帧直传和严格路由测试，保留其他路径。

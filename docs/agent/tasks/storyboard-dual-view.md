@@ -28,6 +28,8 @@
 - `frontend/src/__tests__/storyboard-ui.test.tsx`、`frontend/src/__tests__/storyboard-sync.test.tsx`：独占，交互与持久化测试。
 ## 协调与冲突
 
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
+
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
   最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。
@@ -89,3 +91,10 @@ Chrome 提示其他扩展 UI 打开，禁止自动点击/导航；用户尚未�
 
 ### 2026-09-26 · H3 提示词优化协调
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/src/features/canvas/nodes/TextAnnotationNode.tsx, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
+
+### 2026-09-27 · 同名分支拉取推送协调
+既有实现已提交；sync-main-remotes 串行合并远端 Director 与本地模型/H3 的三语键，保留双方值，由当前同步线最终集成。

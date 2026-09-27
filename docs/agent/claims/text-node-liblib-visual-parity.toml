@@ -21,30 +21,31 @@ reason = "Machine-readable scope."
 [[claims]]
 path = "frontend/src/features/canvas/nodes/TextAnnotationNode.tsx"
 mode = "shared"
-shared_with = ["storyboard-dual-view"]
+shared_with = ["storyboard-dual-view", "multi-provider-models"]
 reason = "Show live upstream references and submit them with compatible text or vision model."
 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/shared/TextModelPicker.tsx"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["multi-provider-models"]
 reason = "Liblib-style text model trigger and portalled popup with keyboard selection."
 
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models"]
 reason = "Expose text and vision model catalog and send ordered references."
 
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models", "project-chinese-names"]
 reason = "Validate selected model and bounded text, image, video reference fields."
 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "multi-provider-models"]
 reason = "Text/vision model catalog, media scope validation, and generation submission only."
 
 [[claims]]
@@ -57,12 +58,12 @@ reason = "Pass selected model and references to freezone text leaf."
 path = "src/novelvideo/freezone/text_node.py"
 mode = "shared"
 reason = "Select compatible model and send ordered text and compacted image/video frames."
-shared_with = ["h3-prompt-optimizer"]
+shared_with = ["h3-prompt-optimizer", "multi-provider-models"]
 
 [[claims]]
 path = "src/novelvideo/local_gateway.py"
 mode = "shared"
-shared_with = ["local-stack", "h3-prompt-optimizer"]
+shared_with = ["local-stack", "h3-prompt-optimizer", "multi-provider-models"]
 reason = "Honor authenticated DeepSeek and supported GLM/Qwen vision chat model selection."
 
 [[claims]]

@@ -4,6 +4,7 @@ from typing import Annotated, Any, Literal, Optional
 
 from fastapi import HTTPException
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+from pydantic_core import PydanticCustomError
 
 from novelvideo.models import SceneRef
 from novelvideo.freezone.asset_copy import MAX_SOURCE_URL_LENGTH, MAX_SOURCES_PER_REQUEST
@@ -42,6 +43,10 @@ class ErrorResponse(BaseModel):
 
 class ProjectCreate(BaseModel):
     name: str = Field(max_length=64)
+
+
+class LiblibProjectPreview(BaseModel):
+    share_url: str = Field(max_length=2048)
 
 
 class ProjectSummary(BaseModel):
@@ -1796,18 +1801,35 @@ class FreezoneTextReference(BaseModel):
 class H3PromptFormatOptions(BaseModel):
     mode: Literal["textToVideo", "allReference", "firstFrame", "imageToVideo", "firstLastFrame", "imageReference", "videoEdit", "videoExtend"]
     duration_sec: float = Field(gt=0, le=120)
-    reference_order: list[Literal["image", "video", "audio"]] = Field(default_factory=list, max_length=12)
+    # Formatting carries labels, not inference attachments. Imported canvases
+    # can exceed a video model's media limit without losing their bindings.
+    reference_order: list[Literal["image", "video", "audio"]] = Field(default_factory=list, max_length=64)
 
 
 class FreezoneTextGenerateRequest(BaseModel):
     """Freezone 文本节点：根据创作要求生成自由文本。"""
 
     prompt: str = Field(min_length=1, max_length=20000, description="文本创作要求")
-    model: str = Field(default="", max_length=160, description="可选：硅基流动文本或视觉模型 ID")
-    references: list[FreezoneTextReference] = Field(default_factory=list, max_length=16)
+    model: str = Field(default="", max_length=160, description="可选：已启用的供应商文本或视觉模型 ID")
+    references: list[FreezoneTextReference] = Field(default_factory=list, max_length=65)
     h3_options: H3PromptFormatOptions | None = None
     canvas_id: str = Field(default="", description="可选：来源画布 id，用于记录节点生成历史")
     node_id: str = Field(default="", description="可选：来源节点 id，用于记录节点生成历史")
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_reference_limit(cls, data: Any) -> Any:
+        # Keep ordinary multimodal generation bounded independently of H3's
+        # text-only manifest, including requests exceeding the field's 65 cap.
+        if isinstance(data, dict) and data.get("h3_options") is None:
+            references = data.get("references")
+            if isinstance(references, list) and len(references) > 16:
+                raise PydanticCustomError(
+                    "reference_count_exceeded",
+                    "Text generation supports at most {limit} references; received {actual}",
+                    {"kind": "total", "actual": len(references), "limit": 16},
+                )
+        return data
 
 
 class FreezoneTextTranslateData(BaseModel):

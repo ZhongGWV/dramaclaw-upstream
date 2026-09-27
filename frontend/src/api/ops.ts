@@ -1,6 +1,8 @@
+import { rememberTextModels, rememberMediaDefault, type CatalogModel } from '@/lib/local-model-catalog';
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { apiCall, apiCallEnvelope, apiClient } from "./client";
+import { responseWithBackendError } from '@/lib/api-errors';
 import { readReferenceMediaLimits, type ReferenceMediaLimits } from "./referenceMediaLimits";
 
 // Per-node generation history -------------------------------------------- //
@@ -1029,6 +1031,8 @@ export interface MediaModelRequestSchema {
 }
 
 export interface FreezoneImageModelInfo extends ReferenceMediaLimits {
+  providerLabel?: string;
+  sourceProvider?: string;
   /** Opaque database identity used by new billing and task records. */
   catalogId?: string;
   /** Stable picker id, e.g. `"huimeng/gpt-image-2"`. */
@@ -1142,6 +1146,8 @@ function modelEntryFromObject(entry: Record<string, unknown>): FreezoneImageMode
     providerId,
     apiModel,
     label,
+    providerLabel: pickString(entry, "providerLabel") ?? undefined,
+    sourceProvider: pickString(entry, "sourceProvider") ?? undefined,
     resolutionOptions: pickStringArray(entry, "resolutionOptions", "resolution_options"),
     qualityOptions: pickStringArray(entry, "qualityOptions", "quality_options"),
     ratioOptions: pickStringArray(entry, "ratioOptions", "ratio_options"),
@@ -1213,6 +1219,7 @@ export async function fetchFreezoneImageModels(
   const payload = await apiCall<unknown>(
     `projects/${encodeURIComponent(project)}/freezone/image/models`,
   );
+  rememberMediaDefault('image', payload);
   return coerceModelList(payload);
 }
 
@@ -1222,6 +1229,8 @@ export async function fetchFreezoneImageModels(
 export type FreezoneVideoProvider = "newapi" | "seedance" | "huimeng";
 
 export interface FreezoneVideoModelInfo extends ReferenceMediaLimits {
+  providerLabel?: string;
+  sourceProvider?: string;
   /** Opaque database identity used by new billing and task records. */
   catalogId?: string;
   /** Stable picker id, e.g. `"seedance_2"` (backend currently keys by api id). */
@@ -1323,6 +1332,8 @@ function videoModelEntryFromObject(
     providerId,
     apiModel,
     label,
+    providerLabel: pickString(entry, "providerLabel") ?? undefined,
+    sourceProvider: pickString(entry, "sourceProvider") ?? undefined,
     ...(resolutionOptions.length > 0 ? { resolutionOptions } : {}),
     humanReview: pickBoolean(entry, "humanReview", "human_review"),
     supportsGenerateAudio: pickBoolean(
@@ -1447,6 +1458,7 @@ export async function fetchFreezoneVideoModels(
   const payload = await apiCall<unknown>(
     `projects/${encodeURIComponent(project)}/freezone/video/models`,
   );
+  rememberMediaDefault('video', payload);
   return coerceVideoModelList(payload);
 }
 
@@ -2386,14 +2398,17 @@ export interface FreezoneTextGeneratePayload extends FreezoneNodeContext {
 }
 
 export interface FreezoneTextModels {
+  entries?: CatalogModel[];
   models: string[];
   defaultModel: string;
 }
 
 export async function fetchFreezoneTextModels(project: string): Promise<FreezoneTextModels> {
-  return await apiCall<FreezoneTextModels>(
+  const catalog = await apiCall<FreezoneTextModels>(
     `projects/${encodeURIComponent(project)}/freezone/text/models`,
   );
+  rememberTextModels(catalog.entries);
+  return catalog;
 }
 
 export async function submitFreezoneTextGenerate(
@@ -2427,11 +2442,11 @@ export async function streamFreezoneH3(
   signal: AbortSignal,
 ): Promise<FreezoneTextGenerateResult> {
   const { readH3Stream } = await import('./h3-stream');
-  const response = await apiClient(`projects/${encodeURIComponent(project)}/freezone/text/stream-h3`, {
+  const response = await responseWithBackendError(apiClient(`projects/${encodeURIComponent(project)}/freezone/text/stream-h3`, {
     method: 'POST', timeout: false, retry: 0, signal,
     json: { prompt: payload.prompt, model: payload.model ?? '',
       references: payload.references ?? [], h3_options: payload.h3Options },
-  });
+  }));
   return readH3Stream(response, onText);
 }
 

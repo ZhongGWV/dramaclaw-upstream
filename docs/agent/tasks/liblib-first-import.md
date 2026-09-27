@@ -27,6 +27,9 @@
 | `docs/agent/STATE.md` | 共享 | 进度索引 |
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
+
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
 - liblib-canvas-parity / legacy-unassigned-diff 的路由共享：已有功能已先提交，本线后串行修缓存调用，由本会话集成。目标路由无未归属 diff；legacy 台账已记载遗留差异拆分完毕。
 - 保留故事板所有未提交文件与用户工作流 JSON。
 

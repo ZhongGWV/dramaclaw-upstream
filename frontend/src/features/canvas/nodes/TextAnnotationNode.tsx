@@ -1,3 +1,4 @@
+import { textModelAccepts } from '@/lib/local-model-catalog';
 import { OperationPanelShell } from "@/features/canvas/ui/OperationPanelShell";
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
@@ -199,27 +200,29 @@ export const TextAnnotationNode = memo(({
   const referenceKind = upstreamContents.some((item) => Boolean(item.videoUrl))
     ? 'video'
     : upstreamContents.some((item) => Boolean(item.imageUrl)) ? 'image' : 'text';
-  const compatibleTextModels = availableTextModels.filter((model) => {
-    if (referenceKind === 'text') return true;
-    if (model.startsWith('Qwen/Qwen3-VL-')) return true;
-    return referenceKind === 'image' && model === 'zai-org/GLM-4.5V';
-  });
+  const compatibleTextModels = availableTextModels.filter(model => textModelAccepts(model, referenceKind));
+  const canonicalSelectedModel = availableTextModels.includes(`siliconflow::${selectedTextModel}`)
+    ? `siliconflow::${selectedTextModel}` : selectedTextModel;
   const preferredVisionModel = referenceKind === 'video'
     ? 'Qwen/Qwen3-VL-32B-Instruct'
     : 'zai-org/GLM-4.5V';
   const effectiveTextModel = referenceKind === 'text'
-    ? selectedTextModel
-    : compatibleTextModels.includes(selectedTextModel)
-      ? selectedTextModel
-      : compatibleTextModels.includes(preferredVisionModel)
-        ? preferredVisionModel
+    ? canonicalSelectedModel
+    : compatibleTextModels.includes(canonicalSelectedModel)
+      ? canonicalSelectedModel
+      : compatibleTextModels.includes(defaultTextModel)
+        ? defaultTextModel
+        : compatibleTextModels.includes(`siliconflow::${preferredVisionModel}`)
+          ? `siliconflow::${preferredVisionModel}`
+          : compatibleTextModels.includes(preferredVisionModel)
+            ? preferredVisionModel
         : compatibleTextModels[0] ?? '';
   useEffect(() => {
     if (!selected || mode !== 'writing') return;
     const projectId = readUrl().project;
     if (!projectId) return;
     let cancelled = false;
-    void fetchFreezoneTextModels(projectId)
+    const refresh = () => { void fetchFreezoneTextModels(projectId)
       .then((catalog) => {
         if (cancelled) return;
         setAvailableTextModels(catalog.models);
@@ -230,7 +233,10 @@ export const TextAnnotationNode = memo(({
         setAvailableTextModels([]);
         setDefaultTextModel('');
       });
-    return () => { cancelled = true; };
+    };
+    refresh();
+    window.addEventListener('media-model-catalog-updated', refresh);
+    return () => { cancelled = true; window.removeEventListener('media-model-catalog-updated', refresh); };
   }, [mode, selected]);
   const reversePromptInstruction =
     instruction.trim() || IMAGE_TO_PROMPT_DEFAULT_CONTENT;

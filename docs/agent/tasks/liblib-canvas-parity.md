@@ -52,6 +52,9 @@ LibTV 画布导入不再丢节点语义，视频节点工具条按实测规格�
 节点注册、工具条、三语翻译、后端 `history.py` 及画布任务适配层均是共享热点。
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
+
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
 
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
@@ -331,3 +334,7 @@ index.tsx 既有改动已提交且当前无 diff；liblib-first-import 在本线
 
 ### 2026-09-26 · H3 提示词优化协调
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/api/routes/freezone.py。

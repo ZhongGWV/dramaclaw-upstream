@@ -52,6 +52,7 @@
 | `docs/agent/claims/text-node-liblib-visual-parity.toml` | 协调 | 机器认领 |
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
 
 - 相关工作线：`liblib-canvas-parity`；该线当前未认领目标组件，本轮只改节点展示。
 - 本地已有改动：目标组件无旧 diff；保留其他全部脏文件。
@@ -181,3 +182,10 @@
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
 
 2026-09-26 协调：h3-prompt-optimizer 在既有模型选择上串行加入 gateway SSE 透传与回归；最终集成由 H3 工作线负责，不改其他网关行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/src/features/canvas/nodes/TextAnnotationNode.tsx, frontend/src/features/canvas/nodes/shared/TextModelPicker.tsx, frontend/src/api/ops.ts, src/novelvideo/api/routes/freezone.py, src/novelvideo/freezone/text_node.py, src/novelvideo/local_gateway.py。
+
+### 2026-09-27 · 引用合同串行协调
+既有 schemas 实现已提交；允许 multi-provider-models 串行修复 H3 格式绑定数量校验，保持本线媒体生成合同，由该线最终集成。

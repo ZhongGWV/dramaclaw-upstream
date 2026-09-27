@@ -290,10 +290,12 @@ from novelvideo.freezone.text_node import (
     generate_freezone_text,
     generate_freezone_story_script,
     generate_freezone_story_script_with_vision,
+    resolve_freezone_text_writer_model,
     text_writer_model_media_kind,
     translate_freezone_text,
     validate_text_writer_references_model,
     text_writer_request_references,
+    validate_h3_reference_bindings,
 )
 from novelvideo.freezone.video_node import (
     MAINLINE_FOLDER_KEY,
@@ -6615,6 +6617,13 @@ async def freezone_text_models(
     from novelvideo.config import get_newapi_runtime_credentials
 
     await _resolve_freezone_project(project, user)
+    from novelvideo.local_model_catalog import LocalModelCatalog, active_root
+    root = active_root()
+    if root is not None:
+        local_catalog = LocalModelCatalog(root)
+        entries = [m for m in local_catalog.models(enabled_only=True) if m["kind"] == "text"]
+        return {"ok": True, "data": {"models": [m["id"] for m in entries], "entries": entries,
+                "defaultModel": local_catalog.setting("default:text")}}
     api_key, base_url = get_newapi_runtime_credentials(
         env_api_key="MODEL_API_KEY",
         env_base_url="MODEL_BASE_URL",
@@ -6666,6 +6675,9 @@ def _validate_text_generate_request(body: FreezoneTextGenerateRequest, project_d
     if not prompt:
         raise HTTPException(400, "prompt is required")
     model = body.model.strip()
+    from novelvideo.local_model_catalog import active_root
+    if not model and active_root() is not None:
+        model = resolve_freezone_text_writer_model()
     references = [item.model_dump() for item in body.references]
     h3_options = body.h3_options.model_dump() if body.h3_options is not None else None
     try:
@@ -6676,25 +6688,29 @@ def _validate_text_generate_request(body: FreezoneTextGenerateRequest, project_d
         raise HTTPException(400, str(exc)) from exc
     image_count = sum(bool(item["image_url"]) for item in references)
     video_count = sum(bool(item["video_url"]) for item in references)
-    if image_count > (9 if h3_options else 8) or video_count > (3 if h3_options else 2):
-        raise HTTPException(400, "too many text node media references")
     if h3_options is not None:
         from novelvideo.freezone.h3_prompt_optimizer import canonical_prompt, skill_system_prompt
 
-        kinds = h3_options["reference_order"]
-        if len(references) < len(kinds):
-            raise HTTPException(400, "missing H3 reference attachments")
-        for kind, item in zip(kinds, references):
-            actual = "video" if item["video_url"] else "image" if item["image_url"] else "audio"
-            if kind != actual:
-                raise HTTPException(400, "H3 reference order does not match attachments")
-        if kinds.count("image") != image_count or kinds.count("video") != video_count:
-            raise HTTPException(400, "H3 reference counts do not match attachments")
         try:
+            validate_h3_reference_bindings(references, h3_options)
             canonical_prompt(prompt, h3_options)
             skill_system_prompt(h3_options)
         except (ValueError, OSError) as exc:
             raise HTTPException(400, str(exc)) from exc
+        # Both local and streamed H3 conversion consume text bindings only.
+        # Generation/file constraints belong to the actual media operation.
+        return prompt, model, references, h3_options
+    exceeded_limits = [
+        {"kind": kind, "actual": actual, "limit": limit}
+        for kind, actual, limit in (("image", image_count, 8), ("video", video_count, 2))
+        if actual > limit
+    ]
+    if exceeded_limits:
+        raise HTTPException(400, {
+            "code": "REFERENCE_COUNT_EXCEEDED",
+            "message": "too many text node media references",
+            "limits": exceeded_limits,
+        })
     for item in references:
         for key, suffixes, max_bytes in (
             ("image_url", {".png", ".jpg", ".jpeg", ".webp", ".gif"}, 64 * 1024 * 1024),
@@ -6790,15 +6806,10 @@ async def freezone_text_format_h3(
     if body.h3_options is None:
         raise HTTPException(400, "H3 format options are required")
     options = body.h3_options.model_dump()
-    if len(body.references) < len(options["reference_order"]):
-        raise HTTPException(400, "missing H3 reference attachments")
-    for kind, ref in zip(options["reference_order"], body.references):
-        actual = "video" if ref.video_url else "image" if ref.image_url else "audio"
-        if kind != actual:
-            raise HTTPException(400, "H3 reference order does not match attachments")
     from novelvideo.freezone.h3_prompt_optimizer import local_format_prompt
 
     try:
+        validate_h3_reference_bindings([ref.model_dump() for ref in body.references], options)
         result = await run_in_threadpool(local_format_prompt, body.prompt, options)
     except (ValueError, OSError) as exc:
         raise HTTPException(400, str(exc)) from exc
@@ -8230,6 +8241,13 @@ async def _ee_media_model_catalog(media_type: str) -> list[dict[str, Any]] | Non
         if is_ce_effective():
             mode = get_effective_newapi_config().mode
             if mode == MODE_CUSTOM:
+                from novelvideo.local_model_catalog import LocalModelCatalog, active_root
+                root = active_root()
+                if root is not None:
+                    return LocalModelCatalog(root).merge_media(media_type, _merge_media_model_catalog_defaults(
+                        _static_media_model_catalog(media_type),
+                        get_ce_media_model_catalog(media_type, include_disabled=True),
+                    ))
                 return _merge_media_model_catalog_defaults(
                     _static_media_model_catalog(media_type),
                     get_ce_media_model_catalog(media_type, include_disabled=True),

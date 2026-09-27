@@ -55,6 +55,7 @@
 | `frontend/src/__tests__/features/canvas/audio-transform.test.ts` | 独占 | 区间、速度和投影纯逻辑 |
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
 
 - 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 API schema, Freezone route and ops client：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
 
@@ -174,3 +175,10 @@ GET 422，定位为结果路由 `Literal` 漏枚举并补回归测试；修复�
 
 ### 2026-09-26 · H3 提示词优化协调
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/src/api/ops.ts, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/api/routes/freezone.py。
+
+### 2026-09-27 · 引用合同串行协调
+既有 schemas 实现已提交；允许 multi-provider-models 串行修复 H3 格式绑定数量校验，保持本线媒体生成合同，由该线最终集成。

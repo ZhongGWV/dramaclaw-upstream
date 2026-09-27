@@ -113,7 +113,7 @@ reason = "LibTV canvas import."
 [[claims]]
 path = "frontend/src/features/freezone/createProjectLiblibImport.ts"
 mode = "shared"
-shared_with = ["minimax-h3-canvas-defaults"]
+shared_with = ["minimax-h3-canvas-defaults", "project-chinese-names"]
 reason = "Project creation import entry."
 
 [[claims]]
@@ -206,7 +206,7 @@ reason = "Navigate directly to a newly imported canvas."
 [[claims]]
 path = "frontend/src/features/freezone/CanvasesTab.tsx"
 mode = "shared"
-shared_with = ["minimax-h3-canvas-defaults", "legacy-unassigned-diff"]
+shared_with = ["minimax-h3-canvas-defaults", "legacy-unassigned-diff", "project-chinese-names"]
 reason = "Import into an existing project while preserving unrelated canvas-selector work."
 
 [[claims]]
@@ -230,7 +230,7 @@ reason = "Mount the explicit asset-localization control."
 [[claims]]
 path = "frontend/src/routes/_app/index.tsx"
 mode = "shared"
-shared_with = ["liblib-first-import", "legacy-unassigned-diff"]
+shared_with = ["liblib-first-import", "legacy-unassigned-diff", "project-chinese-names"]
 reason = "Create or re-import a project from a LibTV share URL without absorbing unrelated project-card edits."
 
 [[claims]]
@@ -270,7 +270,7 @@ reason = "Persist imported canvas semantics and prewarm the LOD image ladder."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Expose LibTV detail/localization endpoints; stage only owned hunks."
 
 [[claims]]

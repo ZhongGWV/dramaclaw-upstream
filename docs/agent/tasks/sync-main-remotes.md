@@ -1,9 +1,9 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：执行中
+**状态**：待验收
 **最后更新**：2026-09-27
-**基线**：`d1b73e14`（先保存主目录Director既有交接；本轮把最新同步分支合回main）
-**认领者**：`codex/main-latest-sync-20260927`
+**基线**：`522f50fe`；主目录原协调改动已分线提交，合入已验证同步分支3fbd16e6。
+**认领者**：`codex/main-merge-20260927`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
@@ -27,6 +27,16 @@
 验收：主检出HEAD与合并分支一致，源代码无额外diff；3个受保护文件SHA256一致；guard、依赖约束、
 主目录生产构建及Director/H3聚焦回归通过。若快进条件不成立立即停止，不强制移动main。
 远端main仍保持此前提交；未来要发布main须用户另行授权。旧章节“不改main”限制仅对应上一轮分支交付。
+
+### 最新增量：保留目标分支新增功能并合入main最新TV Director
+
+用户要求更新并提交到 `codex/sync-main-remotes`。本轮只更新私有 `zhonggwv` 同名分支，不改本地/远端main、不推公开origin、不部署。开始目标检出干净且无锁；已fetch两个私有引用，正常快进目标从0298aefa到4c9dee4f。main=b5883b8f已推送；两边从0298aefa分叉1/5，目标已有模型供应商、H3引用和中文项目名功能，必须原样保留。
+
+只读merge-tree预演唯一冲突为STATE，三语自动合并。main的91条精确增量均登记现有或新增claim，业务和指南只接受Git自动导入；手工仅STATE、本台账、同名claim与必要Director交接协调，不修改方法包或产品逻辑。三语逐叶检查双方非冲突值、无重复键；Director独有路径与b5883b8f逐blob核验，目标独有业务与4c9dee4f核验。其他旧scope写权限本轮不使用。
+
+先提交本轮方案/精确scope以保持合并起点干净，重新校准基线并acquire/preflight协调路径；正常merge b5883b8f（目标历史第一父），仅解决STATE事实冲突。验证Director后端/前端、模型目录/路由、中文项目名、H3引用聚焦回归，生产build、ruff/i18n/CE/密钥/guard/DCO及双方祖先关系；不跑收费模型/媒体。若发现真正语义冲突先扩窄方案，不为过测改变业务合同。成功后只普通push同名分支并ls-remote核验；非快进拒绝则重新审计，不force。
+
+主目录5份未提交交接文档和受保护资料不复制、不覆盖、不stash。本轮不合入更新的origin/main；其历史PR仍独立等待。风险为自动合并的语义集成，失败保留现场，不强行发布；回退只能另行批准revert。完整Director文学/像素失败原样保留，不以同步成功代替产品验收。
 
 ### 本轮增量：将已推送的 TV Director 提交同步到本分支
 
@@ -77,8 +87,8 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 
 ## 写入边界
 
-本轮手工业务改动仅三语 `translation.json` 的合并冲突；其他 main 路径只读导入。
-STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务可写项本轮不使用。
+当前主目录同步轮仅手工修改STATE、本台账和同名claim；全部业务与其他交接记录由既有提交导入，三语没有手工冲突。
+下表保留历史集成范围，当前轮不使用其中业务写权限；历史local-stack台账与scope协调也不另改。
 
 集成门禁补充（实测后登记）：`.env.example` 独占追加两个可选配置说明，并校正与已合并实现一致的回环代理默认说明。
 `test_real_ce_repo_env_ratchet_is_clean` 报 `DIRECTOR_TEXT_MODEL` 和 `H3_PROMPT_SKILL_DIR` 未登记；
@@ -141,9 +151,66 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 
 ## 进展记录
 
+### 2026-09-27 · 主目录合并验证及交付
+
+将3fbd16e6正常合入main；只解决STATE/本台账/claim三个协调冲突，双方记录均保留。原5份未提交交接已分别保存为d1b73e14与522f50fe，受保护的3份未跟踪资料不动，没有stash、强制切换或手改业务。
+
+本轮实际执行：`git diff --exit-code 3fbd16e6 -- . ':!docs/agent/**'`通过，所有业务、测试、指南、配置、资产与已验证来源完全一致；`git diff --cached --check`通过、未解决冲突为空。`agent_guard.py check`为31线/1100claims；对82个精确暂存路径执行`pre-commit run --files ...`，密钥扫描、guard、禁词全部通过。四服务、前端API代理和项目列表只读请求均HTTP200，原6项目可读取。
+
+来源已有794后端、276前端与生产构建通过（命令见下节），本轮未重复运行这些测试、未调用付费模型或生成媒体。采用带DCO的正常合并提交并仅普通推送私有main，再核验双方祖先、DCO及远端SHA；最终提交/推送事实以Git为准。公开origin/PR、正在运行的同步worktree服务和原配置/数据保持不动；待验收仅保留历史公开同步/产品欠项，不代表需要重新实现本轮代码。
+
 ### 2026-09-27 · 主目录最新同步检查点
 
 用户已明确授权当前main同步最新集成版本；本线先保存此前主目录快进的旧交接和本次计划，Director旧记录已分线提交。业务无未提交diff，原受保护资料不动；后续只在协调文件解决真实merge冲突。源代码直接保留同步分支已验证内容，主目录合并后必须与源非agent树一致，再推私有main并核验。
+
+### 2026-09-27 · 最新Director已交付私有同步分支
+
+合并提交 `fb80eafb4afc5ba2e74fe5d005ddd96c98f3786e` 已正常推送至 `zhonggwv/codex/sync-main-remotes`；远端ls-remote复核一致，私有main仍为b5883b8f。目标原4c9dee4f与来源b5883b8f均为合并提交祖先，方案/来源/合并提交DCO全部通过。794后端、276前端、build与三语/双边blob检查结果见下节；93个暂存文件的pre-commit密钥/guard/禁词检查通过。没有重写业务、覆盖main、复制主目录未提交资料或触发收费任务。最后追加此交接记录提交；最终同名分支HEAD以Git为准，交付功能事实仍是fb80eafb。
+
+本次指定分支同步已完成；状态待验收只保留历史公开PR/完整产品验收事项，不表示本次未交付。未来如需把该分支新增模型/中文名回合main，须先获新授权并重新审计主目录5份未提交交接文档，不直接pull/stash。随后正常handoff/release，不留锁。
+
+### 2026-09-27 · 最新Director合并与集成验证通过
+
+正常merge b5883b8f，唯一STATE冲突按目标同步状态与来源Director事实合并；没有手工业务改动。85条来源独有业务/指南路径与b5883b8f逐blob一致，42条目标独有业务/测试路径与4c9dee4f一致；三语按共同祖先逐叶校验，无重复键或丢值，7252个来源键及7218个目标键合并成各7325键。目标模型配置、H3引用和中文项目名功能完整保留。
+
+实际在目标worktree使用既有Python环境、`PYTHONPATH=src`运行：
+
+- `python -m pytest tests/director tests/test_tv_director.py tests/test_newapi_text_gateway.py tests/test_local_model_catalog.py tests/test_local_provider_api.py tests/test_local_gateway.py tests/test_text_reference_contract.py tests/test_project_name_validation.py tests/test_project_rename.py tests/ports/test_project_chinese_names.py tests/test_h3_prompt_optimizer.py tests/test_h3_stream.py -q`：794通过，11条依赖弃用警告。
+- 前端Node22：`pnpm exec vitest run director local-model-catalog project-chinese-names project-name-validation project-first-liblib-import h3-request-contract h3-stream`：23文件276通过；`pnpm build`成功，5547模块，既有大chunk警告。
+- `ruff check .`、前后端i18n、`check_ce_port_closure.py`（11端口）、CE导入/禁词/禁用包名、工作树和索引diff检查通过；guard31线1100claims。
+
+未运行全仓测试、实机Windows或真实付费模型；本次是已提交实现的集成验证，原文学/全页像素失败不改。主检出main与5份协调diff、受保护资料不变。下一步暂存精确协调文件，执行暂存检查/密钥扫描，生成带DCO合并提交，验证双方祖先并只推私有同名分支，再核对远端SHA与main未动。
+
+### 2026-09-27 · 最新Director同步方案门
+
+方案提交77180e7d后，首次handoff因计划内容在acquire前已写入、提交清空diff而被拒绝；未强制释放。后续命令未因该失败短路，实际merge已停在预期STATE冲突。现仅修协调状态、记录此偏差，以原owner正常handoff/release后重新取得锁并preflight；没有手工业务修改或覆盖目标代码。后续命令逐步检查exit code，不把guard失败当作可忽略输出。
+
+恢复目标worktree后确认4c9dee4f与已推main的b5883b8f分叉，唯一文本冲突STATE。记录91条导入路径并新增47条精确read-only claim；现有业务改动不重写，三语按叶核验双方。目标历史模型/H3/中文名功能必须保留，主目录原5份协调diff和本地资料不碰。下一步正常合并、聚焦集成验证、DCO提交及仅私有同名分支推送。
+
+### 2026-09-27 · 当前分支合并收口
+
+已保留远端 0298aef 的 Director 历史以及本地 53ca321/1c8eaaa 的模型与引用修复。
+方案提交后校准精确基线到 11f553e，协调冲突合并双方共享集合；三语手工解冲突前 preflight 通过。
+三语逐叶键核对：本地 6616、远端 7145、合并后各 7205，双方所有键和值均保留，无重复键。
+218 项远端独有业务/文档文件与源提交完全一致，25 项本地独有业务/测试文件与本地源完全一致。
+无未解决冲突、无额外未暂存改动；diff check、guard（30 工作线/979 claims）与密钥扫描通过。
+Gitleaks 对本地三项待推送提交约 200KB、合并暂存约 2.74MB 均无泄露。本轮没有运行实现测试或生成请求。
+正常创建带 Signed-off-by 的合并提交，仅推 origin 的 codex/sync-main-remotes，最终提交和推送结果以 Git 核对。
+补充本机当前分支 fetch 映射，避免只取 main 导致同名远端缓存再次过期；不修改全局代理或其他分支。
+历史双 main 同步及 Director 产品验收仍是独立待办，本轮不扩大到部署、公开 PR 或其他分支。
+
+### 2026-09-27 · 当前分支 pull/push 增量方案
+
+用户授权 pull 并 push 当前分支。当前 origin 指向用户仓库；fetch refspec 只配置 main，旧分支缓存过期。
+真实源 FETCH_HEAD 为 0298aef，本地 1c8eaaa，分叉 2/7；本轮仅同步当前同名分支。
+merge-tree 确认 238 项远端增量，7 个冲突：STATE、H3/故事板/拆分三份 claim、zh/en/vi 翻译。
+远端 Director 作为既有实现只读合入；本地两项模型配置与引用修复原样保留，其他业务不手改。
+翻译按 JSON 键合并且保持双方既有值，claim 合并 shared_with 集合，STATE 保留双方事实与当前任务状态。
+精确导入/冲突范围已补入同名 claim，现有 shared 范围互认；本线唯一串行集成，不创建子代理。
+先提交本方案以保持合并起点干净，再 acquire/preflight，正常 merge 并解决上述冲突；不 rebase/force。
+完成 JSON/冲突标记/差异/guard 与密钥检查，验证双方祖先关系，推 origin 当前分支并核对远端 SHA。
+本次只执行用户指定 Git 同步，不新增或运行实现测试、不触发生成；无运行配置、密钥或本地工作流改动。
+若推送期间远端再前进，重新取证并合并，绝不覆盖。推送前失败可保留合并现场继续处理。
 
 ### 2026-09-26 · 主目录快进及本地验证完成
 
@@ -296,10 +363,10 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ## 交接摘要
 
-- **最后完成到**：合并分支0298aefa已推送；用户后续要求的本地主目录main亦已快进到0298aefa。交接文档本地更新，业务无额外改动。
-- **下一步唯一动作**：如用户再次要求历史双main同步，先只读检查PR #717和三方最新Git差异，提出新方案与发布范围。
+- **最后完成到**：最新同步分支3fbd16e6已在主目录正常合并，非agent树完全一致；原交接分线保存，82路径提交检查和健康复核通过。应用已就绪、原6项目可读取；最终DCO提交与私有main推送结果以Git核对。
+- **下一步唯一动作**：恢复时先核对main与私有远端SHA及3fbd16e6祖先关系；若一致，本轮同步已交付，不重复合并。历史公开同步必须重新获授权，不改正在运行的服务。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
-- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork或远端main，不重启既有服务，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
+- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork或origin/main；仅本轮获准普通推私有main。不重启既有服务，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 
 ### 2026-09-26 · 故事板共享协调
 
@@ -312,3 +379,7 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ### 2026-09-26 · H3 提示词优化协调
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/public/locales/vi/translation.json。

@@ -20,6 +20,9 @@
 具体文件见对应 claim：API schema/route、text runner/service、新 H3 服务、ops、VideoOperationsPanel、新 H3 预览组件、三语资源、本机工作台补丁脚本。工作台 Python 本机副本由补丁脚本定向修改并备份；技能复制到忽略的本地运行目录，读取用于模型系统规则。
 
 ## 协调与冲突
+- 2026-09-27：中文项目命名线串行补充 LibTV 原名称保存 / 来源入口 / 预读名称与回归；既有导入合并和首次重试语义保留，由 project-chinese-names 集成。
+
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
 
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
@@ -144,3 +147,15 @@ H3FormatPlan 共用 local_format_prompt 的确定性布局及原文内容，模�
 - **下一步唯一动作**：刷新视频节点 H3 格式转换弹窗，选 DeepSeek 检查逐段显示及使用/弃用；本地快速仍为默认。
 - **先读这些文件**：本台账和 claim。
 - **不要动这些文件 / 决策**：画布布局、已有任务与工作流 JSON。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：src/novelvideo/api/routes/freezone.py, src/novelvideo/freezone/text_node.py, frontend/src/api/ops.ts, frontend/src/features/canvas/nodes/shared/H3PromptOptimizer.tsx, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/local_gateway.py。
+
+2026-09-27 协调：multi-provider-models 后续串行补齐云视频首帧直传和严格路由测试，保留其他路径。
+
+### 2026-09-27 · 引用合同串行协调
+既有 schemas 实现已提交；允许 multi-provider-models 串行修复 H3 格式绑定数量校验，保持本线媒体生成合同，由该线最终集成。
+
+### 2026-09-27 · 同名分支拉取推送协调
+既有实现已提交；sync-main-remotes 串行合并远端 Director 与本地模型/H3 的三语键，保留双方值，由当前同步线最终集成。

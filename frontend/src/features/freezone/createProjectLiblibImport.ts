@@ -82,6 +82,7 @@ export async function importLiblibCanvasIntoProject(options: {
       display_name: graph.name,
       creator_username: options.creatorUsername ?? null,
       liblib_import: {
+        source_name: graph.name,
         source_url: graph.shareUrl,
         source_project_id: graph.projectId,
         space_id: graph.spaceId,

@@ -74,7 +74,7 @@ reason = "Mount split actions and fan out existing audio transforms."
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Add the smart split preview API client."
 
 [[claims]]
@@ -103,13 +103,13 @@ reason = "Local ffmpeg silence analysis and stable segment projection."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models", "project-chinese-names"]
 reason = "Add the smart split preview request schema."
 
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Resolve local audio and expose the non-mutating split preview endpoint."
 
 [[claims]]

@@ -31,6 +31,8 @@
 
 ## 协调与冲突
 
+- 2026-09-27：`project-chinese-names` 在已提交基线上串行调整新建名称校验 / `project.name*` 三语文案；不更改本线交互与数据，由该线会话集成，双方不同时写入。
+
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
   最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。
@@ -96,3 +98,7 @@ store 一次更新保留原节点作为首段，后续节点放组外空位，�
 
 ### 2026-09-26 · H3 提示词优化协调
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json。
