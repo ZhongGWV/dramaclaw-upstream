@@ -25,6 +25,7 @@
 
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
+| [liblib-import-recovery](tasks/liblib-import-recovery.md) | 节点先保存、素材后台下载 | 待验收 | 89 项回归/类型检查通过；208 节点/139 连线/188 素材恢复，首次保存 4.3 秒；待页面确认 |
 | [project-chinese-names](tasks/project-chinese-names.md) | 中文项目名与拼音目录 | 待验收 | 中文重命名及 LibTV 原名功能完成；132 项回归与真实 API 通过，48 文件提交审计/密钥检查通过，推送结果见 Git |
 | [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | H3 引用 422 和数量提示修复已重启；26 项提交审计/密钥检查通过，本地提交结果见 Git，火山图片仍待单独验收 |
 | [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除；1fa3c1b 已推送 |

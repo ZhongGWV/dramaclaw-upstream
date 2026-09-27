@@ -5508,6 +5508,7 @@
         "label": "Tải về máy",
         "pending": "{{count}} tài nguyên chưa lưu cục bộ",
         "running": "Đang tải về…",
+        "runningProgress": "Đang tải tài nguyên nền {{completed}} / {{total}}",
         "done": "Đã lưu {{count}} tài nguyên",
         "partial": "Đã lưu {{done}}, còn {{failed}} chưa lưu được",
         "none": "Không có tài nguyên cần tải",

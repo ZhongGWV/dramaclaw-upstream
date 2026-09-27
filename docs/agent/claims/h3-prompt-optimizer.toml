@@ -57,19 +57,19 @@ reason = "H3 prompt preview and complete reference images."
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split", "project-chinese-names"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split", "project-chinese-names"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split", "project-chinese-names"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]

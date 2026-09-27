@@ -39,7 +39,7 @@ reason = "Replacement target picker shares imported asset library behavior."
 [[claims]]
 path = "frontend/src/features/freezone/FreezoneShell.tsx"
 mode = "shared"
-shared_with = ["liblib-canvas-parity", "storyboard-dual-view"]
+shared_with = ["liblib-import-recovery", "liblib-canvas-parity", "storyboard-dual-view"]
 reason = "Picker expands the shared asset-library shell."
 
 [[claims]]

@@ -27,6 +27,7 @@ import {
   type FreezonePresetCanvasRequest,
 } from "@/api/canvas";
 import { ApiError } from "@/api/client";
+import { BackendStatusError } from "@/lib/api-errors";
 import type { TFn } from "@/lib/i18n-types";
 import {
   buildSavePayload,
@@ -209,7 +210,7 @@ function acquireHydrateFlight(
       promise: getFreezoneCanvas(project, canvasId, {
         signal: controller.signal,
       }).catch((error: unknown) => {
-        if (error instanceof ApiError && error.status === 404) {
+        if ((error instanceof ApiError || error instanceof BackendStatusError) && error.status === 404) {
           return { nodes: [], edges: [], viewport: null } as FreezoneCanvasPayload;
         }
         throw error;

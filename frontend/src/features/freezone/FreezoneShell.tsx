@@ -981,7 +981,15 @@ export function FreezoneShell({ project, canvasId }: FreezoneShellProps) {
             />
           )}
           <CanvasLocalizeAssetsButton
+            key={`${projectId}:${canvasId}:${(sync.metadata?.liblib_import as { imported_at?: string } | undefined)?.imported_at ?? ''}`}
             project={projectId}
+            canvasId={canvasId}
+            ready={sync.hydratedProject === projectId && sync.hydratedCanvasId === canvasId && sync.status !== 'loading'}
+            autoStartKey={
+              (sync.metadata?.liblib_import as { background_localize?: boolean } | undefined)?.background_localize
+                ? (sync.metadata?.liblib_import as { imported_at?: string } | undefined)?.imported_at ?? null
+                : null
+            }
             sourceProjectId={
               (sync.metadata?.liblib_import as { source_project_id?: string } | undefined)
                 ?.source_project_id ?? null

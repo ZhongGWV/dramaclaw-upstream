@@ -72,11 +72,11 @@ reason = "Prefer H3 for new and imported video nodes."
 [[claims]]
 path = "frontend/src/features/freezone/createProjectLiblibImport.ts"
 mode = "shared"
-shared_with = ["liblib-canvas-parity", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "liblib-canvas-parity", "project-chinese-names"]
 reason = "Prefer H3 for new and imported video nodes."
 
 [[claims]]
 path = "frontend/src/features/freezone/CanvasesTab.tsx"
 mode = "shared"
-shared_with = ["liblib-canvas-parity", "legacy-unassigned-diff", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "liblib-canvas-parity", "legacy-unassigned-diff", "project-chinese-names"]
 reason = "Prefer H3 for new and imported video nodes."

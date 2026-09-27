@@ -74,6 +74,31 @@ describe('applyLocalizedAssets', () => {
 });
 
 describe('溯源字段不参与本地化', () => {
+  it('localizes imported generation references and refresh baselines while retaining provenance', () => {
+    const remote = 'https://cdn.example/a.png';
+    const reference = 'https://cdn.example/ref.png';
+    const data = {
+      imageUrl: remote,
+      liblibImport: { sourceUrl: remote, importedLocalUrl: remote, references: [{ url: reference }] },
+    };
+    expect(collectRemoteMediaUrls([node(data)])).toEqual([remote, reference]);
+    const next = applyLocalizedAssets(data, {
+      [remote]: '/static/projects/p/a.png', [reference]: '/static/projects/p/ref.png',
+    }, new Map());
+    expect(next?.liblibImport).toEqual({
+      sourceUrl: remote, importedLocalUrl: '/static/projects/p/a.png',
+      references: [{ url: '/static/projects/p/ref.png' }],
+    });
+    expect(collectRemoteMediaUrls([node(next)])).toEqual([]);
+  });
+
+  it('retains reasons from earlier batches', () => {
+    const data = {
+      imageUrl: 'https://cdn.example/a.png',
+      liblibImport: { remoteMedia: [{ url: 'https://cdn.example/a.png', reason: 'internal_host' }] },
+    };
+    expect(applyLocalizedAssets(data, {}, new Map())).toBeNull();
+  });
   // 64c5bb59 那张画布素材早已全部本地化，却有 92 条 liblibImport.sourceUrl 指向 LibTV。
   // 把它们算成待下载素材，就会在一张健康的画布上弹出「92 个素材未本地化」。
   it('liblibImport.sourceUrl 不算作待本地化素材', () => {

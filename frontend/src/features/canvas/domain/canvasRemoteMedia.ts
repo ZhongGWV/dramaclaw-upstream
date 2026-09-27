@@ -72,7 +72,13 @@ function walkMediaUrls(value: unknown, visit: (url: string) => void): void {
     // `liblibImport` 是元数据:`sourceUrl` 记的是素材原本在 LibTV 的位置(溯源用,
     // 永不参与显示),`remoteMedia` 是标记本身。把它算进来会在一张**已经全部本地化**
     // 的画布上误报「N 个素材未本地化」——64c5bb59 那张就是 92 条全是 sourceUrl。
-    if (key === 'liblibImport') continue;
+    if (key === 'liblibImport') {
+      // Imported references are still consumed by generation; provenance is not.
+      if (child && typeof child === 'object') {
+        walkMediaUrls((child as Record<string, unknown>).references, visit);
+      }
+      continue;
+    }
     if (isMediaUrlKey(key) && isRemoteUrl(child)) visit(child);
     else walkMediaUrls(child, visit);
   }
@@ -103,7 +109,16 @@ function rewriteUrls(value: unknown, assetMap: Record<string, string>): unknown 
     // 同上:`liblibImport.sourceUrl` 是溯源,本地化之后也要留着指向 LibTV 原址,
     // 不能被改写成本地路径。标记本身由 applyLocalizedAssets 另行重算。
     if (key === 'liblibImport') {
-      next[key] = child;
+      if (child && typeof child === 'object') {
+        const metadata = child as Record<string, unknown>;
+        const references = rewriteUrls(metadata.references, assetMap);
+        const importedLocalUrl = typeof metadata.importedLocalUrl === 'string'
+          ? assetMap[metadata.importedLocalUrl] ?? metadata.importedLocalUrl
+          : metadata.importedLocalUrl;
+        const metadataChanged = references !== metadata.references || importedLocalUrl !== metadata.importedLocalUrl;
+        next[key] = metadataChanged ? { ...metadata, references, importedLocalUrl } : child;
+        if (metadataChanged) changed = true;
+      } else next[key] = child;
       continue;
     }
     if (isMediaUrlKey(key) && isRemoteUrl(child) && assetMap[child]) {
@@ -130,11 +145,12 @@ export function applyLocalizedAssets(
 ): Record<string, unknown> | null {
   const rewritten = rewriteUrls(data, assetMap);
   const remaining: RemoteMediaRef[] = [];
+  const previousReasons = new Map(readRemoteMediaRefs(data).map((ref) => [ref.url, ref.reason]));
   const seen = new Set<string>();
   walkMediaUrls(rewritten, (url) => {
     if (seen.has(url)) return;
     seen.add(url);
-    remaining.push({ url, reason: reasons.get(url) ?? 'unknown' });
+    remaining.push({ url, reason: reasons.get(url) ?? previousReasons.get(url) ?? 'unknown' });
   });
   const previous = readRemoteMediaRefs(rewritten);
   const unchangedData = rewritten === data;

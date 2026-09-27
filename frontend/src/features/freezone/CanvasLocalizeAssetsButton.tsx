@@ -10,25 +10,30 @@
  *
  * 只在真的有远端素材时出现——没有待办就不该在画布上多一块 chrome。
  */
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CloudDownload, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { localizeLiblibCanvasAssets } from '@/api/canvas';
 import {
-  applyLocalizedAssets,
-  collectRemoteMediaUrls,
   nodeHasRemoteMediaUrl,
 } from '@/features/canvas/domain/canvasRemoteMedia';
 import { CANVAS_CONTROL_GLASS_CLASS } from '@/features/canvas/ui/canvasControlStyles';
 import { useCanvasStore } from '@/stores/canvasStore';
+import { flushFreezoneCanvasRuntime } from './canvasSyncRuntime';
+import { localizeLiblibCanvasInBackground, type LocalizationProgress } from './liblibBackgroundLocalization';
 
 export function CanvasLocalizeAssetsButton({
   project,
+  canvasId,
   sourceProjectId,
+  autoStartKey = null,
+  ready = true,
 }: {
   project: string;
+  canvasId: string;
   sourceProjectId: string | null;
+  autoStartKey?: string | null;
+  ready?: boolean;
 }) {
   const { t } = useTranslation();
   // 只订阅「有没有远端素材」这个布尔量,不订阅 nodes 本身。
@@ -37,33 +42,37 @@ export function CanvasLocalizeAssetsButton({
   const hasRemote = useCanvasStore((state) => state.nodes.some(nodeHasRemoteMediaUrl));
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [progress, setProgress] = useState<LocalizationProgress | null>(null);
+  const alive = useRef(true);
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
+  const busy = useRef(false);
+  const attempted = useRef<string | null>(null);
 
-  if (!hasRemote && !running && !result) return null;
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
-  const run = async () => {
-    if (running) return;
-    const nodes = useCanvasStore.getState().nodes;
-    const remoteUrls = collectRemoteMediaUrls(nodes);
-    if (remoteUrls.length === 0) {
-      setResult(t('canvas.remoteMedia.localize.none'));
-      return;
-    }
+  const run = useCallback(async () => {
+    if (busy.current || !readyRef.current) return;
+    busy.current = true;
     setRunning(true);
     setResult(null);
+    const isActive = () => alive.current && readyRef.current;
     try {
-      const { assetMap, skippedMedia } = await localizeLiblibCanvasAssets(
+      const outcome = await localizeLiblibCanvasInBackground({
         project,
-        remoteUrls,
         sourceProjectId,
-      );
-      const reasons = new Map(skippedMedia.map((item) => [item.url, item.reason]));
-      const updateNodeData = useCanvasStore.getState().updateNodeData;
-      for (const node of nodes) {
-        const next = applyLocalizedAssets(node.data, assetMap, reasons);
-        if (next) updateNodeData(node.id, next);
-      }
-      const done = Object.keys(assetMap).length;
-      const failed = skippedMedia.length;
+        isActive,
+        onProgress: setProgress,
+        save: async () => {
+          const saved = await flushFreezoneCanvasRuntime(project, canvasId);
+          if (saved !== true) throw new Error(t('freezone.canvases.currentSaveFailed'));
+        },
+      });
+      if (!outcome || !isActive()) return;
+      const { done, failed } = outcome;
       setResult(
         done === 0 && failed === 0
           ? t('canvas.remoteMedia.localize.none')
@@ -72,18 +81,30 @@ export function CanvasLocalizeAssetsButton({
             : t('canvas.remoteMedia.localize.done', { count: done }),
       );
     } catch (error) {
+      if (!isActive()) return;
       setResult(
         t('canvas.remoteMedia.localize.failed', {
           message: error instanceof Error ? error.message : String(error),
         }),
       );
     } finally {
-      setRunning(false);
+      busy.current = false;
+      if (alive.current) setRunning(false);
     }
-  };
+  }, [project, canvasId, sourceProjectId, t]);
+
+  useEffect(() => {
+    if (!ready || !autoStartKey || !hasRemote || attempted.current === autoStartKey) return;
+    attempted.current = autoStartKey;
+    void run();
+  }, [ready, autoStartKey, hasRemote, run]);
+
+  if (!hasRemote && !running && !result) return null;
 
   const label = running
-    ? t('canvas.remoteMedia.localize.running')
+    ? progress
+      ? t('canvas.remoteMedia.localize.runningProgress', { completed: progress.completed, total: progress.total })
+      : t('canvas.remoteMedia.localize.running')
     : result ?? t('canvas.remoteMedia.localize.label');
 
   return (
@@ -95,7 +116,7 @@ export function CanvasLocalizeAssetsButton({
       <button
         type="button"
         onClick={run}
-        disabled={running}
+        disabled={running || !ready}
         title={t('canvas.remoteMedia.localize.hint')}
         className={`inline-flex items-center gap-1.5 rounded-full border-amber-300/40 bg-amber-300/10 px-2.5 py-1 text-[11px] leading-none text-amber-100 transition hover:bg-amber-300/20 disabled:cursor-default disabled:opacity-70 ${CANVAS_CONTROL_GLASS_CLASS}`}
       >

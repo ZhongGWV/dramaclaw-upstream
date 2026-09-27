@@ -37,19 +37,19 @@ reason = "Chinese display names and collision-safe pinyin directories; preserve 
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split"]
 reason = "Chinese display names and collision-safe pinyin directories; preserve persisted paths."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split"]
 reason = "Chinese display names and collision-safe pinyin directories; preserve persisted paths."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "multi-provider-models", "shot-breakdown", "story-writer", "storyboard-dual-view", "sync-main-remotes", "tv-director-implementation", "video-prompt-split"]
 reason = "Chinese display names and collision-safe pinyin directories; preserve persisted paths."
 
 [[claims]]
@@ -171,13 +171,13 @@ reason = "Project rename and LibTV original-name/source-link integration."
 [[claims]]
 path = "frontend/src/features/freezone/createProjectLiblibImport.ts"
 mode = "shared"
-shared_with = ["liblib-canvas-parity", "minimax-h3-canvas-defaults"]
+shared_with = ["liblib-import-recovery", "liblib-canvas-parity", "minimax-h3-canvas-defaults"]
 reason = "Project rename and LibTV original-name/source-link integration."
 
 [[claims]]
 path = "frontend/src/features/freezone/CanvasesTab.tsx"
 mode = "shared"
-shared_with = ["legacy-unassigned-diff", "liblib-canvas-parity", "minimax-h3-canvas-defaults"]
+shared_with = ["liblib-import-recovery", "legacy-unassigned-diff", "liblib-canvas-parity", "minimax-h3-canvas-defaults"]
 reason = "Project rename and LibTV original-name/source-link integration."
 
 [[claims]]

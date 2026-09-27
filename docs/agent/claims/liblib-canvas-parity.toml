@@ -97,7 +97,8 @@ reason = "LibTV remote URL classification."
 
 [[claims]]
 path = "frontend/src/features/canvas/domain/canvasRemoteMedia.ts"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-import-recovery"]
 reason = "Remote-media localization policy."
 
 [[claims]]
@@ -113,12 +114,13 @@ reason = "LibTV canvas import."
 [[claims]]
 path = "frontend/src/features/freezone/createProjectLiblibImport.ts"
 mode = "shared"
-shared_with = ["minimax-h3-canvas-defaults", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "minimax-h3-canvas-defaults", "project-chinese-names"]
 reason = "Project creation import entry."
 
 [[claims]]
 path = "frontend/src/features/freezone/CanvasLocalizeAssetsButton.tsx"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-import-recovery"]
 reason = "Explicit remote asset localization."
 
 [[claims]]
@@ -206,7 +208,7 @@ reason = "Navigate directly to a newly imported canvas."
 [[claims]]
 path = "frontend/src/features/freezone/CanvasesTab.tsx"
 mode = "shared"
-shared_with = ["minimax-h3-canvas-defaults", "legacy-unassigned-diff", "project-chinese-names"]
+shared_with = ["liblib-import-recovery", "minimax-h3-canvas-defaults", "legacy-unassigned-diff", "project-chinese-names"]
 reason = "Import into an existing project while preserving unrelated canvas-selector work."
 
 [[claims]]
@@ -224,7 +226,7 @@ reason = "Display and filter imported fallback media nodes."
 [[claims]]
 path = "frontend/src/features/freezone/FreezoneShell.tsx"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "storyboard-dual-view"]
+shared_with = ["liblib-import-recovery", "asset-replacement-picker", "storyboard-dual-view"]
 reason = "Mount the explicit asset-localization control."
 
 [[claims]]
@@ -296,7 +298,8 @@ reason = "Frontend import regression tests."
 
 [[claims]]
 path = "frontend/src/__tests__/canvas-remote-media-localize.test.ts"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-import-recovery"]
 reason = "Remote localization regression tests."
 
 [[claims]]

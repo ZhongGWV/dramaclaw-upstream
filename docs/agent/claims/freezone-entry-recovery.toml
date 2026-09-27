@@ -26,7 +26,7 @@ reason = "Choose a real canvas for project entry."
 [[claims]]
 path = "frontend/src/features/freezone/useCanvasSync.ts"
 mode = "shared"
-shared_with = ["storyboard-dual-view"]
+shared_with = ["liblib-import-recovery", "storyboard-dual-view"]
 reason = "Preserve first-use canvas hydration semantics."
 
 [[claims]]

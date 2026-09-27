@@ -265,7 +265,7 @@ export function CanvasesTab({
       // The browser list can omit an imported canvas during a stale query;
       // always check storage before deciding to create or overwrite it.
       const stored = await getFreezoneCanvas(project, canvasId).catch((err: unknown) => {
-        if (err instanceof ApiError && err.status === 404) return null;
+        if ((err instanceof ApiError || err instanceof BackendStatusError) && err.status === 404) return null;
         throw err;
       });
       if (stored && !stored.metadata?.liblib_import) {
@@ -282,7 +282,7 @@ export function CanvasesTab({
         if (!saved) throw new Error(t("freezone.canvases.currentSaveFailed"));
       }
       const [detail, imageModels, videoModels] = await Promise.all([
-        getLiblibShareCanvasDetail(project, share.shareUrl, true),
+        getLiblibShareCanvasDetail(project, share.shareUrl, false),
         fetchFreezoneImageModels(project),
         fetchFreezoneVideoModels(project),
       ]);
@@ -319,6 +319,7 @@ export function CanvasesTab({
             source_project_id: graph.projectId,
             space_id: graph.spaceId,
             imported_at: new Date().toISOString(),
+            background_localize: true,
             ...liblibImportAssetStats(detail),
           },
         },

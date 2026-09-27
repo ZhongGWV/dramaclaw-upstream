@@ -46,7 +46,7 @@ export async function importLiblibCanvasIntoProject(options: {
     throw new LiblibCanvasImportError('canvas_conflict', { canvasId });
   }
   const [detail, imageModels, videoModels] = await Promise.all([
-    getLiblibShareCanvasDetail(options.projectId, share.shareUrl, true),
+    getLiblibShareCanvasDetail(options.projectId, share.shareUrl, false),
     fetchFreezoneImageModels(options.projectId),
     fetchFreezoneVideoModels(options.projectId),
   ]);
@@ -87,6 +87,7 @@ export async function importLiblibCanvasIntoProject(options: {
         source_project_id: graph.projectId,
         space_id: graph.spaceId,
         imported_at: new Date().toISOString(),
+        background_localize: true,
         ...liblibImportAssetStats(detail),
       },
     },

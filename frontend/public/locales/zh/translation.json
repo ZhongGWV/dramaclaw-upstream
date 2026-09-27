@@ -5604,6 +5604,7 @@
         "label": "一键本地化",
         "pending": "{{count}} 个素材未本地化",
         "running": "正在本地化…",
+        "runningProgress": "后台下载素材 {{completed}} / {{total}}",
         "done": "已本地化 {{count}} 个素材",
         "partial": "已本地化 {{done}} 个，仍有 {{failed}} 个未能保存",
         "none": "没有素材需要本地化",

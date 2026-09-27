@@ -5604,6 +5604,7 @@
         "label": "Localize assets",
         "pending": "{{count}} assets not localized",
         "running": "Localizing…",
+        "runningProgress": "Downloading assets in background {{completed}} / {{total}}",
         "done": "Localized {{count}} assets",
         "partial": "Localized {{done}}, {{failed}} still could not be saved",
         "none": "No assets need localizing",
