@@ -58,7 +58,7 @@ async def test_siliconflow_stream_is_not_buffered_and_closes_upstream(tmp_path, 
 
 
 @pytest.mark.asyncio
-async def test_stream_upstream_errors_keep_http_status_and_body(tmp_path, monkeypatch):
+async def test_stream_upstream_errors_keep_http_status_and_redact_body(tmp_path, monkeypatch):
     config = _config(tmp_path)
     original_client = httpx.AsyncClient
     monkeypatch.setattr(local_gateway.httpx, "AsyncClient", lambda **kw: original_client(
@@ -72,7 +72,7 @@ async def test_stream_upstream_errors_keep_http_status_and_body(tmp_path, monkey
     ]}, receive)
     response = await local_gateway._forward_to_siliconflow(request, config, "chat/completions", "model")
     assert response.status_code == 429
-    assert json.loads(response.body) == {"error": "rate limited"}
+    assert json.loads(response.body) == {"error": {"message": "provider_request_failed", "provider": "siliconflow"}}
 
 
 def _config(tmp_path: Path) -> local_gateway.RouterConfig:
@@ -108,11 +108,11 @@ def test_health_identifies_the_configured_gateway_instance(tmp_path: Path) -> No
     assert health["instanceId"].isalnum()
 
 
-def test_chat_and_embedding_force_local_models(tmp_path: Path, monkeypatch) -> None:
+def test_chat_default_alias_and_embedding_use_configured_routes(tmp_path: Path, monkeypatch) -> None:
     config = _config(tmp_path)
     seen: list[tuple[str, str | None]] = []
 
-    async def fake_forward(request, received_config, path, forced_model=None):
+    async def fake_forward(request, received_config, path, forced_model=None, **kwargs):
         assert received_config is config
         seen.append((path, forced_model))
         return Response(content='{"ok":true}', media_type="application/json")
@@ -122,7 +122,7 @@ def test_chat_and_embedding_force_local_models(tmp_path: Path, monkeypatch) -> N
 
     assert (
         client.post(
-            "/v1/chat/completions", headers=_authorization(), json={"model": "ignored"}
+            "/v1/chat/completions", headers=_authorization(), json={"model": "DC-freezone-text-writer-LLM"}
         ).status_code
         == 200
     )
@@ -133,7 +133,7 @@ def test_chat_and_embedding_force_local_models(tmp_path: Path, monkeypatch) -> N
         == 200
     )
     assert seen == [
-        ("chat/completions", "text-forced"),
+        ("chat/completions", "deepseek-ai/DeepSeek-V4-Flash"),
         ("embeddings", "embedding-forced"),
     ]
 
@@ -158,7 +158,7 @@ def test_image_generation_uses_local_qwen_workflow(tmp_path: Path, monkeypatch) 
         "/v1/images/generations",
         headers=_authorization(),
         json={
-            "model": "ignored",
+            "model": "Qwen-Image-local",
             "prompt": "orange cat",
             "size": "510x513",
             "seed": 42,

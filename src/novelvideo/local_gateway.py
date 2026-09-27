@@ -1,7 +1,7 @@
 """Local, update-safe OpenAI-compatible router for a command-line CE install.
 
-The router deliberately owns provider selection: SiliconFlow serves text,
-embeddings, and audio; a locally running ComfyUI serves Qwen Image.  Secrets
+The private model catalog owns provider selection for SiliconFlow, Ark Agent
+Plan, and local ComfyUI. Embedding and audio keep their configured routes.  Secrets
 and copied workflow files live in a user-managed, ignored configuration
 directory so upgrading DramaClaw does not replace them.
 """
@@ -30,6 +30,9 @@ import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+
+from novelvideo.local_model_catalog import ARK_BASE, LocalModelCatalog, read_key
+from novelvideo.local_provider_api import cloud_image, cloud_video_submit, cloud_video_status
 
 
 logger = logging.getLogger("dramaclaw.local_gateway")
@@ -445,12 +448,13 @@ def _prepare_krea_identity_edit_workflow(
 
 
 async def _forward_to_siliconflow(
-    request: Request, config: RouterConfig, path: str, forced_model: str | None = None
+    request: Request, config: RouterConfig, path: str, forced_model: str | None = None,
+    *, provider: str = "siliconflow"
 ) -> Response:
     _require_router_auth(request, config)
-    headers = {
-        "Authorization": f"Bearer {_read_secret(config.siliconflow_key_file, siliconflow=True)}"
-    }
+    key = read_key(config.root, provider)
+    base_url = ARK_BASE if provider == "ark" else config.siliconflow_base_url
+    headers = {"Authorization": f"Bearer {key}"}
     content_type = request.headers.get("content-type")
     if content_type:
         headers["Content-Type"] = content_type
@@ -470,6 +474,11 @@ async def _forward_to_siliconflow(
             payload = json.loads(body)
         except json.JSONDecodeError:
             pass
+    if provider == "ark" and path.lstrip("/") == "chat/completions":
+        if payload.pop("enable_thinking", None) is False:
+            payload["thinking"] = {"type": "disabled"}
+        payload.setdefault("thinking", {"type": "disabled"})
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     if path.lstrip("/") == "chat/completions" and isinstance(payload, dict) and payload.get("stream") is True:
         # request() buffers the entire SSE body. Keep both resources alive until
         # downstream finishes (or disconnects), forwarding each chunk immediately.
@@ -477,20 +486,19 @@ async def _forward_to_siliconflow(
         started = time.perf_counter()
         try:
             upstream = await client.send(client.build_request(
-                request.method, f"{config.siliconflow_base_url}/{path.lstrip('/')}",
+                request.method, f"{base_url}/{path.lstrip('/')}",
                 headers=headers, content=body,
             ), stream=True)
         except BaseException as exc:
             with anyio.CancelScope(shield=True):
                 await client.aclose()
             if isinstance(exc, httpx.HTTPError):
-                raise HTTPException(502, "SiliconFlow stream connection failed") from exc
+                raise HTTPException(502, "Provider stream connection failed") from exc
             raise
         if upstream.status_code >= 400:
             try:
-                content = await upstream.aread()
-                return Response(content, status_code=upstream.status_code,
-                                media_type=upstream.headers.get("content-type"))
+                await upstream.aread()
+                return JSONResponse({"error": {"message": "provider_authentication_failed" if upstream.status_code in {401, 403} else "provider_request_failed", "provider": provider}}, status_code=upstream.status_code)
             finally:
                 with anyio.CancelScope(shield=True):
                     await upstream.aclose()
@@ -519,7 +527,7 @@ async def _forward_to_siliconflow(
         async with httpx.AsyncClient(timeout=300) as client:
             upstream = await client.request(
                 request.method,
-                f"{config.siliconflow_base_url}/{path.lstrip('/')}",
+                f"{base_url}/{path.lstrip('/')}",
                 headers=headers,
                 content=body,
             )
@@ -532,29 +540,10 @@ async def _forward_to_siliconflow(
             forced_model or "(client-specified)",
             exc,
         )
-        raise HTTPException(status_code=502, detail=f"SiliconFlow request failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail="Provider request failed") from None
     if upstream.status_code >= 400:
-        # 上游的错误原样透传给调用方，但调用方那边往往只剩一个状态码——
-        # 比如 pydantic-ai 拿到 502 空 body 时,错误信息里既没有模型名也没有原因。
-        # 这里是唯一还同时握着「发出去的模型名」和「上游返回了什么」的地方,不记就永久丢失。
-        # 注意只记正文和 trace id,请求头里有 API key,绝不能进日志。
-        snippet = ""
-        media_type = (upstream.headers.get("content-type") or "").lower()
-        if not media_type or media_type.startswith(("application/json", "text/")):
-            try:
-                snippet = upstream.content.decode("utf-8", errors="replace")[
-                    :_UPSTREAM_ERROR_BODY_CHARS
-                ]
-            except Exception:  # 记日志本身不该把请求搞挂
-                snippet = "(undecodable)"
-        logger.warning(
-            "siliconflow error path=%s model=%s status=%s trace=%s body=%s",
-            path,
-            forced_model or "(client-specified)",
-            upstream.status_code,
-            upstream.headers.get("x-siliconcloud-trace-id") or "-",
-            snippet or "(empty)",
-        )
+        logger.warning("provider error provider=%s path=%s status=%s", provider, path, upstream.status_code)
+        return JSONResponse({"error": {"message": "provider_authentication_failed" if upstream.status_code in {401, 403} else "provider_request_failed", "provider": provider}}, status_code=upstream.status_code)
     passthrough_headers = {
         key: value
         for key, value in upstream.headers.items()
@@ -571,6 +560,7 @@ async def _forward_to_siliconflow(
 def create_app(config: RouterConfig | None = None) -> FastAPI:
     config = config or router_config()
     app = FastAPI(title="DramaClaw Local Gateway", docs_url=None, redoc_url=None)
+    catalog = LocalModelCatalog(config.root)
 
     @app.get("/healthz")
     async def healthz() -> dict[str, Any]:
@@ -587,32 +577,48 @@ def create_app(config: RouterConfig | None = None) -> FastAPI:
             "kreaT2iWorkflow": config.krea_t2i_workflow.is_file(),
             "kreaEditWorkflow": config.krea_edit_workflow.is_file(),
             "siliconflowKey": config.siliconflow_key_file.is_file(),
-            "textModel": config.text_model,
+            "textModel": catalog.setting("default:text"),
+            "arkKey": (config.secrets_dir / "ark-agent-plan.key").is_file(),
         }
 
     @app.get("/v1/models")
     async def models(request: Request) -> Response:
-        return await _forward_to_siliconflow(request, config, "models")
+        _require_router_auth(request, config)
+        if not catalog.setting("sync:siliconflow"):
+            try:
+                await catalog.refresh("siliconflow")
+            except ValueError:
+                pass
+        return JSONResponse({"object": "list", "data": [
+            {**m, "object": "model", "owned_by": m["provider"]}
+            for m in catalog.models(enabled_only=True)
+        ]})
 
     @app.post("/v1/chat/completions")
     async def chat_completions(request: Request) -> Response:
-        # Existing aliases keep the configured default. Explicit text/vision
-        # IDs are the opt-in path for per-node model selection.
+        _require_router_auth(request, config)
         try:
             requested = str((await request.json()).get("model") or "")
-        except (ValueError, AttributeError):
-            requested = ""
-        selectable = bool(
-            re.fullmatch(
-                r"(?:Pro/)?deepseek-ai/DeepSeek-(?:R1|V3|V4)[A-Za-z0-9._-]*"
-                r"|zai-org/GLM-4\.5V"
-                r"|Qwen/Qwen3-VL-(?:8B|30B-A3B|32B)-(?:Instruct|Thinking)",
-                requested,
-            )
-        )
+            # Only documented application aliases resolve to the user's default.
+            # Unknown explicit IDs must fail instead of silently changing models.
+            if not requested or requested.startswith("DC-"):
+                requested = catalog.setting("default:text")
+            entry = catalog.resolve(requested, kind="text")
+        except (ValueError, AttributeError) as exc:
+            raise HTTPException(400, str(exc)) from None
         return await _forward_to_siliconflow(
-            request, config, "chat/completions", None if selectable else config.text_model
+            request, config, "chat/completions", entry["upstreamModel"], provider=entry["provider"]
         )
+
+    @app.post("/v1/video/generations")
+    async def video_generations(request: Request) -> Response:
+        _require_router_auth(request, config)
+        return JSONResponse(await cloud_video_submit(catalog, await request.json()))
+
+    @app.get("/v1/video/generations/{task_id}")
+    async def video_status(task_id: str, request: Request) -> Response:
+        _require_router_auth(request, config)
+        return JSONResponse(await cloud_video_status(catalog, task_id))
 
     @app.post("/v1/embeddings")
     async def embeddings(request: Request) -> Response:
@@ -641,6 +647,12 @@ def create_app(config: RouterConfig | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail="request body must be JSON") from exc
         if not isinstance(payload, dict):
             raise HTTPException(status_code=400, detail="request body must be an object")
+        if "::" in str(payload.get("model") or ""):
+            return JSONResponse(await cloud_image(catalog, payload))
+        try:
+            catalog.resolve(str(payload.get("model") or QWEN_IMAGE_MODEL), kind="image")
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from None
         workflow, _ = _prepare_t2i_workflow(payload, config)
         images = await _submit_comfy_workflow(workflow, config)
         return JSONResponse(_local_image_response(images, config))
@@ -650,6 +662,13 @@ def create_app(config: RouterConfig | None = None) -> FastAPI:
         _require_router_auth(request, config)
         form = await request.form()
         uploads = [item for item in form.getlist("image") if hasattr(item, "read")]
+        requested_model = str(form.get("model") or QWEN_IMAGE_MODEL)
+        if "::" in requested_model:
+            return JSONResponse(await cloud_image(catalog, dict(form), uploads))
+        try:
+            catalog.resolve(requested_model, kind="image")
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from None
         if not uploads:
             raise HTTPException(status_code=400, detail="at least one image is required")
         if len(uploads) > 3:

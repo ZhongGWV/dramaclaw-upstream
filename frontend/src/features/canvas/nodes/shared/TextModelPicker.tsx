@@ -1,3 +1,4 @@
+import { textModelPresentation } from '@/lib/local-model-catalog';
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { useEffect, useRef, useState } from 'react';
@@ -16,7 +17,8 @@ interface TextModelPickerProps {
 }
 
 function modelPresentation(model: string) {
-  const label = model.split('/').pop() || model;
+  const presentation = textModelPresentation(model);
+  const label = presentation.label;
   const isPro = model.startsWith('Pro/');
   const family = model.includes('DeepSeek') ? 'DeepSeek'
     : model.includes('GLM') ? 'GLM'
@@ -26,7 +28,7 @@ function modelPresentation(model: string) {
       : family === 'Qwen' ? Layers : Box;
   return {
     label: isPro ? `${label} Pro` : label,
-    description: family ? `SiliconFlow · ${family}` : label,
+    description: presentation.providerLabel,
     Icon,
   };
 }
@@ -92,6 +94,7 @@ export function TextModelPicker({
           <CurrentIcon aria-hidden className="h-4 w-4 shrink-0 text-[#919191]" />
           <span className="truncate text-[13px] leading-5">
             {current.label || t('modelPicker.empty')}
+            {currentId && <span className="ml-1 text-[10px] text-[#919191]">{current.description}</span>}
           </span>
           <ChevronDown
             aria-hidden

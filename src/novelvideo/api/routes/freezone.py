@@ -6615,6 +6615,13 @@ async def freezone_text_models(
     from novelvideo.config import get_newapi_runtime_credentials
 
     await _resolve_freezone_project(project, user)
+    from novelvideo.local_model_catalog import LocalModelCatalog, active_root
+    root = active_root()
+    if root is not None:
+        local_catalog = LocalModelCatalog(root)
+        entries = [m for m in local_catalog.models(enabled_only=True) if m["kind"] == "text"]
+        return {"ok": True, "data": {"models": [m["id"] for m in entries], "entries": entries,
+                "defaultModel": local_catalog.setting("default:text")}}
     api_key, base_url = get_newapi_runtime_credentials(
         env_api_key="MODEL_API_KEY",
         env_base_url="MODEL_BASE_URL",
@@ -8230,6 +8237,13 @@ async def _ee_media_model_catalog(media_type: str) -> list[dict[str, Any]] | Non
         if is_ce_effective():
             mode = get_effective_newapi_config().mode
             if mode == MODE_CUSTOM:
+                from novelvideo.local_model_catalog import LocalModelCatalog, active_root
+                root = active_root()
+                if root is not None:
+                    return LocalModelCatalog(root).merge_media(media_type, _merge_media_model_catalog_defaults(
+                        _static_media_model_catalog(media_type),
+                        get_ce_media_model_catalog(media_type, include_disabled=True),
+                    ))
                 return _merge_media_model_catalog_defaults(
                     _static_media_model_catalog(media_type),
                     get_ce_media_model_catalog(media_type, include_disabled=True),

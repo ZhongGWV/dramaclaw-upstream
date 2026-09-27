@@ -44,25 +44,25 @@ reason = "Dual view projection, editor host, persistence and parity validation."
 [[claims]]
 path = "frontend/src/features/canvas/nodes/TextAnnotationNode.tsx"
 mode = "shared"
-shared_with = ["text-node-liblib-visual-parity"]
+shared_with = ["text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]
 path = "frontend/public/locales/zh/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split", "multi-provider-models"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]
 path = "frontend/public/locales/en/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "video-prompt-split", "multi-provider-models"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "sync-main-remotes", "video-prompt-split"]
+shared_with = ["asset-replacement-picker", "canvas-audio-actions", "canvas-audio-split", "creative-intro-blend", "creative-intro-implementation", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "local-stack", "shot-breakdown", "story-writer", "sync-main-remotes", "video-prompt-split", "multi-provider-models"]
 reason = "Dual view projection, editor host, persistence and parity validation."
 
 [[claims]]

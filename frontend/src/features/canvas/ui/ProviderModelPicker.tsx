@@ -44,6 +44,8 @@ export interface ProviderOption {
 }
 
 export interface ModelOption {
+  providerLabel?: string;
+  sourceProvider?: string;
   /** Opaque database identity used by new billing and task records. */
   catalogId?: string;
   id: string;
@@ -229,7 +231,7 @@ interface ProviderModelPickerProps {
 export function ProviderModelPicker({
   selectedModelId,
   onChange,
-  providers: _providers = SHARED_PROVIDERS,
+  providers = SHARED_PROVIDERS,
   models,
   domain = 'image',
   className,
@@ -265,6 +267,7 @@ export function ProviderModelPicker({
     left: number;
     top: number;
   } | null>(null);
+  const providerName = (model: ModelOption) => model.providerLabel || providers.find(p => p.id === model.providerId)?.label || model.providerId;
   const selectedModel = effectiveModels.find((m) => m.id === selectedModelId) ?? effectiveModels[0];
 
   const syncPopoverPosition = () => {
@@ -321,6 +324,7 @@ export function ProviderModelPicker({
           {selectedModel?.label
             ?? (catalogIsEmpty ? t('modelParams.noModelsAvailable') : selectedModelId)}
         </span>
+        {selectedModel?.providerLabel && <span className="text-[10px] text-text-muted">{providerName(selectedModel)}</span>}
         <ChevronDown className="h-3 w-3 text-text-muted/90" />
       </button>
       {isOpen && popoverPosition && createPortal(
@@ -347,7 +351,8 @@ export function ProviderModelPicker({
                   ) : (
                     <span className="inline-block h-3.5 w-3.5 shrink-0" />
                   )}
-                  <span className="truncate">{model.label}</span>
+                  <span className="min-w-0 flex-1 truncate">{model.label}</span>
+                  <span className="max-w-[100px] truncate text-[10px] opacity-60">{providerName(model)}</span>
                 </>
               );
               const optionClass = `${MODEL_PICKER_OPTION_BASE_CLASS} ${

@@ -27,7 +27,8 @@
 
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
-| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除，未推送 |
+| [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | 正式设置正常，两项火山文本在新密钥下实测成功；火山图片待真实生成验收 |
+| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除；1fa3c1b 已推送 |
 | [h3-prompt-optimizer](tasks/h3-prompt-optimizer.md) | H3 参考图完整保留与提示词格式转换 | 待验收 | 本地/云端共用字段布局，去共用段重复、统一空行/音效标题；服务已重启，待用户试转 |
 | [h3-completion-recovery](tasks/h3-completion-recovery.md) | H3 完成结果认领及超时恢复 | 待验收 | 按任务 ID 认领修复并重启生效；545秒成品已接回、任务恢复完成，待下次正常生成通知验收 |
 | [video-prompt-split](tasks/video-prompt-split.md) | 时间分镜一键拆分 | 待验收 | 完整镜头≤15秒、横排避让、清旧封面；18项回归及类型检查通过，当前五段坐标已修复，待空占位刷新复核 |

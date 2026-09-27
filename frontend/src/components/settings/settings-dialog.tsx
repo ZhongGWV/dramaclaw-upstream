@@ -1,3 +1,4 @@
+import { LocalModelCatalogPanel } from './local-model-catalog';
 // SPDX-License-Identifier: Elastic-2.0
 // Copyright (c) 2026 ClaymoreLab
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -528,7 +529,7 @@ function ModelConfigSection({
         {mode === "custom" || mode === "hybrid" ? (
           <>
             {localRouterActive ? (
-              <LocalRouterPanel config={config} />
+              <><LocalRouterPanel config={config} /><LocalModelCatalogPanel /></>
             ) : (
               <CustomGatewayPanel
                 config={config}
@@ -619,10 +620,6 @@ function LocalRouterPanel({
   config: ModelGatewayConfig | undefined;
 }) {
   const { t } = useTranslation();
-  const localImage = Object.entries(
-    config?.provisioner?.mediaModels ?? {},
-  ).find(([, item]) => item.mediaType === "image");
-  const imageLabel = localImage?.[1].label || localImage?.[0] || "Qwen Image";
 
   return (
     <div className="mt-4 rounded-md border border-emerald-500/35 bg-emerald-500/5 p-4">
@@ -632,7 +629,7 @@ function LocalRouterPanel({
             {t("settings.modelConfig.localRouter.title")}
           </h4>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            {t("settings.modelConfig.localRouter.description")}
+            {t("providerCatalog.description")}
           </p>
         </div>
         <span className="shrink-0 text-xs font-medium text-emerald-400">
@@ -640,33 +637,7 @@ function LocalRouterPanel({
         </span>
       </div>
 
-      <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
-        <div className="rounded border border-border/60 bg-black/20 px-3 py-2">
-          <dt className="text-muted-foreground">{t("settings.modelConfig.localRouter.image")}</dt>
-          <dd className="mt-1 font-medium text-foreground">{imageLabel}</dd>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {t("settings.modelConfig.localRouter.imageDescription")}
-          </p>
-        </div>
-        <div className="rounded border border-border/60 bg-black/20 px-3 py-2">
-          <dt className="text-muted-foreground">{t("settings.modelConfig.localRouter.text")}</dt>
-          <dd className="mt-1 font-medium text-foreground">
-            {t("settings.modelConfig.localRouter.textDescription")}
-          </dd>
-        </div>
-        <div className="rounded border border-border/60 bg-black/20 px-3 py-2">
-          <dt className="text-muted-foreground">{t("settings.modelConfig.localRouter.embedding")}</dt>
-          <dd className="mt-1 font-medium text-foreground">
-            {t("settings.modelConfig.localRouter.embeddingDescription")}
-          </dd>
-        </div>
-        <div className="rounded border border-border/60 bg-black/20 px-3 py-2">
-          <dt className="text-muted-foreground">{t("settings.modelConfig.localRouter.voice")}</dt>
-          <dd className="mt-1 font-medium text-foreground">
-            {t("settings.modelConfig.localRouter.voiceDescription")}
-          </dd>
-        </div>
-      </dl>
+
 
       <p className="mt-3 text-[11px] text-muted-foreground">
         {t("settings.modelConfig.localRouter.address", {

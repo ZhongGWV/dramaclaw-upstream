@@ -3754,9 +3754,9 @@ async def _call_newapi_image_api(
     payload = enforce_newapi_media_geometry_contract(payload, media_type="image")
     from novelvideo.config import LOCAL_KREA_IMAGE_MODEL
 
-    if local_edit_data is not None and model in {
+    if local_edit_data is not None and (model.startswith(("ark::", "siliconflow::")) or model in {
         LOCAL_KREA_IMAGE_MODEL, "Krea-2-Identity-Edit-local"
-    }:
+    }):
         for key in ("width", "height"):
             value = payload.get(key)
             if value is not None:
@@ -4077,11 +4077,11 @@ def _is_local_image_router(model: str, endpoint: str) -> bool:
     """Identify dedicated loopback image routes without affecting hosted APIs."""
     from novelvideo.config import LOCAL_KREA_IMAGE_MODEL, LOCAL_QWEN_IMAGE_MODEL
 
-    return model in {
+    return (model.startswith(("ark::", "siliconflow::")) or model in {
         LOCAL_QWEN_IMAGE_MODEL,
         LOCAL_KREA_IMAGE_MODEL,
         "Krea-2-Identity-Edit-local",
-    } and _is_loopback_http_url(endpoint)
+    }) and _is_loopback_http_url(endpoint)
 
 
 def _is_local_qwen_router(model: str, endpoint: str) -> bool:

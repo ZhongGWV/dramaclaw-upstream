@@ -270,7 +270,7 @@ reason = "Persist imported canvas semantics and prewarm the LOD image ladder."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "local-stack", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Expose LibTV detail/localization endpoints; stage only owned hunks."
 
 [[claims]]

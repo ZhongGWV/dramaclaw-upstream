@@ -27,7 +27,7 @@ reason = "Machine-readable scope for this workstream."
 [[claims]]
 path = "src/novelvideo/local_gateway.py"
 mode = "shared"
-shared_with = ["text-node-liblib-visual-parity", "h3-prompt-optimizer"]
+shared_with = ["text-node-liblib-visual-parity", "h3-prompt-optimizer", "multi-provider-models"]
 reason = "Local provider routing gateway; text-node workstream only changes authenticated explicit DeepSeek text selection."
 
 [[claims]]
@@ -71,7 +71,8 @@ reason = "Suppress the irrelevant media-relay warning for the documented local r
 
 [[claims]]
 path = "frontend/src/components/settings/settings-dialog.tsx"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["multi-provider-models"]
 reason = "Present the local-router configuration without NewAPI setup controls."
 
 [[claims]]
@@ -95,13 +96,13 @@ reason = "Localized local-router status copy; merge by key only."
 [[claims]]
 path = "src/novelvideo/api/routes/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "liblib-canvas-parity", "minimax-h3-canvas-defaults", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
 reason = "Local media catalog ordering is independent of neighboring Freezone endpoints."
 
 [[claims]]
 path = "tests/test_local_gateway.py"
 mode = "shared"
-shared_with = ["h3-prompt-optimizer"]
+shared_with = ["h3-prompt-optimizer", "multi-provider-models"]
 reason = "Local gateway regression tests."
 
 [[claims]]

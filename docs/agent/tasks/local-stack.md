@@ -276,3 +276,9 @@ Depth、拉片和 LibTV endpoint 均未写入。
 原工作先完成，h3-prompt-optimizer 在共享路径串行增加可选优化参数/入口/翻译，由当前会话集成，保留原行为。
 
 2026-09-26 协调：h3-prompt-optimizer 在既有模型选择上串行加入 gateway SSE 透传与回归；最终集成由 H3 工作线负责，不改其他网关行为。
+
+
+### 2026-09-27 · 多供应商模型接入协调
+用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：src/novelvideo/local_gateway.py, src/novelvideo/generators/nanobanana_grid.py, frontend/src/components/settings/settings-dialog.tsx, frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/api/routes/freezone.py。
+
+2026-09-27 协调：multi-provider-models 后续串行补齐云视频首帧直传和严格路由测试，保留其他路径。

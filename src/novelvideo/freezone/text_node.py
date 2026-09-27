@@ -263,6 +263,14 @@ def is_selectable_deepseek_text_model(model: str) -> bool:
 
 def text_writer_model_media_kind(model: str) -> Literal["text", "image", "video"] | None:
     """Keep the picker and submit validation aligned with the gateway allowlist."""
+    from novelvideo.local_model_catalog import LocalModelCatalog, active_root
+    root = active_root()
+    if root is not None:
+        try:
+            entry = LocalModelCatalog(root).resolve(model, kind="text")
+        except ValueError:
+            return None
+        return "video" if "image" in entry["inputModalities"] else "text"
     if is_selectable_deepseek_text_model(model):
         return "text"
     if model == "zai-org/GLM-4.5V":
@@ -284,7 +292,7 @@ def validate_text_writer_references_model(
     if model and kind is None:
         raise ValueError("unsupported text model")
     if has_video and kind != "video":
-        raise ValueError("video references require a Qwen3-VL model")
+        raise ValueError("video references require a vision model with sampled-frame support")
     if has_image and kind not in {"image", "video"}:
         raise ValueError("image references require a vision model")
 
@@ -294,7 +302,7 @@ def text_writer_request_references(
     h3_options: dict[str, Any] | None,
 ) -> Sequence[Mapping[str, str]]:
     """Text-only H3 formatting uses verified bindings, never invented vision input."""
-    if h3_options is None or not is_selectable_deepseek_text_model(model):
+    if h3_options is None:
         return references
     from novelvideo.freezone.h3_prompt_optimizer import reference_labels
 
@@ -381,6 +389,11 @@ def get_freezone_text_writer_agent() -> Agent:
 def resolve_freezone_text_writer_model() -> str:
     """返回当前自由文本生成逻辑模型名，供结果与审计记录使用。"""
     from novelvideo.config import get_newapi_text_model_name
+    from novelvideo.local_model_catalog import LocalModelCatalog, active_root
+
+    root = active_root()
+    if root is not None:
+        return LocalModelCatalog(root).setting("default:text")
 
     return get_newapi_text_model_name(
         "FREEZONE_TEXT_WRITER_MODEL",
@@ -519,6 +532,9 @@ async def generate_freezone_text(
         h3_system = skill_system_prompt(h3_options)
 
     selected_model = str(model or "").strip()
+    from novelvideo.local_model_catalog import active_root
+    if not selected_model and active_root() is not None:
+        selected_model = resolve_freezone_text_writer_model()
     references = text_writer_request_references(selected_model, references, h3_options)
     validate_text_writer_references_model(selected_model, references)
     if references and project_dir is None:
@@ -611,8 +627,8 @@ async def generate_freezone_text(
                 # Formatting has no reasoning task. Explicitly disable the
                 # provider's optional thinking, and validate once after EOF.
                 settings = (
-                    {"extra_body": {"enable_thinking": False}}
-                    if h3_options and is_selectable_deepseek_text_model(selected_model) else None
+                    {"extra_body": {"thinking": {"type": "disabled"}}} if h3_options and selected_model.startswith("ark::")
+                    else {"extra_body": {"enable_thinking": False}} if h3_options else None
                 )
                 if plan is not None:
                     settings = {**(settings or {}), "max_tokens": 1024}
