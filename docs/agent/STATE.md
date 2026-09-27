@@ -11,8 +11,9 @@
 - 最新推送核验（2026-09-27）：用户明确授权push，`main=zhonggwv/main=b5883b8f`，ahead0/behind0；
   已把此前49个合并历史和本次TV Director提交正常快进推送到私有仓库。公开origin、远端同步分支和服务均未改。
   下条为同步线保留的历史交接，当前远端main以本条和Git为准；本轮推送交接文档仅本地更新，未追加提交。
-- 当前隔离分支 `codex/sync-main-remotes`，`96bda53c`已合入四个TV Director提交并推送私有同名分支。
-  后续协调提交后的HEAD以Git为准。`main=zhonggwv/main=f057a867`保持不动，公开fork/PR未更新。
+- 当前主检出分支 `main`，按用户后续指令已从f057a867快进到 `0298aefa`，与本地/已推送的
+  `codex/sync-main-remotes`相同，包含双方全部已提交代码；相对私有远端main为ahead49/behind0。
+  本轮未push；`zhonggwv/main`仍为f057a867，公开fork/PR未更新，现有服务未重启。
 - 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
   研究与实现边界、失败模型实验照原台账保留。主检出的 `_to_delete/` 与 `曹操.md` 仍受保护，
   `.playwright-cli/`、本地配置与付费回包继续忽略。备份与逐组验证见 `docs/agent/archive/git-sync-preparation.md`。
@@ -34,7 +35,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 私有同步分支合入 TV Director；历史上游同步另行等待 | 已阻塞 | 本轮私有分支已交付96bda53c，560后端/127前端/build及门禁通过；仅历史公开PR等审核，未来同步须重审，禁止把旧origin/main推回私有main |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 最新同步分支合回主目录main；历史公开同步另行处理 | 执行中 | 用户已确认也同步main；先分线保存原5份协调diff，再正常合并最新3fbd16e6，仅解协调冲突，非agent树必须与已验证分支一致；随后只推私有main，不碰公开origin和现有服务 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。本线连续增量b5883b8f已按后续授权推送私有main并核验；未部署 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |

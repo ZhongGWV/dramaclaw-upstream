@@ -1,13 +1,32 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：已阻塞
-**最后更新**：2026-09-26
-**基线**：`96bda53c`（TV Director 合并已推私有同名分支；原目标远端为 `1fa3c1bc`）
-**认领者**：`codex/sync-director-20260926`
+**状态**：执行中
+**最后更新**：2026-09-27
+**基线**：`d1b73e14`（先保存主目录Director既有交接；本轮把最新同步分支合回main）
+**认领者**：`codex/main-latest-sync-20260927`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 2026-09-27最新授权：同步主目录main到最新分支
+
+用户在重启后明确确认“也同步主目录main”。应用已从945baa9f启动且原6项目可读，重启交接提交为3fbd16e6；该同步分支保留模型/H3/中文项目名和最新Director，集成794后端/276前端/build通过。主目录原5份未提交协调文件先按Director/同步线分别提交，业务和3份受保护资料不动、不stash/reset；此方案与本线旧交接同属同步线检查点。
+
+随后以main为第一父正常merge最新codex/sync-main-remotes，手工仅解决STATE/同步台账/claim的协调冲突，保留双方历史与当前授权；业务文件全部只接受目标既有提交，不重新实现或更改API/模型/配置。精确业务导入路径以两端git diff和目标已验证claim为准；若业务文本有冲突立即另做窄审计，不整文件覆盖。三语与全部非agent文件逐blob比对来源，代码必须与已运行/测试的同步分支一致；DCO/密钥/guard/diff和健康读检查后普通push私有main，不推公开origin、不改服务、不触发生成。非快进拒绝则重读远端，绝不force。保留全部旧进度，产品文学/像素验收不因Git同步变为通过。
+
+本轮手工范围仅本台账/同名claim/STATE（coordination）；Director既有记录已独立保存。风险为协调冲突和误丢本地资料；用双祖先和非agent树一致性验证，不以丢记录换快进。回退须另行授权revert，不改写历史。
+
+### 最新追加：只把已验证合并结果同步回本地主检出
+
+用户明确要求“把合并结果同步回主目录”。执行前主检出为 `main=f057a867`，无已跟踪脏文件、无锁；
+目标 `codex/sync-main-remotes=0298aefa` 为其后代，差异0/49。87个新增跟踪路径均不与现有本地文件冲突。
+本次只通过 `git merge --ff-only 0298aefa` 导入已有提交，不手工改业务代码、不拉取额外提交、不stash/reset，
+不推任何远端、不重启服务、不迁移项目数据。主检出里的本地配置、凭据、运行数据及3个受保护未跟踪文件保留。
+手工写入仅STATE、本台账和同名claim三个coordination文件，用于修正旧“主目录仍未同步”的交接事实。
+验收：主检出HEAD与合并分支一致，源代码无额外diff；3个受保护文件SHA256一致；guard、依赖约束、
+主目录生产构建及Director/H3聚焦回归通过。若快进条件不成立立即停止，不强制移动main。
+远端main仍保持此前提交；未来要发布main须用户另行授权。旧章节“不改main”限制仅对应上一轮分支交付。
 
 ### 本轮增量：将已推送的 TV Director 提交同步到本分支
 
@@ -121,6 +140,22 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-27 · 主目录最新同步检查点
+
+用户已明确授权当前main同步最新集成版本；本线先保存此前主目录快进的旧交接和本次计划，Director旧记录已分线提交。业务无未提交diff，原受保护资料不动；后续只在协调文件解决真实merge冲突。源代码直接保留同步分支已验证内容，主目录合并后必须与源非agent树一致，再推私有main并核验。
+
+### 2026-09-26 · 主目录快进及本地验证完成
+
+已执行 `git merge --ff-only 0298aefa4734c3d8e5a02362cbf068351833c343`，主目录main与合并分支相同，
+Git未生成新合并提交。导入后 `git diff --exit-code codex/sync-main-remotes` 与cached比对均通过；
+guard为29条工作线/940claims，通过。主检出相对私有远端main ahead49/behind0，没有执行push。
+3个未跟踪受保护文件前后SHA256相同；本地配置/凭据/项目目录没有跟踪路径变动。
+前端package/lock与主目录原版本相同，无须重新安装；现有sse-starlette 3.4.5满足上游>=3.3.0约束。
+主目录 `pnpm build` 在Node22下通过（5533模块，仅大chunk警告）；
+`.venv/bin/python -m pytest tests/director tests/test_tv_director.py tests/test_newapi_text_gateway.py tests/test_h3_prompt_optimizer.py tests/test_h3_stream.py tests/test_local_gateway.py tests/test_image_generation_selection.py -q`
+为545通过/10条依赖弃用警告。所有业务代码仍与0298aefa一致，三个交接文件是本轮唯一跟踪diff，保留为本地文档更新。
+本轮没有创建新提交、推远端或重启服务；历史功能/文学质量欠项未因此被标成完成。
 
 ### 2026-09-26 · 本轮私有分支同步完成
 
@@ -251,6 +286,7 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 - [x] 完成 claim 与共享互认后 acquire/preflight。
 - [x] 执行合并、解决文本与语义冲突并完成全量验证。
 - [x] 用户本轮要求的 TV Director 四个 main 提交已合并、验证并推送私有 `codex/sync-main-remotes`。
+- [x] 后续请求：本地主目录main已快进到合并版本0298aefa；没有更新任何远端。
 - [ ] 历史上游维护者审核 PR #717；合入后重新审计双方 main 与当前私有集成分支，另行取得同步授权。
 
 ## 阻塞
@@ -260,10 +296,10 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ## 交接摘要
 
-- **最后完成到**：用户本轮指定的私有分支已含全部四个Director提交，合并为 `96bda53c`并推送核验；目标干净。
+- **最后完成到**：合并分支0298aefa已推送；用户后续要求的本地主目录main亦已快进到0298aefa。交接文档本地更新，业务无额外改动。
 - **下一步唯一动作**：如用户再次要求历史双main同步，先只读检查PR #717和三方最新Git差异，提出新方案与发布范围。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
-- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork，不改main，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
+- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork或远端main，不重启既有服务，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 
 ### 2026-09-26 · 故事板共享协调
 
