@@ -47,6 +47,7 @@ from novelvideo.api.routes import (  # noqa: E402
     chat,
     config,
     content,
+    director,
     episodes,
     files,
     freezone,
@@ -109,6 +110,7 @@ api_router.include_router(props.router, tags=["props"])
 api_router.include_router(episodes.router, tags=["episodes"])
 api_router.include_router(scripts.router, tags=["scripts"])
 api_router.include_router(content.router, tags=["content"])
+api_router.include_router(director.router, tags=["director"])
 api_router.include_router(story.router, tags=["story"])
 api_router.include_router(generation.router, tags=["generation"])
 api_router.include_router(tasks.router, tags=["tasks"])

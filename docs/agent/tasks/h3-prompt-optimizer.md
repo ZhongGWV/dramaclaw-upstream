@@ -21,6 +21,10 @@
 
 ## 协调与冲突
 
+- 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
+  三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
+  最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。
+
 2026-09-27：pending-code-checkpoint 在既有实现之后串行更新 test_invalid_generated_audio_reference_is_corrected_in_same_task 的旧输出格式断言，保留两次调用及错误修正验证；最终集成为当前会话，不改服务行为。
 与 text-node-liblib-visual-parity、local-stack 及 claims 中已有共享工作线双向协调；既有实现先完成，本线后串行集成；保留全部脏文件。只读认领不改归属。
 

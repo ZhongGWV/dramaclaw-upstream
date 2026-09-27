@@ -1,0 +1,75 @@
+[
+  {
+    "valid": true,
+    "value": {
+      "characters": [
+        {
+          "id": "char-1",
+          "names": [
+            "Lin"
+          ],
+          "appearance": "Blue shirt",
+          "motive": "Read letter",
+          "knowledge": "Key fits box",
+          "voice": "Quiet",
+          "arc": "Gains confidence"
+        }
+      ],
+      "relations": [],
+      "locations": [
+        {
+          "id": "location-1",
+          "name": "Room",
+          "description": "Table by window"
+        }
+      ],
+      "props": [
+        {
+          "id": "prop-1",
+          "name": "Box",
+          "description": "Contains glasses"
+        }
+      ],
+      "worldRules": []
+    }
+  },
+  {
+    "valid": false,
+    "value": {}
+  },
+  {
+    "valid": false,
+    "value": {
+      "characters": [
+        {
+          "id": "char-1",
+          "names": [
+            "Lin"
+          ],
+          "appearance": "Blue shirt",
+          "motive": "Read letter",
+          "knowledge": "Key fits box",
+          "voice": "Quiet",
+          "arc": "Gains confidence"
+        }
+      ],
+      "relations": [],
+      "locations": [
+        {
+          "id": "location-1",
+          "name": "Room",
+          "description": "Table by window"
+        }
+      ],
+      "props": [
+        {
+          "id": "prop-1",
+          "name": "Box",
+          "description": "Contains glasses"
+        }
+      ],
+      "worldRules": [],
+      "approved": true
+    }
+  }
+]

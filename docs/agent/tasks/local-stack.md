@@ -45,6 +45,8 @@
 
 - 2026-09-26 与 `text-node-liblib-visual-parity` 串行共享 local gateway and Freezone route：该线只修改 DeepSeek 文本模型选择与透传，由其集成；本线原有功能及写入边界保持不变。
 
+- 2026-09-26：tv-director-implementation持唯一锁串行集成`config.py`回环文本HTTP代理默认行为，发现真实模型请求受系统代理影响；本线现有wildcard shared claim允许，最终集成/测试归Director线。仅默认loopback绕代理，显式NEWAPI_TEXT_TRUST_ENV与远端保持原逻辑；不修改本线gateway/启动器/凭据及其他图像配置。
+
 - `src/novelvideo/generators/nanobanana_grid.py` 同时被 `origin/main` 修改。必须先看上游修复语义，
   再把“回环地址绕代理”移植到新基线，不能提交旧文件整段。
 - `config/local/community/` 是本机下载的原始参考工作流，不参与运行，已按精确路径忽略；只提交四份最小 API 模板。

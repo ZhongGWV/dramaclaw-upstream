@@ -27,6 +27,10 @@
 - `frontend/src/features/canvas/ui/NodeGenerationHistory.tsx`：独占，复用历史恢复回调。
 - `frontend/src/__tests__/storyboard-ui.test.tsx`、`frontend/src/__tests__/storyboard-sync.test.tsx`：独占，交互与持久化测试。
 ## 协调与冲突
+
+- 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
+  三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
+  最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。
 已在现有 scope 双向声明共享。其他工作线先完成，本线随后串行集成；当前会话为最终集成者。既有未提交 JSON 保留，不修改。新模块独占。
 ## 实施方案
 1. 纯投影与按画布分离的显示状态、排序分类元数据；接入所有保存/恢复路径。

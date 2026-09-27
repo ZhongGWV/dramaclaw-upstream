@@ -1,7 +1,7 @@
 version = 1
 slug = "sync-main-remotes"
 ledger = "docs/agent/tasks/sync-main-remotes.md"
-baseline = "1c8eaaa"
+baseline = "11f553e"
 
 [[claims]]
 path = "docs/agent/STATE.md"
@@ -21,13 +21,13 @@ reason = "Exact machine-readable import and conflict-resolution scope."
 [[claims]]
 path = "frontend/public/locales/vi/translation.json"
 mode = "shared"
-shared_with = ["*"]
+shared_with = ["*", "h3-prompt-optimizer", "storyboard-dual-view", "video-prompt-split"]
 reason = "Merge locale keys from both branch tips without dropping provider, H3 or Director labels."
 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/VideoNode.tsx"
 mode = "shared"
-shared_with = ["video-prompt-split", "*"]
+shared_with = ["*", "video-prompt-split"]
 reason = "Final integration of H3/Mixed, LibTV/depth/shot, and upstream validation/extension behavior."
 
 [[claims]]

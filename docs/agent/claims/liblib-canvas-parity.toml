@@ -328,7 +328,8 @@ reason = "LibTV group annotation styling and color preservation."
 
 [[claims]]
 path = "DESIGN.md"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["tv-director-implementation"]
 reason = "LibTV group annotation styling and color preservation."
 
 [[claims]]

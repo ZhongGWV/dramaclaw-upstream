@@ -1,13 +1,42 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：执行中
+**状态**：待验收
 **最后更新**：2026-09-27
-**基线**：`1c8eaaa`；本地当前分支与远端 0298aef 分叉 2/7，本轮仅 pull/push 同名分支。
+**基线**：`11f553e`；本地当前分支与远端 0298aef 分叉 2/7，本轮仅 pull/push 同名分支。
 **认领者**：`codex/pull-push-20260927`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 本轮增量：将已推送的 TV Director 提交同步到本分支
+
+用户最新要求是把 main 的四个已提交改动也交付到 `codex/sync-main-remotes`。
+当前 `main=zhonggwv/main=f057a867`，目标远端 `1fa3c1bc`；共同祖先 `e7b1fbce`，
+两边独有提交数为 4 / 46。目标干净 worktree 已安全快进，保留远端新增的 14 个画布/H3提交。
+本轮只更新私有 `ZhongGWV/dramaclaw` 的该分支，不修改任一 main，也不更新公开 fork 或 PR #717。
+PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`。
+
+范围与步骤：
+
+1. 完成方案、精确 scope、guard 后，以目标分支为第一父提交正常 merge `f057a867`；不用 cherry-pick、rebase、force。
+2. merge-tree 在最新远端上只报告五个文本冲突：STATE、本地栈台账、zh/en/vi翻译。
+   前两者保留双方事实并校正当前状态；翻译按键合并，禁止丢失 storyboard/H3 或 director 键。
+   其余 main 增量仅只读导入，精确路径见 claim；不重新实现或修改文学生成方法。
+3. 自动合并的 `config.py`、路由、DESIGN按双方 diff核对；不动既有画布行为。
+   incoming Director 的 scope若与目标既有范围重叠，仅协调双方claim/台账为串行共享，不夺取所有权。
+4. 验证：后端 Director/文本网关及 H3 聚焦测试；前端 Director/三语/故事板/H3/拆分聚焦测试；
+   `pnpm build`、Ruff、i18n、CE闭合、违禁词/EE/导入门禁、pre-commit、gitleaks、DCO与双方祖先关系。
+   发现语义冲突先补计划；不以旧测试结果当作本轮通过，不触发收费模型或浏览器生成。
+5. 带 DCO生成合并提交，显式推 `zhonggwv HEAD:refs/heads/codex/sync-main-remotes`；
+   ls-remote核对SHA，同时确认私有 main未移动。修正本分支upstream到同名远端，防误推 main。
+
+验收：原两边提交均为祖先，受影响集成验证通过，目标远端含全部四个 main 提交；主工作区与凭据不变。
+风险/回退：自动合并仍可能语义冲突；三语逐叶键比对双方，构建验证路由/类型。推送前可停止保留本地合并；
+如需要撤销，另行批准显式 revert，不重写历史。原“两个main同SHA”目标是历史任务，仍等待上游审核，
+本轮不据此扩大权限；未来同步不得以旧 `origin/main` 覆盖现已独立前进的私有 main。
+
+### 历史目标（本轮不执行）
 
 把 `origin/main` 与 `zhonggwv/main` 的两条分叉历史合并为同一个提交：保留上游 29 个独有提交、
 保留 fork 50 个独有提交，解决交叉热点后验证，并最终让两个远端的 `main` 指向完全相同的 SHA。
@@ -28,6 +57,14 @@
 - 图2所需 H3 提交 `0bb2410b`、`51573f75`、`ec79e9fe` 均在 fork 历史；上游的付款、媒体归档、引用校验和视频续写提交均在 `origin/main` 历史。
 
 ## 写入边界
+
+本轮手工业务改动仅三语 `translation.json` 的合并冲突；其他 main 路径只读导入。
+STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务可写项本轮不使用。
+
+集成门禁补充（实测后登记）：`.env.example` 独占追加两个可选配置说明，并校正与已合并实现一致的回环代理默认说明。
+`test_real_ce_repo_env_ratchet_is_clean` 报 `DIRECTOR_TEXT_MODEL` 和 `H3_PROMPT_SKILL_DIR` 未登记；
+采用注释模板记录真实含义，不扩大缺漏白名单、不改默认值、不改技能、模型或网关实现。
+回退只移除本轮注释，验证原有环境棘轮测试和零缺漏检查；这是提交集成所需的配置文档修复。
 
 | 路径 | 模式 | 作用 / 为什么必须改 |
 |---|---|---|
@@ -85,6 +122,18 @@
 
 ## 进展记录
 
+### 2026-09-27 · 当前分支合并收口
+
+已保留远端 0298aef 的 Director 历史以及本地 53ca321/1c8eaaa 的模型与引用修复。
+方案提交后校准精确基线到 11f553e，协调冲突合并双方共享集合；三语手工解冲突前 preflight 通过。
+三语逐叶键核对：本地 6616、远端 7145、合并后各 7205，双方所有键和值均保留，无重复键。
+218 项远端独有业务/文档文件与源提交完全一致，25 项本地独有业务/测试文件与本地源完全一致。
+无未解决冲突、无额外未暂存改动；diff check、guard（30 工作线/979 claims）与密钥扫描通过。
+Gitleaks 对本地三项待推送提交约 200KB、合并暂存约 2.74MB 均无泄露。本轮没有运行实现测试或生成请求。
+正常创建带 Signed-off-by 的合并提交，仅推 origin 的 codex/sync-main-remotes，最终提交和推送结果以 Git 核对。
+补充本机当前分支 fetch 映射，避免只取 main 导致同名远端缓存再次过期；不修改全局代理或其他分支。
+历史双 main 同步及 Director 产品验收仍是独立待办，本轮不扩大到部署、公开 PR 或其他分支。
+
 ### 2026-09-27 · 当前分支 pull/push 增量方案
 
 用户授权 pull 并 push 当前分支。当前 origin 指向用户仓库；fetch refspec 只配置 main，旧分支缓存过期。
@@ -98,6 +147,52 @@ merge-tree 确认 238 项远端增量，7 个冲突：STATE、H3/故事板/拆�
 本次只执行用户指定 Git 同步，不新增或运行实现测试、不触发生成；无运行配置、密钥或本地工作流改动。
 若推送期间远端再前进，重新取证并合并，绝不覆盖。推送前失败可保留合并现场继续处理。
 
+### 2026-09-26 · 本轮私有分支同步完成
+
+合并提交 `96bda53cb7ae6757d0d9c1613194053b28f3691f` 已正常推送到
+`zhonggwv/codex/sync-main-remotes`，ls-remote与本地HEAD完全一致；DCO与双方祖先检查通过。
+私有 `main` 仍为 `f057a8678de7faf0adbf82b6035b324821af53f8`，未改写；公开fork/PR未推送。
+本地该分支upstream已纠正为同名远端，避免默认push误发main；目标工作区干净、锁正常释放。
+主检出仍在main，仅有原受保护未跟踪资料，本轮未触碰。560后端/127前端与构建结果见下节。
+
+用户本轮“也提交到此分支”已完成。本台账仍留活动索引的“已阻塞”仅指历史双main同步等待上游审核，
+不表示此次私有分支交付失败；下一轮必须重新比较所有分支，不得执行旧交接中的直接覆盖命令。
+
+### 2026-09-26 · 本轮集成验证收口，准备推送私有分支
+
+`.env.example`仅补充两个可选变量注释及回环代理默认说明，无任何运行态/模型参数变更。
+补充回归15项全部通过；合计本轮后端560项、前端127项通过。前端安装严格使用已锁版本，
+首次离线安装因包元数据访问被沙箱DNS限制，授权网络后 frozen-lockfile 成功，锁文件无额外漂移。
+
+实际验证命令（Python使用现有受锁运行环境，`PYTHONPATH=src`指向本worktree）：
+
+- `python -m pytest tests/director tests/test_tv_director.py tests/test_newapi_text_gateway.py tests/test_h3_prompt_optimizer.py tests/test_h3_stream.py tests/test_local_gateway.py tests/test_image_generation_selection.py -q`：545通过。
+- `python -m pytest tests/test_env_config_ratchet.py tests/test_dependency_license_gate.py -q`：修复模板缺漏后15通过。
+- `pnpm exec vitest run src/__tests__/director-execution.test.tsx src/__tests__/director-richtext.test.tsx src/__tests__/director-ui.test.tsx src/__tests__/i18n/locales-json.test.ts src/__tests__/storyboard.test.ts src/__tests__/storyboard-ui.test.tsx src/__tests__/storyboard-sync.test.tsx src/__tests__/h3-stream.test.ts src/__tests__/video-prompt-split.test.ts src/__tests__/stores/canvas-store-video-split.test.ts src/__tests__/routes/project-first-liblib-import.test.tsx src/__tests__/components/layout/project-navigation-routes.test.ts`：12文件127通过。
+- `pnpm build`：通过，5537模块，只有大chunk警告；`ruff check .`：通过。
+- `python3 scripts/check_frontend_i18n.py`、`python3 scripts/check_backend_i18n.py`、`python scripts/check_ce_port_closure.py`：通过。
+- `python3 scripts/lint_banned_words.py`、`python3 scripts/lint_ee_terms.py`、`python3 scripts/lint_ce_imports.py`、`pre-commit run --all-files`：通过。
+- `git diff --check`、`git diff --cached --check`、`python3 scripts/agent_guard.py check`：通过；29条工作线与scope相容。
+
+Director业务目录相对 `f057a867` 无差异；只合入已有实现，三语和协调冲突已审计，没有修改原有H3、故事板行为。
+接下来生成DCO合并提交，复核双方祖先后只推私有同名分支；公开PR和两个main保持原样。
+
+### 2026-09-26 · 合并与聚焦验证
+
+五个文本冲突已保留双方解决，config.py保留Director回环代理与目标Krea编辑模型两个不重叠增量。
+三语分别逐叶验证：6556个原键值不变，合入main的589个新增键值，合计7145，无重复键。
+Ruff、前端i18n零命中、后端474/29、11个CE端口、违禁词/EE/导入与pre-commit全通过。
+后端Director/文本/H3/本地网关聚焦545通过；前端12文件127通过；Node22 + pnpm11.5生产构建通过，
+仅既有大chunk警告。额外环境/依赖门禁14通过1失败，确认为上述两个缺少模板注释的配置名，已先补方案。
+全量测试和真实付费模型/Windows本轮未跑；不将集成通过表述为Director功能/文学质量全部完成。
+
+### 2026-09-26 · TV Director 增量同步方案门
+
+方案与222条精确只读/协调导入范围已提交为 `906355d7`；三语共享互认及预检成功。
+此后仅按已预演的五个冲突推进，不扩大至其他业务功能。
+
+只读核对本地与远端、公开PR归属并安全快进干净目标工作区到 `1fa3c1bc`；guard为27工作线/597claims，无锁。
+预演确认五个冲突，源 main 已推送，不是待提交脏文件。下一步锁内预检、正常合并和集成验证；尚未声称完成。
 
 ### 2026-09-24 · 上游 PR 可合并但等待必需审核
 
@@ -180,20 +275,20 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 - [x] 完成 claim 与共享互认后 acquire/preflight。
 - [x] 执行合并、解决文本与语义冲突并完成全量验证。
-- [ ] 上游维护者审核并合入 PR #717；随后 fetch `origin/main`，把它的最终 SHA 快进推到 `zhonggwv/main`。
+- [x] 用户本轮要求的 TV Director 四个 main 提交已合并、验证并推送私有 `codex/sync-main-remotes`。
+- [ ] 历史上游维护者审核 PR #717；合入后重新审计双方 main 与当前私有集成分支，另行取得同步授权。
 
 ## 阻塞
 
-`dramaclaw/dramaclaw` 对当前账号只读；PR #717 虽可合并但必须由上游维护者审核，且当前账号无权开启
-auto-merge。阻塞解除条件：PR 合入；不要在此之前单独移动 `zhonggwv/main`。
+本轮私有分支交付无阻塞。历史 `dramaclaw/dramaclaw` 审核/合入权限仍在上游维护者，PR #717仍OPEN；
+私有main已经按后续用户请求独立前进。阻塞解除也不代表获准把私有新增Director及素材发布到公开fork。
 
 ## 交接摘要
 
-- **最后完成到**：合并提交 `a2418a65` 全量验证通过并已推送到两个 PR 集成分支；upstream PR #717 等审核。
-- **下一步唯一动作**：确认 PR #717 已合入，fetch origin，验证其最终 main 含 `a2418a65`，再执行
-  `git push zhonggwv origin/main:main` 并用两次 `ls-remote` 核对同 SHA。
+- **最后完成到**：用户本轮指定的私有分支已含全部四个Director提交，合并为 `96bda53c`并推送核验；目标干净。
+- **下一步唯一动作**：如用户再次要求历史双main同步，先只读检查PR #717和三方最新Git差异，提出新方案与发布范围。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
-- **不要动这些文件 / 决策**：不强推、不 rebase、不提前移动 fork main，不把主工作区未跟踪资料复制进来。
+- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork，不改main，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 
 ### 2026-09-26 · 故事板共享协调
 

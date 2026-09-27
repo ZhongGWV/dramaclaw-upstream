@@ -4,9 +4,11 @@
 """
 
 import os
+from ipaddress import ip_address
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 from novelvideo.official_defaults import (
@@ -165,8 +167,9 @@ def _get_newapi_text_model_profile(model_name: str):
 def _newapi_text_http_client_factory(
     *,
     timeout_seconds: float,
+    trust_env_default: bool = True,
 ) -> Any:
-    trust_env = _env_bool("NEWAPI_TEXT_TRUST_ENV", True)
+    trust_env = _env_bool("NEWAPI_TEXT_TRUST_ENV", trust_env_default)
 
     def factory():
         import httpx
@@ -190,8 +193,19 @@ def _newapi_text_openai_provider(
 
     class _LifecycleManagedOpenAIProvider(OpenAIProvider):
         def __init__(self) -> None:
+            # A desktop proxy may intercept localhost and return an empty 502.
+            # Only loopback defaults to direct transport; remote deployments
+            # and an explicit NEWAPI_TEXT_TRUST_ENV keep their existing policy.
+            hostname = urlsplit(base_url).hostname or ""
+            loopback = hostname == "localhost"
+            try:
+                loopback = loopback or ip_address(hostname).is_loopback
+            except ValueError:
+                pass
+            factory_options = {"trust_env_default": False} if loopback else {}
             http_client_factory = _newapi_text_http_client_factory(
                 timeout_seconds=timeout_seconds,
+                **factory_options,
             )
             http_client = http_client_factory()
             super().__init__(
