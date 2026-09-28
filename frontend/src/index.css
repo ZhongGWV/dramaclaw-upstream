@@ -868,7 +868,7 @@ body.canvas-node-drag-focus [role="listbox"] {
 }
 
 /* 低缩放档节点外壳（withLodShell）。刻意朴素：整块画布此档下每帧的渲染树遍历
- * 成本与元素数量成正比，外壳保持每节点 ≤4 个元素。 */
+ * 成本与元素数量成正比；图片/视频仅额外保留一行标题。 */
 .dc-lod-shell {
   position: relative;
   overflow: hidden;
@@ -881,6 +881,25 @@ body.canvas-node-drag-focus [role="listbox"] {
 
 .dc-lod-shell--selected {
   outline: 3px solid rgba(96, 165, 250, 0.9);
+}
+
+/* The shell keeps its clipped media body; this sibling sits outside it so the
+   title matches the full node's floating header without changing RF geometry. */
+.dc-lod-shell__title {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  z-index: 10;
+  max-width: 60%;
+  overflow: hidden;
+  color: rgb(var(--text-rgb) / 0.95);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 
 .dc-lod-shell__thumb {

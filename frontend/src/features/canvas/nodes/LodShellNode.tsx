@@ -27,6 +27,7 @@ import {
   type CSSProperties,
 } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { useTranslation } from 'react-i18next';
 
 import {
   LOD_SHELL_EXEMPT_TYPES,
@@ -56,7 +57,8 @@ import {
   nodeHasSourceHandle,
   nodeHasTargetHandle,
 } from '@/features/canvas/domain/nodeRegistry';
-import type { CanvasNodeType } from '@/features/canvas/domain/canvasNodes';
+import type { CanvasNodeData, CanvasNodeType } from '@/features/canvas/domain/canvasNodes';
+import { localizeNodeDisplayName } from '@/features/canvas/domain/nodeDisplay';
 
 /**
  * 未测量且未显式设尺寸的节点（首屏恢复在低缩放档、且从未被渲染过）的兜底尺寸。
@@ -90,6 +92,7 @@ const DEFAULT_SHELL_SIZE = { width: 400, height: 300 };
 const SHELL_TEXT_MAX_CHARS = 1200;
 
 type ShellData = {
+  displayName?: string;
   imageUrl?: string | null;
   previewImageUrl?: string | null;
   posterUrl?: string | null;
@@ -103,6 +106,16 @@ type ShellData = {
   /** Text body of a text node — painted by the shell, see `.dc-lod-shell__text`. */
   content?: unknown;
 };
+
+const TITLED_MEDIA_SHELL_TYPES = new Set([
+  'imageNode', 'imageGenNode', 'exportImageNode', 'uploadNode', 'videoNode',
+]);
+
+function LodMediaTitle({ type, data }: { type: CanvasNodeType; data: ShellData }) {
+  const { t } = useTranslation();
+  const title = localizeNodeDisplayName(type, data as Partial<CanvasNodeData>, t);
+  return <span className="dc-lod-shell__title" title={title}>{title}</span>;
+}
 
 /**
  * shell 里的图喂哪一档变体，按这一格实际要多少设备像素来挑。
@@ -201,33 +214,39 @@ function LodShell({ type, id, data, selected, width, height }: {
       ? data.content.slice(0, SHELL_TEXT_MAX_CHARS)
       : null;
 
+  const showMediaTitle = TITLED_MEDIA_SHELL_TYPES.has(type) ||
+    (type === 'liblibMediaNode' && (data.mediaKind === 'image' || data.mediaKind === 'video'));
+
   const style: CSSProperties = { width: w, height: h };
 
   return (
-    <div className={`dc-lod-shell${selected ? ' dc-lod-shell--selected' : ''}`} style={style}>
-      {nodeHasTargetHandle(type as CanvasNodeType) && (
-        <Handle type="target" position={Position.Left} id="target" />
-      )}
-      {nodeHasSourceHandle(type as CanvasNodeType) && (
-        <Handle type="source" position={Position.Right} id="source" />
-      )}
-      {isLiblibVideo && data.posterUrl ? (
-        <img src={data.posterUrl} alt="" loading="lazy" draggable={false} className="dc-lod-shell__thumb" />
-      ) : isLiblibVideo && data.videoUrl ? (
-        <video
-          src={data.videoUrl}
-          muted
-          playsInline
-          preload="metadata"
-          className="liblib-media-node__lod-video"
-        />
-      ) : imageSrc ? (
-        <img src={imageSrc} alt="" loading={type === 'liblibMediaNode' ? 'lazy' : undefined} draggable={false} className="dc-lod-shell__thumb" />
-      ) : shellText ? (
-        <div className="dc-lod-shell__text">{shellText}</div>
-      ) : null}
-      {busy ? <span className="dc-lod-shell__busy" data-node-id={id} /> : null}
-    </div>
+    <>
+      {showMediaTitle && <LodMediaTitle type={type as CanvasNodeType} data={data} />}
+      <div className={`dc-lod-shell${selected ? ' dc-lod-shell--selected' : ''}`} style={style}>
+        {nodeHasTargetHandle(type as CanvasNodeType) && (
+          <Handle type="target" position={Position.Left} id="target" />
+        )}
+        {nodeHasSourceHandle(type as CanvasNodeType) && (
+          <Handle type="source" position={Position.Right} id="source" />
+        )}
+        {isLiblibVideo && data.posterUrl ? (
+          <img src={data.posterUrl} alt="" loading="lazy" draggable={false} className="dc-lod-shell__thumb" />
+        ) : isLiblibVideo && data.videoUrl ? (
+          <video
+            src={data.videoUrl}
+            muted
+            playsInline
+            preload="metadata"
+            className="liblib-media-node__lod-video"
+          />
+        ) : imageSrc ? (
+          <img src={imageSrc} alt="" loading={type === 'liblibMediaNode' ? 'lazy' : undefined} draggable={false} className="dc-lod-shell__thumb" />
+        ) : shellText ? (
+          <div className="dc-lod-shell__text">{shellText}</div>
+        ) : null}
+        {busy ? <span className="dc-lod-shell__busy" data-node-id={id} /> : null}
+      </div>
+    </>
   );
 }
 
