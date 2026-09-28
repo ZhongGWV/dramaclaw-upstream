@@ -66,6 +66,21 @@ async def dispatch_writing(
             work_id, run_id, token, error_code="CANCELLED_BEFORE_SEND", sent=False
         )
     try:
+        parameters = snapshot["parameters"]
+        repository.progress(work_id, run_id, token, "method.loaded", {
+            "key": parameters.get("skill_key"),
+            "version": parameters.get("skill_version"),
+            "revision": parameters.get("skill_revision"),
+            "references": [ref["path"] for ref in (snapshot.get("contextManifest", {}).get("methodBinding") or {}).get("selectedReferences", [])],
+        })
+        repository.progress(work_id, run_id, token, "model.started", {
+            "model": parameters["model_name"],
+            "stream": bool(parameters.get("stream")),
+        })
+
+        async def on_delta(text: str) -> None:
+            repository.progress(work_id, run_id, token, "text.delta", {"text": text})
+
         call = model_call or (
             run_bounded_outline_review_model
             if snapshot.get("purpose") == "review" and snapshot["docKey"] == "outline"
@@ -78,11 +93,11 @@ async def dispatch_writing(
             else run_bounded_writing_model
         )
         async with asyncio.timeout(snapshot["limits"]["timeoutSeconds"]):
-            output = await call(
-                snapshot["prompt"],
-                snapshot["parameters"]["model_name"],
-                snapshot["limits"]["maxOutputTokens"],
-            )
+            args = (snapshot["prompt"], parameters["model_name"], snapshot["limits"]["maxOutputTokens"])
+            if model_call is None and parameters.get("stream"):
+                output = await run_bounded_writing_model(*args, on_delta=on_delta)
+            else:
+                output = await call(*args)
     except asyncio.CancelledError:
         repository.complete(work_id, run_id, token, error_code="DISPATCH_INTERRUPTED")
         raise

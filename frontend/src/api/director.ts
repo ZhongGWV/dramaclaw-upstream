@@ -3,6 +3,26 @@
 /** Every visible Director parameter has one typed API field and one server-side hash. */
 import { apiCall } from './client';
 
+export type DirectorMediaKind = 'characters' | 'scenes' | 'props';
+export type DirectorMediaSource = { workRevision: number; documentVersion: number; kind: DirectorMediaKind; style: string; assets: Array<{ id: string; name: string; text: string }> };
+export type DirectorMediaIntent = { id: string; workId: string; status: 'prepared' | 'submitting' | 'accepted' | 'unknown' | 'cancelled'; createdAt: number;
+  request: { batchId?: string; source: { kind: DirectorMediaKind; documentVersion: number; asset: { id: string; name: string; text: string } }; modelLabel: string; actual: Record<string, unknown> };
+  result: { task_key?: string; task_type?: string; job_id?: string } };
+export type DirectorMediaPrepare = { intent_id: string; work_revision: number; document_version: number; kind: DirectorMediaKind; asset_id: string; prompt: string; model_id: string; aspect_ratio: string; image_size: string; quality: string; model_params: Record<string, unknown> };
+const mediaPath = (project: string, work: string) => `projects/${encodeURIComponent(project)}/director/works/${encodeURIComponent(work)}/media`;
+export const getDirectorMediaSource = (project: string, work: string, kind: DirectorMediaKind) => apiCall<DirectorMediaSource>(`${mediaPath(project, work)}/source/${kind}`);
+export const listDirectorMedia = (project: string, work: string) => apiCall<DirectorMediaIntent[]>(mediaPath(project, work));
+export const prepareDirectorMedia = (project: string, work: string, body: DirectorMediaPrepare) => apiCall<DirectorMediaIntent>(`${mediaPath(project, work)}/prepare`, { method: 'POST', json: body });
+export const confirmDirectorMedia = (project: string, work: string, id: string) => apiCall<DirectorMediaIntent>(`${mediaPath(project, work)}/${encodeURIComponent(id)}/confirm`, { method: 'POST', json: { approved: true, acknowledge_unknown_cost: true } });
+export type DirectorMediaNode = { id: string; batch_id: string; ordinal: number; x: number; y: number; version: number; intent: DirectorMediaIntent };
+export type DirectorMediaBatch = { id: string; status: 'planned' | 'approved' | 'cancelled'; selectedIds: string[]; nodes: DirectorMediaNode[] };
+export type DirectorBatchPrepare = Omit<DirectorMediaPrepare, 'intent_id' | 'asset_id' | 'prompt'> & { id: string; prompts: Record<string, string> };
+export const listDirectorBatches = (project: string, work: string) => apiCall<DirectorMediaBatch[]>(`${mediaPath(project, work)}/batches`);
+export const prepareDirectorBatch = (project: string, work: string, body: DirectorBatchPrepare) => apiCall<DirectorMediaBatch>(`${mediaPath(project, work)}/batches`, { method: 'POST', json: body });
+export const approveDirectorBatch = (project: string, work: string, id: string, selectedIds: string[]) => apiCall<DirectorMediaBatch>(`${mediaPath(project, work)}/batches/${id}/approve`, { method: 'POST', json: { selected_ids: selectedIds, acknowledge_unknown_cost: true } });
+export const cancelDirectorBatch = (project: string, work: string, id: string) => apiCall<DirectorMediaBatch>(`${mediaPath(project, work)}/batches/${id}/cancel`, { method: 'POST' });
+export const moveDirectorMediaNode = (project: string, work: string, node: DirectorMediaNode, x: number, y: number) => apiCall<Omit<DirectorMediaNode, 'intent'>>(`${mediaPath(project, work)}/nodes/${node.id}`, { method: 'PATCH', json: { version: node.version, x, y } });
+
 export type DirectorMode = 'original' | 'adaptation';
 export type AdaptDirection = 'condense' | 'expand' | 'conflict' | 'hook';
 export type DirectorDocumentKind = 'outline' | 'characters' | 'scenes' | 'props' | 'episode';
@@ -197,6 +217,23 @@ export async function saveDirectorDraft(project: string, command: ReturnType<typ
   return reply.result;
 }
 
+export function manualDocumentCommand(workId: string, workRevision: number, document: DirectorDocument, text: string) {
+  if (!document.document_id) throw new Error('CANONICAL_DOCUMENT_REQUIRED');
+  const intent = crypto.randomUUID();
+  return { schemaVersion: 2 as const, commandId: intent, clientRequestId: intent, sessionId: `editor-${document.document_id}`,
+    workId, expected: { workRevision, documentVersions: { [document.document_id]: document.version } },
+    payload: { type: 'document.commitManual' as const, documentId: document.document_id, text } };
+}
+
+export async function commitManualDocument(project: string, command: ReturnType<typeof manualDocumentCommand>) {
+  const reply = await apiCall<{ workRevision: number; result: { docKey: string; documentId: string; version: number; content: string; contentHash: string; semanticInputHash: string; createdAt: number } }>(
+    `projects/${encodeURIComponent(project)}/director/v2/documents/commands`, { method: 'POST', json: command });
+  const value = reply.result;
+  return { workRevision: reply.workRevision, document: { doc_key: value.docKey, document_id: value.documentId,
+    version: value.version, content: value.content, content_hash: value.contentHash, semantic_input_hash: value.semanticInputHash,
+    origin: 'user', created_at: value.createdAt, schema_version: 2 } satisfies DirectorDocument };
+}
+
 export interface GenerateDirectorDraft {
   kind: DirectorDocumentKind;
   episode_ordinal?: number;
@@ -219,6 +256,11 @@ export interface DirectorReviewCheck {
   evidence: Array<{ inputId: string; quote: string; start: number; end: number; quoteHash: string }>;
 }
 
+export type EpisodeFactAudit = { status: 'FAIL' | 'UNAVAILABLE' | 'REVIEWED'; version: string;
+  coverage: { expected: number; valid: number; semanticCompletenessVerified: false };
+  issues: Array<{ code: string; unitId?: string }>;
+  units: Array<{ id: string; inputId: string; text: string; disposition: string; explanation: string; valid: boolean; requiresHumanCheck: boolean;
+    facts: Array<{ subject: string; relation: string; value: string; before: string; after: string; layer: string; status: string; explanation: string; evidence: Array<{ inputId: string; quote: string; start: number; end: number }> }> }> };
 export interface DirectorQualityReport {
   doc_key: string;
   version: number;
@@ -230,7 +272,7 @@ export interface DirectorQualityReport {
   productionReady: false;
   requiredHumanChecks: string[];
   review: null | { id: string; reportHash: string; status: 'PASS' | 'FAIL' | 'UNAVAILABLE'; reviewerRunId: string;
-    checks: DirectorReviewCheck[] };
+    checks: DirectorReviewCheck[]; episodeFacts?: EpisodeFactAudit | null };
   retainedValidation?: null | { status: 'PASS' | 'FAIL' | 'UNAVAILABLE'; sourceReportId: string; checks: DirectorReviewCheck[] };
 }
 

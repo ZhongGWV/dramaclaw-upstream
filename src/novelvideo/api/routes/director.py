@@ -42,6 +42,8 @@ from novelvideo.director.revisions import RevisionService
 from novelvideo.director.schemas.revisions import RevisionPreviewCommand, CommitRevision
 from novelvideo.director.schemas.planning import WorkflowCommand
 from novelvideo.director.workflow import WorkflowService, dispatch_planning
+from novelvideo.director.media import MediaPrepare, MediaRepository
+from novelvideo.director.media_batch import BatchApproval, BatchPrepare, MediaBatchRepository, NodePosition
 from novelvideo.project_context import require_project_home_node, resolve_project_context
 
 router = APIRouter()
@@ -73,6 +75,100 @@ async def _store(project: str, user: dict, role: str) -> DirectorStore:
 async def get_director_model(project: str, user: dict = Depends(get_api_user)):
     await _store(project, user, "viewer")
     return _result(director_model_contract)
+
+
+@router.get("/projects/{project}/director/works/{work_id}/media", tags=["director"])
+async def director_media(project: str, work_id: str, user: dict = Depends(get_api_user)):
+    repository = MediaRepository(await _store(project, user, "viewer"))
+    return _result(lambda: repository.list(work_id))
+
+
+@router.get("/projects/{project}/director/works/{work_id}/media/source/{kind}", tags=["director"])
+async def director_media_source(project: str, work_id: str, kind: str, user: dict = Depends(get_api_user)):
+    repository = MediaRepository(await _store(project, user, "viewer"))
+    return _result(lambda: repository.source(work_id, kind))
+
+
+@router.post("/projects/{project}/director/works/{work_id}/media/prepare", tags=["director"])
+async def prepare_director_media(project: str, work_id: str, body: MediaPrepare, user: dict = Depends(get_api_user)):
+    from .freezone import freezone_image_models
+
+    repository = MediaRepository(await _store(project, user, "editor"))
+    catalog = (await freezone_image_models(project, user))["data"]
+    return _result(lambda: repository.prepare(_execution_actor(user), work_id, body, catalog))
+
+
+class MediaApproval(BaseModel):
+    approved: bool
+    acknowledge_unknown_cost: bool
+
+
+@router.get("/projects/{project}/director/works/{work_id}/media/batches", tags=["director"])
+async def director_media_batches(project: str, work_id: str, user: dict = Depends(get_api_user)):
+    repository = MediaBatchRepository(MediaRepository(await _store(project, user, "viewer")))
+    return _result(lambda: repository.list(work_id))
+
+
+@router.post("/projects/{project}/director/works/{work_id}/media/batches", tags=["director"])
+async def prepare_director_batch(project: str, work_id: str, body: BatchPrepare, user: dict = Depends(get_api_user)):
+    from .freezone import freezone_image_models
+
+    repository = MediaBatchRepository(MediaRepository(await _store(project, user, "editor")))
+    catalog = (await freezone_image_models(project, user))["data"]
+    return _result(lambda: repository.prepare(_execution_actor(user), work_id, body, catalog))
+
+
+@router.post("/projects/{project}/director/works/{work_id}/media/batches/{batch_id}/approve", tags=["director"])
+async def approve_director_batch(project: str, work_id: str, batch_id: str, body: BatchApproval, user: dict = Depends(get_api_user)):
+    from .freezone import freezone_image_models
+
+    repository = MediaBatchRepository(MediaRepository(await _store(project, user, "editor")))
+    catalog = (await freezone_image_models(project, user))["data"]
+    batch = _result(lambda: repository.approve(_execution_actor(user), work_id, batch_id, body, catalog))["data"]
+    for intent_id in batch["selectedIds"]:
+        # Enqueue only; generation itself belongs to the existing task worker.
+        # A crash leaves prepared entries resumable, submitting entries unknown.
+        await confirm_director_media(project, work_id, intent_id,
+                                     MediaApproval(approved=True, acknowledge_unknown_cost=True), user)
+    return {"ok": True, "data": next(b for b in repository.list(work_id) if b["id"] == batch_id)}
+
+
+@router.post("/projects/{project}/director/works/{work_id}/media/batches/{batch_id}/cancel", tags=["director"])
+async def cancel_director_batch(project: str, work_id: str, batch_id: str, user: dict = Depends(get_api_user)):
+    repository = MediaBatchRepository(MediaRepository(await _store(project, user, "editor")))
+    return _result(lambda: repository.cancel(_execution_actor(user), work_id, batch_id))
+
+
+@router.patch("/projects/{project}/director/works/{work_id}/media/nodes/{node_id}", tags=["director"])
+async def move_director_media_node(project: str, work_id: str, node_id: str, body: NodePosition, user: dict = Depends(get_api_user)):
+    repository = MediaBatchRepository(MediaRepository(await _store(project, user, "editor")))
+    return _result(lambda: repository.move(work_id, node_id, body))
+
+
+@router.post("/projects/{project}/director/works/{work_id}/media/{intent_id}/confirm", tags=["director"])
+async def confirm_director_media(project: str, work_id: str, intent_id: str, body: MediaApproval,
+                                 user: dict = Depends(get_api_user)):
+    from .freezone import freezone_gen, freezone_image_models
+    from novelvideo.api.schemas import FreezoneGenRequest
+
+    repository = MediaRepository(await _store(project, user, "editor"))
+    if not body.approved or not body.acknowledge_unknown_cost:
+        raise HTTPException(422, {"code": "MEDIA_APPROVAL_REQUIRED"})
+    catalog = (await freezone_image_models(project, user))["data"]
+    intent, claimed = _result(lambda: repository.claim(_execution_actor(user), work_id, intent_id, catalog))["data"]
+    if not claimed:
+        return {"ok": True, "data": intent}
+    try:
+        response = await freezone_gen(project, FreezoneGenRequest.model_validate(intent["request"]["actual"]), user)
+        if isinstance(response, BaseModel):
+            response = response.model_dump()
+        result = response["data"]
+        if not result.get("task_key") or not result.get("job_id"):
+            raise ValueError("MEDIA_TASK_RECEIPT_INVALID")
+    except Exception:
+        # Even an HTTP error may follow an accepted job. Never mint a retry here.
+        return {"ok": True, "data": repository.finish(work_id, intent_id, None)}
+    return {"ok": True, "data": repository.finish(work_id, intent_id, result)}
 
 
 @router.get("/projects/{project}/director/works", tags=["director"])

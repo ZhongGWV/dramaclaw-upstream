@@ -122,6 +122,15 @@ def root_for(runtime):
 def output_for(runtime, stage):
     value = sample(stage)
     root = root_for(runtime)
+    if stage == "M08":
+        for prop in value["props"]:
+            prop["firstEpisodeId"] = root["episodes"][0]["id"]
+            prop["keyEpisodeIds"] = [ep["id"] for ep in root["episodes"]]
+        for location in value["locations"]:
+            location["keyEpisodeIds"] = [ep["id"] for ep in root["episodes"]]
+        for character in value["characters"]:
+            character["firstEpisodeId"] = root["episodes"][0]["id"]
+            character["keyEpisodeIds"] = [ep["id"] for ep in root["episodes"]]
     if stage == "M07":
         value["segments"][0]["episodeIds"] = [ep["id"] for ep in root["episodes"]]
         value["whyWatch"] = [

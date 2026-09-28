@@ -3,11 +3,11 @@
 PACKAGES = {
     "M11": (
         "episode-writing",
-        "e8ed7e5a94fea8d51319b2ae51ad072092f405288367995858c529e3796481b3",
+        "593f2334e8a1a484e50aae77235a5a4822ff1d902353bb8a433bde49718ad806",
     ),
     "M12": (
         "episode-review",
-        "29b80d74353f891f0b0e70664cf9b6eac401f0af647268b0fd4a1e2e58476bc0",
+        "09558ed2594316480d59ff06846190e97ea2846e2192f722d5bf0b7e4469212f",
     ),
     "M03": (
         "direction-options",
@@ -19,7 +19,7 @@ PACKAGES = {
     ),
     "M08": (
         "character-bible",
-        "365e6878703f546320ab6c671e116af02186e56c3b1d3d8db4a11e57278309ef",
+        "d0d4a8ff25e5c678b618ee95a81693b3002b54c312250847a1a263ec909ddf1b",
     ),
     "M09": (
         "episode-directory",

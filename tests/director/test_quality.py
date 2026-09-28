@@ -33,6 +33,10 @@ from novelvideo.director.store import DirectorInvalidState, DirectorStore
 
 def response(frozen, *, failed=False):
     return {
+        **({"episodeFacts": {"units": [{"unitId": unit["id"],
+             "disposition": "METADATA" if unit["structural"] else "NO_FACT",
+             "explanation": "Synthetic transport fixture: each non-structural unit still requires a human attestation.",
+             "facts": []} for unit in frozen["factUnits"]]}} if frozen.get("factAuditVersion") else {}),
         "schemaVersion": 2,
         "subjectHash": frozen["contentHash"],
         "checks": [
@@ -372,6 +376,11 @@ def test_version_bound_manual_review_finalizes_exactly_once_and_preserves_bounda
     store, work = quality
     cmd = reviewed_command(store, work["id"], unavailable=unavailable)
     service = QualityService(store)
+    if unavailable:
+        assert "EPISODE_FACTS_INCOMPLETE" in service.report(work["id"], 1)["blockers"]
+        with pytest.raises(ExecutionFault, match="QUALITY_BLOCKED"):
+            service.finalize("actor", cmd)
+        return
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(lambda _: service.finalize("actor", cmd), range(2)))
     assert results[0] == results[1]
@@ -413,7 +422,7 @@ def test_stale_or_incomplete_confirmation_never_commits(quality, change):
     if change == "wrong_hash":
         wire["reportHash"] = "f" * 64
     if change == "wrong_conclusion":
-        wire["humanChecks"][-1]["conclusion"] = "verified"
+        next(item for item in wire["humanChecks"] if item["checkId"] == "production_unverified")["conclusion"] = "verified"
     with pytest.raises(ExecutionFault):
         QualityService(store).finalize("actor", FinalizeCommand.from_wire(wire))
     with store._connect() as db:

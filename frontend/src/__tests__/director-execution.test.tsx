@@ -27,7 +27,7 @@ vi.mock('@/api/director', async (original) => ({
 vi.mock('@/api/director-execution', async (original) => ({
   ...await original<typeof import('@/api/director-execution')>(),
   getExecutionCapability: vi.fn(), listExecutionRuns: vi.fn(), sendExecutionCommand: vi.fn(), getRetainedResult: vi.fn(),
-  getPlanningState: vi.fn(), sendPlanningCommand: vi.fn(),
+  getPlanningState: vi.fn(), sendPlanningCommand: vi.fn(), getExecutionEvents: vi.fn(),
 }));
 
 const capabilities = {
@@ -69,6 +69,7 @@ beforeEach(() => {
   window.localStorage.clear();
   vi.mocked(executionApi.getExecutionCapability).mockResolvedValue(capabilities);
   vi.mocked(executionApi.listExecutionRuns).mockResolvedValue([]);
+  vi.mocked(executionApi.getExecutionEvents).mockResolvedValue({ schemaVersion: 2, events: [], nextSeq: 0 });
   vi.mocked(executionApi.getPlanningState).mockResolvedValue({ workId: work.id, revision: 1, phase: 'READY', checkpoint: null, budgets: [], artifacts: {}, errorCode: null });
   vi.mocked(directorApi.getDirectorModelContract).mockResolvedValue(capabilities.model);
   vi.mocked(directorApi.listDirectorWorks).mockResolvedValue([work]);
@@ -176,6 +177,22 @@ describe('version-pinned private editor drafts', () => {
     content: 'Original scene.', origin: 'user', created_at: 1 };
   const base = { project: 'synthetic', work, initial, currentVersion: 1, readOnly: false, busy: false, error: '', label: 'outline',
     onClose: vi.fn(), onSave: vi.fn(), onPropose: vi.fn() };
+
+  it('keeps unsaved protection when a stream makes the open editor read-only', async () => {
+    const close = vi.fn();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const ui = render(<DirectorDocumentEditor {...base} onClose={close} companionOpen />);
+    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: 'director.surface.sourceView' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'director.documentBody' }), { target: { value: 'Unsaved line.' } });
+    ui.rerender(<DirectorDocumentEditor {...base} onClose={close} readOnly companionOpen />);
+    expect(screen.getByRole('dialog', { name: 'director.editor' })).toHaveAttribute('aria-modal', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'director.close' }));
+    expect(confirm).toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox', { name: 'director.documentBody' })).toHaveValue('Unsaved line.');
+    confirm.mockRestore();
+  });
 
   it('preserves input and pinned version when polling brings in a newer document', async () => {
     const save = vi.fn();
@@ -375,6 +392,14 @@ describe('canonical document upgrade', () => {
 });
 
 describe('execution controls', () => {
+  it('labels prop runs with the existing translated document name, preserving submitted keys', () => {
+    const props = { ...run('succeeded'), docKey: 'props', parameters: { doc_key: 'props', output_contract: 'prop-design/1.0.0' } };
+    render(<ExecutionHistory runs={[props]} busy={false} onAction={vi.fn()} />);
+    expect(screen.getByText('director.run · director.section.props')).toBeVisible();
+    expect(screen.getByText('prop-design/1.0.0')).toBeInTheDocument();
+    expect(props.parameters.doc_key).toBe('props');
+  });
+
   it('never presents an unknown billable task as retryable or free', () => {
     const action = vi.fn();
     render(<ExecutionHistory runs={[run('unknown')]} busy={false} onAction={action} />);
@@ -458,6 +483,21 @@ describe('studio uses durable authorization', () => {
     expect(executionApi.sendExecutionCommand).not.toHaveBeenCalled();
     expect(executionApi.getRetainedResult).toHaveBeenCalledWith('synthetic', work.id, retained.id);
   });
+  it('shows nested scene parameters literally and cancels without granting approval', async () => {
+    const root = { episodes: [{ id: 'episode-a', deliveryLabel: 'EP02' }] };
+    vi.mocked(executionApi.sendExecutionCommand).mockResolvedValueOnce({ ...quoted, docKey: 'scenes', parameters: { ...quoted.parameters, sceneRoot: root, response_format: { type: 'json_object' } } });
+    render(<DirectorStudio project="synthetic" />);
+    const button = await screen.findByRole('button', { name: 'director.send' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    fireEvent.click(button);
+    await screen.findByRole('dialog', { name: 'director.parameterReview' });
+    expect(screen.getByText(JSON.stringify(root))).toBeVisible();
+    expect(screen.getByText('{"type":"json_object"}')).toBeVisible();
+    expect(screen.queryByText('[object Object]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'director.cancel' }));
+    expect(executionApi.sendExecutionCommand).toHaveBeenCalledTimes(1);
+  });
+
   it('previews the actual limit and requires consent; failed transport reuses the same approval intent', async () => {
     const send = vi.mocked(executionApi.sendExecutionCommand);
     send.mockResolvedValueOnce(quoted).mockRejectedValueOnce(new Error('Temporary connection loss')).mockResolvedValueOnce(run('queued'));

@@ -309,6 +309,7 @@ async def test_document_api_checks_project_permission_and_strict_intent(
         )
         assert written.status_code == 200 and roles[-1] == "editor"
         assert written.json()["data"]["result"]["version"] == 1
+        assert written.json()["data"]["workRevision"] == 2
         replay = await client.post(
             "/projects/allowed/director/v2/documents/commands", json=payload
         )
