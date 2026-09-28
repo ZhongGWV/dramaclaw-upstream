@@ -2,7 +2,8 @@
 
 **状态**：待验收
 **最后更新**：2026-09-27
-**基线**：`762591d`；`codex/sync-main-remotes`；本轮只修分组标题/颜色，早期提交和取证记录保留如下
+**基线**：`4c9dee4`；`codex/sync-main-remotes`；本轮实现视频节点封面预览，早期提交和取证记录保留如下
+**认领者**：`codex/video-poster-20260927`
 **相关文档**：`docs/guides/canvas-architecture.md`（我方画布功能架构与扩展边界）、
 `docs/guides/liblib-canvas-parity.md`（真实界面、线上 chunk 与能力差距）
 **相关分支 / PR**：`main`；`28936905`、`8bc8d598`、`4959b1d9`、`09e2703a`
@@ -86,6 +87,34 @@ LibTV 画布导入不再丢节点语义，视频节点工具条按实测规格�
 - 回退按四个功能切片执行；未拆提交前不对共享文件做 restore。
 
 ## 进展记录
+
+### 2026-09-27 · 平移性能线串行协调
+
+本线封面实现先完成，canvas-lod-perf 后串行修改共享 Canvas/index.css，由 codex/pan-fix-20260927 集成。保留本线未提交的 VideoNode/videoFrameCapture/LodShellNode 封面 hunk；本轮性能线不改变画布数据与故事板接口。
+
+### 2026-09-27 · 全档位视频封面预览已实现
+
+- 改动：普通 VideoNode 默认绘制静态封面，点击播放才同步创建播放器；首帧 loadeddata 前保留封面，暂停后保留已加载播放器供继续播放和截图；播放失败保留重试入口。播放前使用已保存的时长、分辨率；替换素材或进入生成/上传状态时重置播放会话。
+- 封面归属：videoFrameCapture 的候选封面选择增加可选导入源比较；VideoNode 和 LodShellNode 同时透传。当前视频不是原导入视频时，忽略旧导入封面，复用现有服务端封面 / 限并发离屏抽帧兜底。没有封面的素材仍可能由原队列加载视频取一帧，不能据此宣称全站零视频请求。
+- 范围：仅三个前端文件的预览 / 控件 / 封面来源判断，以及两线协调台账和本线索引；未修改节点坐标、尺寸、引用、生成参数或 LOD 策略。前一轮性能分析文档保留，未提交代码。
+- 检查：TypeScript 编译 `tsc -b frontend/tsconfig.json --pretty false` 最终退出 0；迭代中发现的 isUploading 声明顺序和 ShellData 元数据类型错误均已修复。`git diff --check`、前端 i18n 棘轮（0 命中）、agent guard check（32 工作线 / 1031 claims）通过。
+- 验收欠项：本轮用户要求实现，未要求测试，因此没有新增/执行测试、浏览器交互验收或媒体生成。下一步在目标大画布刷新后对比未播放时的拖拽表现，再确认点击播放、暂停继续、加载失败重试和新结果封面；本记录不宣称帧率改善已经实测。
+- 回退：仅撤销本轮 VideoNode 预览与控件、LodShellNode 导入源透传、videoFrameCapture 导入封面归属判断的 hunk；保留历史功能和分析文档。
+
+### 2026-09-27 · 全档位视频封面预览方案
+
+- 授权：用户在画布性能分析后要求「先实现这个」，即复用本地已有封面，点击播放才创建播放器。
+- 目标：普通视频节点无播放请求时显示静态封面；播放入口、已知时长和分辨率无需等待播放器；加载首帧时保留封面；更换素材重置播放状态。
+- 非目标：不实施报告其余 LOD、裁剪、手势和 store 重构；不改变坐标、句柄、引用、生成提交、画册与历史播放交互；不提交代码。
+- 证据：目标画布 61 个视频节点均有本地 previewImageUrl，55 张去重封面实际存在；VideoNode 仅低档位使用封面，高档位创建 video#t=0.1；底部控件和分辨率受 hasMetadata 门控。
+- 基线与重叠：VideoNode.tsx 本地无 diff；origin/main..HEAD 的差异属于已集成的拆分、引用错误、续写等功能，没有此封面预览改法，均保留。旧远端重拍分支审计记录沿用本台账，不整文件覆盖；分析报告的四个文档为前一轮未提交产物，保持其归属。
+- 精确写入：共享 `frontend/src/features/canvas/nodes/VideoNode.tsx`，以及本台账、对应 claim 和 STATE。现有 depth-motion-da3 / shot-breakdown / video-prompt-split / sync-main-remotes 均已先完成相应提交，本会话后串行集成预览段，既有共享约定继续适用。
+- 封面正确性补充：代码审查发现生成完成仅替换 videoUrl，导入封面和来源元数据仍在。增加现有共享 `application/videoFrameCapture.ts` 的导入源匹配判断、`nodes/LodShellNode.tsx` 的同参数透传，防止新视频继续显示旧导入封面；不改 LOD 挂载策略。两文件当前无本地 diff，origin/main...HEAD 也无差异；沿用已集成封面管道。本线后串行集成，协调记录补入 canvas-lod-perf 台账；claim 已互认这两条路径。
+- 步骤：播放状态按视频源绑定；控件支持未挂播放器时请求播放，并在用户点击中同步挂载；用现有封面覆盖首帧加载；元数据事件仅按差异更新素材信息；保留错误反馈与重试、暂停/继续及截图动作。
+- 风险：浏览器播放授权需保持在用户点击内；请求播放但尚未开始时也需保护 LOD 媒体活跃状态；素材替换要防止旧播放状态复用。暂停后的已请求播放器保留以便继续和截当前帧，未点击播放的节点不创建播放器。
+- 回退：只撤销本轮三个前端文件中的预览/控件/封面来源 hunk，不改任何画布数据或整文件回滚。
+- 验证计划：类型编译和 diff/guard 静态检查；本轮未要求测试，不新增或运行测试，不提交生成任务。浏览器播放与冷/热缓存表现留作用户试用验收。
+- 执行门：owner `codex/video-poster-20260927`，acquire/preflight 成功后写业务代码。
 
 ### 2026-09-27 · 分组备注样式落地并完成目标画布呈现对照
 
@@ -339,6 +368,14 @@ index.tsx 既有改动已提交且当前无 diff；liblib-first-import 在本线
 ### 2026-09-27 · 多供应商模型接入协调
 用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/public/locales/zh/translation.json, frontend/public/locales/en/translation.json, frontend/public/locales/vi/translation.json, src/novelvideo/api/routes/freezone.py。
 
+### 2026-09-27 · 预览与拖动串行协调
+
+canvas-lod-perf 在现有实现之后串行修改共享 VideoNode 的封面显示档位、预览就绪标记与内容引用订阅；保留本线生成/布局语义，由 codex/pan-stable-20260927b 集成。
+
 
 ### 2026-09-27 · LibTV 分阶段导入协调
 现有实现先完成，liblib-import-recovery 后串行增加节点先保存、素材进入画布后分批后台下载及结构化 404 兼容。仅合并精确差异，保留其他功能，由本线会话最终集成。
+
+### 2026-09-28 · 连线配色串行协调
+
+既有 DESIGN 内容先保留，canvas-lod-perf 后续仅补用户指定的 LibTV 连线三色与流星说明，由 codex/edge-meteor-20260928 串行集成；不改变本线视觉或接口。

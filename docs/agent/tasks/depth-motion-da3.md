@@ -187,3 +187,7 @@ Blob 上传；本线在受控 CUDA worker 上跑 DA3-SMALL，输出 MP4 + manife
 
 ### 2026-09-27 · 引用合同串行协调
 既有 schemas 实现已提交；允许 multi-provider-models 串行修复 H3 格式绑定数量校验，保持本线媒体生成合同，由该线最终集成。
+
+### 2026-09-27 · 预览与拖动串行协调
+
+canvas-lod-perf 在现有实现之后串行修改共享 VideoNode 的封面显示档位、预览就绪标记与内容引用订阅；保留本线生成/布局语义，由 codex/pan-stable-20260927b 集成。

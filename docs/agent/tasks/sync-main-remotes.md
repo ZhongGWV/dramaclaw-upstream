@@ -305,3 +305,7 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ### 2026-09-27 · 多供应商模型接入协调
 用户已授权多供应商选择，替代原本固定硅基流动的限制。已有实现先完成，本线由 multi-provider-models 串行扩展模型目录、调用路由与选择器；最终集成为当前会话，保留既有数据和工作流。共享路径：frontend/public/locales/vi/translation.json。
+
+### 2026-09-27 · 预览与拖动串行协调
+
+canvas-lod-perf 在现有实现之后串行修改共享 VideoNode 的封面显示档位、预览就绪标记与内容引用订阅；保留本线生成/布局语义，由 codex/pan-stable-20260927b 集成。

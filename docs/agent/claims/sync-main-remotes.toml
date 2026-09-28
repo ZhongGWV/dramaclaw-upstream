@@ -27,7 +27,7 @@ reason = "Merge locale keys from both branch tips without dropping provider, H3 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/VideoNode.tsx"
 mode = "shared"
-shared_with = ["*", "video-prompt-split"]
+shared_with = ["canvas-lod-perf", "*", "video-prompt-split"]
 reason = "Final integration of H3/Mixed, LibTV/depth/shot, and upstream validation/extension behavior."
 
 [[claims]]

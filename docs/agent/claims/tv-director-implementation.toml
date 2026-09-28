@@ -431,7 +431,7 @@ reason = "Add director Vietnamese keys only."
 [[claims]]
 path = "DESIGN.md"
 mode = "shared"
-shared_with = ["liblib-canvas-parity"]
+shared_with = ["canvas-lod-perf", "liblib-canvas-parity"]
 reason = "Document new director-scoped tokens."
 
 [[claims]]

@@ -571,3 +571,7 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 - **下一步唯一动作**：先读literary-benchmark §9.5与workplace-reference-only/warmth审查原回包，在本台账开精确边界，把五类漏判沉淀为带原要求/剧情锚点及最小正反变异的反例fixture；设计可人工确认的原子事实版本，联通来源/方向/大纲，区别模型提议与用户事实。当前句覆盖与引用检查不代替该事实表。反例能区分正反后才做同稿已配置模型对照；不先加长prompt或购买新稿，旧UNKNOWN不重发。后续M10/完整来源/完整UI仍照原合同。
 - **先读这些文件**：本台账顶部、literary-benchmark.md §9、outline_review.py/schemas/outline_review.py及test_outline_review.py/live_outline_review.py、outline_benchmark.py、outline-parity.md；M07看story-plan/{SKILL.md,method.md,manifest.json}。总目标看implementation-closure/runtime-validation和skill/workflow合同，UI看ui-parity/DESIGN/feature-contracts。6适配包不等于24完整方法，历史开销不等于内容改善。
 - **不要动这些文件 / 决策**：现有 story/freezone/canvas 业务代码、用户源稿、研究 Cookie。
+
+### 2026-09-28 · 连线配色串行协调
+
+既有 DESIGN 内容先保留，canvas-lod-perf 后续仅补用户指定的 LibTV 连线三色与流星说明，由 codex/edge-meteor-20260928 串行集成；不改变本线视觉或接口。

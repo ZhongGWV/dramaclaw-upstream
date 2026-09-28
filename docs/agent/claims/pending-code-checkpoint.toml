@@ -1,7 +1,7 @@
 version = 1
 slug = "pending-code-checkpoint"
 ledger = "docs/agent/tasks/pending-code-checkpoint.md"
-baseline = "762591d"
+baseline = "8428b3a"
 
 [[claims]]
 path = "frontend/src/features/canvas/application/videoPromptSplit.ts"

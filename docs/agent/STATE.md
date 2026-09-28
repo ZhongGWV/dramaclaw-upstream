@@ -3,7 +3,7 @@
 > **新会话的第一件事是读这份文件。** 它只回答三个问题：现在有哪几条线在做、各自卡在哪、
 > 下一步做什么。取证与方案不在这里——在 `docs/guides/`；每条线的逐步记录在 `docs/agent/tasks/`。
 >
-> 最后更新：2026-09-27 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
+> 最后更新：2026-09-28 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
 > [`docs/agent/README.md`](README.md)
 
 ## 一、仓库当前形态（接手前必须核对）
@@ -26,9 +26,10 @@
 | 台账 | 主题 | 状态 | 卡在哪 / 下一步 |
 |---|---|---|---|
 | [liblib-import-recovery](tasks/liblib-import-recovery.md) | 节点先保存、素材后台下载 | 待验收 | 89 项回归/类型检查通过；208 节点/139 连线/188 素材恢复，首次保存 4.3 秒；待页面确认 |
+| [canvas-pan-stability-analysis](tasks/canvas-pan-stability-analysis.md) | 拖动画布卡顿与闪烁的 LibTV 对照分析 | 待验收 | 已捕获 LibTV 旧缩略图覆盖/淡出交接与抓手禁用命中规则；报告新增节点拖动订阅/指纹链，优先抓手归属与预览交接；只改文档，持续低缩放闪烁仍待可信轨迹 |
 | [project-chinese-names](tasks/project-chinese-names.md) | 中文项目名与拼音目录 | 待验收 | 中文重命名及 LibTV 原名功能完成；132 项回归与真实 API 通过，48 文件提交审计/密钥检查通过，推送结果见 Git |
 | [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | H3 引用 422 和数量提示修复已重启；26 项提交审计/密钥检查通过，本地提交结果见 Git，火山图片仍待单独验收 |
-| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 8 个代码提交已完成，前端45/后端70项测试通过；凭据和本地工作流已排除；1fa3c1b 已推送 |
+| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 标题修复已补 DCO，剩余画布代码、测试和设计已提交；交接文档独立提交。排除本机录屏取帧、凭据和本地工作流，未推送 |
 | [h3-prompt-optimizer](tasks/h3-prompt-optimizer.md) | H3 参考图完整保留与提示词格式转换 | 待验收 | 本地/云端共用字段布局，去共用段重复、统一空行/音效标题；服务已重启，待用户试转 |
 | [h3-completion-recovery](tasks/h3-completion-recovery.md) | H3 完成结果认领及超时恢复 | 待验收 | 按任务 ID 认领修复并重启生效；545秒成品已接回、任务恢复完成，待下次正常生成通知验收 |
 | [video-prompt-split](tasks/video-prompt-split.md) | 时间分镜一键拆分 | 待验收 | 完整镜头≤15秒、横排避让、清旧封面；18项回归及类型检查通过，当前五段坐标已修复，待空占位刷新复核 |
@@ -42,7 +43,7 @@
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
 | [asset-replacement-picker](tasks/asset-replacement-picker.md) | 画布素材替换：拖拽与点选双入口 | 待验收 | 独立实现与 5 项聚焦测试已通过；待真实画布手工走一遍点选替换 |
 | [freezone-entry-recovery](tasks/freezone-entry-recovery.md) | 项目画布入口恢复 | 待验收 | 30 项聚焦测试和生产构建通过；待跨项目、无效深链、首次个人画布浏览器验收 |
-| [liblib-canvas-parity](tasks/liblib-canvas-parity.md) | 画布架构与 LibTV 能力对齐 | 待验收 | 分组备注字号/标签/配色已对齐，目标15组恢复颜色；DOM/类型检查通过，几何和512条边未变 |
+| [liblib-canvas-parity](tasks/liblib-canvas-parity.md) | 画布架构与 LibTV 能力对齐 | 待验收 | 视频全档位封面预览、点击播放才挂播放器已实现；更换导入视频跳过旧封面；类型/静态检查通过，待交互验收 |
 | [canvas-grouped-auto-layout](tasks/canvas-grouped-auto-layout.md) | 分组画布整理与本地布局恢复 | 待验收 | 代码与本机 rev47 已修复，项目 API 已确认；待浏览器视觉确认 |
 | [text-node-liblib-visual-parity](tasks/text-node-liblib-visual-parity.md) | 文本节点 LibLib 视觉、模型与引用素材 | 待验收 | 模型按钮/浮层按 Liblib 线上尺寸和色值实现，构建通过；待窗口视觉确认 |
 | [minimax-h3-liblib-parity](tasks/minimax-h3-liblib-parity.md) | MiniMax H3 视频节点与 LibLib 参数/模式对齐 | 已完成 | 已验收分支集成到 main；后续底部模式入口与 Mixed 顺序由 `minimax-h3-reference-order` 接手 |
@@ -66,7 +67,7 @@
 | 路径 / 区域 | 本地工作线 | 外部重叠 | 当前处理规则 |
 |---|---|---|---|
 | 三语翻译、配置文档、协调台账；历史上游集成热点 | sync-main-remotes 最终集成 | 私有main的4个Director提交与目标46个独有提交 | 96bda53c已保留双方历史并推私有分支；公开PR仍在另一个fork，本轮不更新，未来双main同步须重新审计/授权 |
-| `Canvas.tsx`、`index.css`、`imageData.ts`、`useCanvasSync.ts` | LOD + LibTV 画布 | `origin/perf/canvas-pan-lod-culling` | LOD 来源审计完成前不再写这 4 个文件 |
+| `Canvas.tsx`、`index.css`、`imageData.ts`、`useCanvasSync.ts` | LOD + LibTV 画布 | 历史 `origin/perf/canvas-pan-lod-culling` | 2026-09-18 来源审计已记录；本轮在 4c9dee4 保留当前外壳与故事板，仅串行改 Canvas/index.css 的平移性能，详见 canvas-lod-perf |
 | `VideoNode.tsx`、`canvasNodes.ts`、`nodeRegistry.ts`、`NodeActionToolbar.tsx` 等 | LibTV + depth / 拉片接入 | `origin/feat/canvas-video-reshoot-breakdown` | 先做行为与测试的三方差异，不按文件新旧直接取舍 |
 | `VideoOperationsPanel.tsx`、`PromptMentionEditor.tsx`、H3 工作台适配器 | MiniMax H3 引用顺序 | `codex/minimax-h3-liblib-parity`、旧 CTA 分支 | H3 已集成；sync-main-remotes 只修候选签名刷新与既有素材替换等待态的 effect 顺序，不改 Mixed 协议 |
 | `official_media_models.json` 的 MiniMax-H3 条目、H3 工作台适配器 | minimax-h3-canvas-defaults | `sync-main-remotes` 已合并目录；H3 原实现已验收 | 仅改 H3 默认参数与 LoRA 传参；保留其他上游目录和现有画布透传协议 |

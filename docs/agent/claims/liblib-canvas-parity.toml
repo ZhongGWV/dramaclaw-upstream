@@ -1,7 +1,7 @@
 version = 1
 slug = "liblib-canvas-parity"
 ledger = "docs/agent/tasks/liblib-canvas-parity.md"
-baseline = "762591d"
+baseline = "4c9dee4"
 
 [[claims]]
 path = ".gitignore"
@@ -132,7 +132,7 @@ reason = "Imported-node fallbacks share the lazy registry with LOD heavy compone
 [[claims]]
 path = "frontend/src/features/canvas/nodes/VideoNode.tsx"
 mode = "shared"
-shared_with = ["video-prompt-split", "depth-motion-da3", "shot-breakdown", "minimax-h3-reference-order", "sync-main-remotes"]
+shared_with = ["canvas-lod-perf", "video-prompt-split", "depth-motion-da3", "shot-breakdown", "minimax-h3-reference-order", "sync-main-remotes"]
 reason = "Video remake/continuation and depth-motion entry share the video node."
 
 [[claims]]
@@ -332,7 +332,7 @@ reason = "LibTV group annotation styling and color preservation."
 [[claims]]
 path = "DESIGN.md"
 mode = "shared"
-shared_with = ["tv-director-implementation"]
+shared_with = ["canvas-lod-perf", "tv-director-implementation"]
 reason = "LibTV group annotation styling and color preservation."
 
 [[claims]]
