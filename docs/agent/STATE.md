@@ -36,7 +36,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 待验收 | Director 与本地模型/H3 修复已合并，三语7205键完整；差异/guard/密钥检查通过，正常推送结果以Git为准 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 执行中 | 隔离 worktree 集成本地画布三提交与远端六提交；主检出目录的 HEVC 未提交工作保留，正常推送结果以 Git 为准 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | cb3833ee已推送私有main（未deploy）；471后端/78前端/build/提交钩子通过。已保存大纲证据审查接通，但6笔审稿全漏关键错，未过文学门、不能自动放行；M07 2.2.0保留short-drama根基。下一步literary-benchmark §9.5原子事实确认+最小正反反例；UI/M10/Windows/完整退出门与素材再分发许可仍未全过 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |

@@ -1,13 +1,19 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：待验收
-**最后更新**：2026-09-27
+**状态**：执行中
+**最后更新**：2026-09-29
 **基线**：`11f553e`；本地当前分支与远端 0298aef 分叉 2/7，本轮仅 pull/push 同名分支。
 **认领者**：`codex/pull-push-20260927`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 2026-09-29 · 推送剩余画布提交
+
+用户要求将刚完成的提交全部推送到私有 `ZhongGWV/dramaclaw` 同名分支。隔离 worktree 从本地 `af8fdc1` 建立；主检出目录已有 `liblib-canvas-parity` 的 HEVC 播放修复及有效锁，禁止修改或暂存其中的未提交文件。目标远端目前为 `e4877e4`，本地独有三个 DCO 提交 `391b249`、`a453fdf`、`af8fdc1`，远端独有六个提交。仅集成并推送这些已提交内容，不带入主目录的新增未提交工作。
+
+`git merge-tree --write-tree af8fdc1 origin/codex/sync-main-remotes` 只报告 `docs/agent/STATE.md` 一处文本冲突；`DESIGN.md` 与相关台账自动合并。方案是在本隔离 worktree 以本地三个提交为第一父、正常合并远端六个提交，在 STATE 中保留双方工作线进度并更新本次推送记录。合并后检查两端祖先关系、冲突标记、签名尾注、`git diff --check` 和 guard；用户只要求推送，本轮不运行测试套件。使用显式目标引用正常推送，不使用 force、rebase、stash，不碰 `main` 或公开 fork。推送前重新核对远端 SHA；若远端又前进，先重新合并，再推送。完成后记录结果并清理隔离 worktree，主检出目录的未提交工作原样保留。
 
 ### 本轮增量：将已推送的 TV Director 提交同步到本分支
 
