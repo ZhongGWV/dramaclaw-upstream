@@ -2,8 +2,8 @@
 
 **状态**：执行中
 **最后更新**：2026-09-29
-**基线**：`11f553e`；本地当前分支与远端 0298aef 分叉 2/7，本轮仅 pull/push 同名分支。
-**认领者**：`codex/pull-push-20260927`
+**基线**：`af8fdc1`；本地三个画布提交与远端 `e4877e4` 六个提交在隔离 worktree 集成。
+**认领者**：`codex/push-all-20260929`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
@@ -14,6 +14,15 @@
 用户要求将刚完成的提交全部推送到私有 `ZhongGWV/dramaclaw` 同名分支。隔离 worktree 从本地 `af8fdc1` 建立；主检出目录已有 `liblib-canvas-parity` 的 HEVC 播放修复及有效锁，禁止修改或暂存其中的未提交文件。目标远端目前为 `e4877e4`，本地独有三个 DCO 提交 `391b249`、`a453fdf`、`af8fdc1`，远端独有六个提交。仅集成并推送这些已提交内容，不带入主目录的新增未提交工作。
 
 `git merge-tree --write-tree af8fdc1 origin/codex/sync-main-remotes` 只报告 `docs/agent/STATE.md` 一处文本冲突；`DESIGN.md` 与相关台账自动合并。方案是在本隔离 worktree 以本地三个提交为第一父、正常合并远端六个提交，在 STATE 中保留双方工作线进度并更新本次推送记录。合并后检查两端祖先关系、冲突标记、签名尾注、`git diff --check` 和 guard；用户只要求推送，本轮不运行测试套件。使用显式目标引用正常推送，不使用 force、rebase、stash，不碰 `main` 或公开 fork。推送前重新核对远端 SHA；若远端又前进，先重新合并，再推送。完成后记录结果并清理隔离 worktree，主检出目录的未提交工作原样保留。
+### 2026-09-27 · 保留目标分支新增功能并合入main最新TV Director
+
+用户要求更新并提交到 `codex/sync-main-remotes`。本轮只更新私有 `zhonggwv` 同名分支，不改本地/远端main、不推公开origin、不部署。开始目标检出干净且无锁；已fetch两个私有引用，正常快进目标从0298aefa到4c9dee4f。main=b5883b8f已推送；两边从0298aefa分叉1/5，目标已有模型供应商、H3引用和中文项目名功能，必须原样保留。
+
+只读merge-tree预演唯一冲突为STATE，三语自动合并。main的91条精确增量均登记现有或新增claim，业务和指南只接受Git自动导入；手工仅STATE、本台账、同名claim与必要Director交接协调，不修改方法包或产品逻辑。三语逐叶检查双方非冲突值、无重复键；Director独有路径与b5883b8f逐blob核验，目标独有业务与4c9dee4f核验。其他旧scope写权限本轮不使用。
+
+先提交本轮方案/精确scope以保持合并起点干净，重新校准基线并acquire/preflight协调路径；正常merge b5883b8f（目标历史第一父），仅解决STATE事实冲突。验证Director后端/前端、模型目录/路由、中文项目名、H3引用聚焦回归，生产build、ruff/i18n/CE/密钥/guard/DCO及双方祖先关系；不跑收费模型/媒体。若发现真正语义冲突先扩窄方案，不为过测改变业务合同。成功后只普通push同名分支并ls-remote核验；非快进拒绝则重新审计，不force。
+
+主目录5份未提交交接文档和受保护资料不复制、不覆盖、不stash。本轮不合入更新的origin/main；其历史PR仍独立等待。风险为自动合并的语义集成，失败保留现场，不强行发布；回退只能另行批准revert。完整Director文学/像素失败原样保留，不以同步成功代替产品验收。
 
 ### 本轮增量：将已推送的 TV Director 提交同步到本分支
 
@@ -127,6 +136,30 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-27 · 最新Director已交付私有同步分支
+
+合并提交 `fb80eafb4afc5ba2e74fe5d005ddd96c98f3786e` 已正常推送至 `zhonggwv/codex/sync-main-remotes`；远端ls-remote复核一致，私有main仍为b5883b8f。目标原4c9dee4f与来源b5883b8f均为合并提交祖先，方案/来源/合并提交DCO全部通过。794后端、276前端、build与三语/双边blob检查结果见下节；93个暂存文件的pre-commit密钥/guard/禁词检查通过。没有重写业务、覆盖main、复制主目录未提交资料或触发收费任务。最后追加此交接记录提交；最终同名分支HEAD以Git为准，交付功能事实仍是fb80eafb。
+
+本次指定分支同步已完成；状态待验收只保留历史公开PR/完整产品验收事项，不表示本次未交付。未来如需把该分支新增模型/中文名回合main，须先获新授权并重新审计主目录5份未提交交接文档，不直接pull/stash。随后正常handoff/release，不留锁。
+
+### 2026-09-27 · 最新Director合并与集成验证通过
+
+正常merge b5883b8f，唯一STATE冲突按目标同步状态与来源Director事实合并；没有手工业务改动。85条来源独有业务/指南路径与b5883b8f逐blob一致，42条目标独有业务/测试路径与4c9dee4f一致；三语按共同祖先逐叶校验，无重复键或丢值，7252个来源键及7218个目标键合并成各7325键。目标模型配置、H3引用和中文项目名功能完整保留。
+
+实际在目标worktree使用既有Python环境、`PYTHONPATH=src`运行：
+
+- `python -m pytest tests/director tests/test_tv_director.py tests/test_newapi_text_gateway.py tests/test_local_model_catalog.py tests/test_local_provider_api.py tests/test_local_gateway.py tests/test_text_reference_contract.py tests/test_project_name_validation.py tests/test_project_rename.py tests/ports/test_project_chinese_names.py tests/test_h3_prompt_optimizer.py tests/test_h3_stream.py -q`：794通过，11条依赖弃用警告。
+- 前端Node22：`pnpm exec vitest run director local-model-catalog project-chinese-names project-name-validation project-first-liblib-import h3-request-contract h3-stream`：23文件276通过；`pnpm build`成功，5547模块，既有大chunk警告。
+- `ruff check .`、前后端i18n、`check_ce_port_closure.py`（11端口）、CE导入/禁词/禁用包名、工作树和索引diff检查通过；guard31线1100claims。
+
+未运行全仓测试、实机Windows或真实付费模型；本次是已提交实现的集成验证，原文学/全页像素失败不改。主检出main与5份协调diff、受保护资料不变。下一步暂存精确协调文件，执行暂存检查/密钥扫描，生成带DCO合并提交，验证双方祖先并只推私有同名分支，再核对远端SHA与main未动。
+
+### 2026-09-27 · 最新Director同步方案门
+
+方案提交77180e7d后，首次handoff因计划内容在acquire前已写入、提交清空diff而被拒绝；未强制释放。后续命令未因该失败短路，实际merge已停在预期STATE冲突。现仅修协调状态、记录此偏差，以原owner正常handoff/release后重新取得锁并preflight；没有手工业务修改或覆盖目标代码。后续命令逐步检查exit code，不把guard失败当作可忽略输出。
+
+恢复目标worktree后确认4c9dee4f与已推main的b5883b8f分叉，唯一文本冲突STATE。记录91条导入路径并新增47条精确read-only claim；现有业务改动不重写，三语按叶核验双方。目标历史模型/H3/中文名功能必须保留，主目录原5份协调diff和本地资料不碰。下一步正常合并、聚焦集成验证、DCO提交及仅私有同名分支推送。
 
 ### 2026-09-27 · 当前分支合并收口
 
@@ -291,8 +324,8 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ## 交接摘要
 
-- **最后完成到**：用户本轮指定的私有分支已含全部四个Director提交，合并为 `96bda53c`并推送核验；目标干净。
-- **下一步唯一动作**：如用户再次要求历史双main同步，先只读检查PR #717和三方最新Git差异，提出新方案与发布范围。
+- **最后完成到**：合并fb80eafb已推送并核验，保留目标4c9dee4f及来源b5883b8f；794后端/276前端/build通过，85/42条独有路径和三语7325键完整。main未动，最终交接记录提交号以Git为准。
+- **下一步唯一动作**：本次同步无剩余操作；若用户要求合回主目录或双main同步，先核验最新分支和主目录未提交交接，不按旧指针覆盖。历史公开PR与产品欠项仍独立待办。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
 - **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork，不改main，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 

@@ -11,7 +11,7 @@ export function DirectorCanvas({ project, children, onCreate, onDirector }: { pr
   const { t } = useTranslation();
   const [view, setView] = useState<View>(() => {
     const v = readDirectorPreference(`canvas:${project}`, initial);
-    return [v.x, v.y, v.zoom].every(Number.isFinite) && v.zoom >= .25 && v.zoom <= 2 ? v : initial;
+    return [v.x, v.y, v.zoom].every(Number.isFinite) && v.zoom >= .05 && v.zoom <= 2 ? v : initial;
   });
   const [pan, setPan] = useState(false);
   const [map, setMap] = useState(false);
@@ -21,6 +21,22 @@ export function DirectorCanvas({ project, children, onCreate, onDirector }: { pr
   const ref = useRef<HTMLElement>(null);
   const drag = useRef<{ pointer: number; x: number; y: number; base: View } | null>(null);
   const current = useRef(view); current.current = view;
+  const fit = () => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const rectangles = [...canvas.querySelectorAll('.dc-script-node, .dc-media-node')].map(n => n.getBoundingClientRect());
+    if (!rectangles.length) { setView(initial); return; }
+    const bounds = canvas.getBoundingClientRect(), v = current.current;
+    const minX = Math.min(...rectangles.map(r => (r.left - bounds.left - bounds.width / 2 - v.x) / v.zoom));
+    const maxX = Math.max(...rectangles.map(r => (r.right - bounds.left - bounds.width / 2 - v.x) / v.zoom));
+    const minY = Math.min(...rectangles.map(r => (r.top - bounds.top - v.y) / v.zoom));
+    const maxY = Math.max(...rectangles.map(r => (r.bottom - bounds.top - v.y) / v.zoom));
+    // Fit all persisted nodes outside the floating conversation's footprint.
+    const panel = canvas.parentElement?.querySelector('.dc-panel')?.getBoundingClientRect();
+    const usable = panel && bounds.width > 900 ? Math.max(bounds.width / 2, panel.left - bounds.left - 24) : bounds.width;
+    const zoom = Math.max(.05, Math.min(1, (usable - 96) / (maxX - minX), (bounds.height - 192) / (maxY - minY)));
+    setView({ zoom, x: usable / 2 - bounds.width / 2 - (minX + maxX) * zoom / 2, y: 96 - minY * zoom });
+  };
   useEffect(() => { saveDirectorPreference(`canvas:${project}`, view); }, [project, view]);
   useEffect(() => {
     const element = ref.current;
@@ -30,7 +46,7 @@ export function DirectorCanvas({ project, children, onCreate, onDirector }: { pr
       event.preventDefault();
       if (event.ctrlKey || event.metaKey) {
         const bounds = element.getBoundingClientRect(), v = current.current;
-        const zoom = Math.min(2, Math.max(.25, v.zoom * Math.exp(-event.deltaY * .01)));
+        const zoom = Math.min(2, Math.max(.05, v.zoom * Math.exp(-event.deltaY * .01)));
         const dx = event.clientX - bounds.left - bounds.width / 2, dy = event.clientY - bounds.top;
         setView({ zoom, x: dx - (dx - v.x) * zoom / v.zoom, y: dy - (dy - v.y) * zoom / v.zoom });
       } else setView(v => ({ ...v, x: v.x - event.deltaX, y: v.y - event.deltaY }));
@@ -47,7 +63,7 @@ export function DirectorCanvas({ project, children, onCreate, onDirector }: { pr
       onPointerDown={event => {
         const target = event.target as HTMLElement;
         if (event.button !== 0 && event.button !== 1 || target.closest('button, input, textarea, select, summary, .dc-document-preview, .dc-document-rail')) return;
-        if (!pan && event.button !== 1 && target.closest('.dc-script-document')) return;
+        if (!pan && event.button !== 1 && target.closest('.dc-script-document, .dc-media-node')) return;
         event.currentTarget.focus(); event.currentTarget.setPointerCapture(event.pointerId);
         drag.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, base: view };
       }} onPointerMove={event => {
@@ -60,7 +76,7 @@ export function DirectorCanvas({ project, children, onCreate, onDirector }: { pr
     <div className="dc-canvas-tools" role="toolbar" aria-label={t('director.surface.canvasTools')}>
       <button type="button" aria-label={t('director.surface.addScript')} onClick={onCreate}><Plus size={22} /></button>
       <button type="button" aria-label={t('director.surface.pan')} aria-pressed={pan} onClick={() => setPan(!pan)}><DirectorReferenceIcon name="Move" size={20} /></button><i />
-      <button type="button" aria-label={t('director.surface.fit')} onClick={() => setView(initial)}><DirectorReferenceIcon name="Arrange" size={20} /></button>
+      <button type="button" aria-label={t('director.surface.fit')} onClick={fit}><DirectorReferenceIcon name="Arrange" size={20} /></button>
       <button type="button" aria-label={t('director.surface.shortcuts')} onClick={() => setHelp(!help)}><DirectorReferenceIcon name="Shortcuts" size={20} /></button><i />
       <button type="button" aria-label={t('director.openPanel')} onClick={onDirector}><DirectorReferenceIcon name="Welcome" size={24} /></button>
     </div>

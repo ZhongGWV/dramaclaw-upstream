@@ -1,5 +1,6 @@
 {
   "additionalProperties": false,
+  "description": "The same character craft serves preparation and source-grounded edits.",
   "properties": {
     "schemaVersion": {
       "const": 2,
@@ -7,17 +8,15 @@
       "type": "integer"
     },
     "stage": {
-      "enum": [
-        "M03",
-        "M07",
-        "M08",
-        "M09"
-      ],
+      "const": "M08",
       "title": "Stage",
       "type": "string"
     },
     "mode": {
-      "const": "original",
+      "enum": [
+        "original",
+        "adaptation"
+      ],
       "title": "Mode",
       "type": "string"
     },
@@ -46,6 +45,17 @@
       "pattern": "^[a-f0-9]{64}$",
       "title": "Parametershash",
       "type": "string"
+    },
+    "documentKind": {
+      "default": "preparation",
+      "enum": [
+        "preparation",
+        "characters",
+        "scenes",
+        "props"
+      ],
+      "title": "Documentkind",
+      "type": "string"
     }
   },
   "required": [
@@ -57,6 +67,6 @@
     "endingType",
     "parametersHash"
   ],
-  "title": "PlanningMethodContext",
+  "title": "CharacterMethodContext",
   "type": "object"
 }

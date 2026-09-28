@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -31,7 +32,7 @@ from novelvideo.director.schemas.planning import OutlineMethodContext
 from novelvideo.director.outline import OUTLINE_CONTRACT
 from novelvideo.director.documents import object_hash
 
-METHOD_VERSION = "studio/short-drama-compiler@2.2.0"
+METHOD_VERSION = "studio/short-drama-compiler@2.6.0"
 MODEL_ALIAS = "DC-content-rewriter-LLM"
 MAX_MODEL_INPUT_CHARS = 60000
 
@@ -75,7 +76,7 @@ STAGE_INSTRUCTIONS: dict[str, str] = {
     "outline": "写故事大纲：一集内已有结果与结尾新问题分开；多集写每集可拍行动、已发生结果、伏笔 ID 与兑现集。改编时每个关键事件标来源与保留/压缩/合并/移动/删除/桥接决策，关键事件不可无审批删除。",
     "characters": "写人物小传与关系：名字、可见外形、目标、阻力、已知与未知、弧线。来源未确认的亲属/生死/身份不得编成事实。",
     "scenes": "写场景设计：具体地点、内外、时段、空间进出与可用动作；心理解释转为可见选择和物件变化。",
-    "props": "写道具设计：稳定 ID、首次出现、持有人、每次转移、关键用途和最终状态；未知归属标待确认。",
+    "props": "Design props using the host schema: type, dramatic function, usage boundary, first appearance and key episodes. Ground holder, transfers and state in confirmed facts; preserve unknowns.",
     "episode": "写本集文学剧本：每场包含场次头、出场人物、可见动作与结果、台词；场次先后与日夜规则连续。先解决本集可见问题，再开集尾新问题。不得把目标秒数当实测。",
 }
 
@@ -181,8 +182,41 @@ def compile_generation(
     add("user-instruction", "instruction", command.instruction, work["revision"])
     add("source", "source", source, work["revision"])
     add("locked-facts", "locked_facts", preset.locked_facts, work["revision"])
+    if (
+        command.kind in {"characters", "scenes", "props"}
+        and not outline["version"]
+        and not source
+    ):
+        prefix = {"characters": "CHARACTER", "scenes": "SCENE", "props": "PROP"}[
+            command.kind
+        ]
+        raise ValueError(f"{prefix}_OUTLINE_OR_SOURCE_REQUIRED")
     if key != "outline":
         add("outline", "plan", outline["content"], outline["version"])
+    if command.kind in {"episode", "props"}:
+        # Retained facts must influence writing, not just decorate the UI.
+        characters = store.get_document(work_id, "characters")
+        add("characters", "plan", characters["content"], characters["version"])
+        parameter_map.update(
+            characters_version=characters["version"],
+            characters_content_hash=characters.get("content_hash", ""),
+        )
+        scenes = store.get_document(work_id, "scenes")
+        add("scenes", "plan", scenes["content"], scenes["version"])
+        parameter_map.update(
+            scenes_version=scenes["version"],
+            scenes_content_hash=scenes.get("content_hash", ""),
+        )
+    if command.kind == "episode":
+        props = store.get_document(work_id, "props")
+        add("props", "plan", props["content"], props["version"])
+        parameter_map.update(
+            props_version=props["version"],
+            props_content_hash=props.get("content_hash", ""),
+            stream=True,
+            stream_options={"include_usage": True, "continuous_usage_stats": True},
+            output_contract="episode-screenplay/1.0.0",
+        )
     if prior:
         add("prior-episode", "prior_boundary", prior["content"], prior["version"])
     add("current-document", "current_document", current["content"], current["version"])
@@ -204,7 +238,7 @@ def compile_generation(
         market_confirmed=preset.market != "unspecified",
     )
     method_bundle = None
-    if command.kind == "outline":
+    if command.kind in {"outline", "characters", "scenes", "props"}:
         with store._connect() as db:
             episodes = [
                 dict(
@@ -217,20 +251,65 @@ def compile_generation(
                     (work_id,),
                 )
             ]
-        parameter_map.update(
-            output_contract=OUTLINE_CONTRACT,
-            response_format={"type": "json_object"},
-            responseSchema=output_schema("M07"),
-            outlineRoot={
-                "preset": preset.model_dump(),
-                "episodes": episodes,
-                "brief": work["brief"],
-            },
+        from .characters import CHARACTER_CONTRACT
+        from .scenes import SCENE_CONTRACT
+        from .props import PROP_CONTRACT
+        from .schemas.planning import (
+            CharacterDocument,
+            CharacterMethodContext,
+            SceneDocument,
+            PropDocument,
         )
+
+        is_outline = command.kind == "outline"
+        response_schema = (
+            output_schema("M07")
+            if is_outline
+            else {
+                "scenes": SceneDocument,
+                "characters": CharacterDocument,
+                "props": PropDocument,
+            }[command.kind].model_json_schema(by_alias=True)
+        )
+        parameter_map.update(
+            output_contract={
+                "outline": OUTLINE_CONTRACT,
+                "characters": CHARACTER_CONTRACT,
+                "scenes": SCENE_CONTRACT,
+                "props": PROP_CONTRACT,
+            }[command.kind],
+            response_format={"type": "json_object"},
+            responseSchema=response_schema,
+            responseSchemaHash=object_hash(response_schema),
+        )
+        if command.kind in {"characters", "scenes"}:
+            from .fact_guard import boundary, constrain_schema, schema as fact_schema
+
+            parameter_map["factBoundary"] = boundary(command.kind, {
+                "source": source, "brief": work["brief"], "locked-facts": preset.locked_facts,
+                "outline": outline["content"], "user-instruction": command.instruction,
+            })
+            response_schema["properties"]["sourceProofs"] = fact_schema()
+            response_schema.setdefault("required", []).append("sourceProofs")
+            constrain_schema(response_schema, parameter_map["factBoundary"], preset.output_language)
+            parameter_map["responseSchemaHash"] = object_hash(response_schema)
+        parameter_map[
+            {
+                "outline": "outlineRoot",
+                "characters": "characterRoot",
+                "scenes": "sceneRoot",
+                "props": "propRoot",
+            }[command.kind]
+        ] = {
+            "preset": preset.model_dump(),
+            "episodes": episodes,
+            "brief": work["brief"],
+        }
         method_bundle = compile_method(
-            OutlineMethodContext(
+            (OutlineMethodContext if is_outline else CharacterMethodContext)(
+                **({} if is_outline else {"document_kind": command.kind}),
                 schema_version=2,
-                stage="M07",
+                stage="M07" if is_outline else "M08",
                 mode=preset.mode,
                 episode_ordinal=1,
                 total_episodes=preset.episode_count,
@@ -270,6 +349,12 @@ def compile_generation(
         method_bundle=method_bundle,
     )
     prompt = compiled["prompt"]
+    if parameter_map.get("factBoundary"):
+        prompt += "\nFINAL_SOURCE_CHECK: For each character/location, EVERY non-unknown field named by factBoundary.fields needs its own sourceProofs entry. " \
+            "The proof value must equal the ENTIRE output field. Copy quote exactly from factBoundary.inputs, including an actual entity name. " \
+            "Use the responseSchema enum excerpts for critical prose fields; do not compose new text there. Use the supplied unknown value when no evidence exists. " \
+            "Include type proofs for every non-unknown scene type. Never invent age, spoken address, example dialogue, numeric time or an action. " \
+            "Null is allowed ONLY for nullable schema fields. The response must still contain all required literary fields and host episode IDs."
     if len(prompt) > MAX_MODEL_INPUT_CHARS:
         raise ValueError(
             "source exceeds the current single-run context limit; split/source-map stage is required"
@@ -338,6 +423,7 @@ async def run_bounded_writing_model(
     *,
     system_prompt: str = SYSTEM_PROMPT,
     json_object: bool = False,
+    on_delta: Callable[[str], Awaitable[None]] | None = None,
 ) -> WritingResult:
     """One authorized request, with the approved output ceiling and no repair retries."""
     agent = Agent(
@@ -352,6 +438,9 @@ async def run_bounded_writing_model(
         output_retries=0,
         model_settings={
             "max_tokens": max_output_tokens,
+            # Compatible gateways can report cumulative totals on every delta.
+            # Tell the SDK to replace those totals, not add them per chunk.
+            **({"openai_continuous_usage_stats": True} if on_delta else {}),
             **(
                 {
                     "extra_body": {
@@ -362,10 +451,35 @@ async def run_bounded_writing_model(
                     }
                 }
                 if json_object
-                else {}
+                else {"extra_body": {"max_tokens": max_output_tokens}}
             ),
         },
     )
+    if on_delta is not None:
+        from .streaming import VisibleText
+
+        visible = VisibleText()
+        parts: list[str] = []
+        size = 0
+        async with agent.run_stream(prompt) as streamed:
+            async for chunk in streamed.stream_text(delta=True, debounce_by=0.2):
+                text = visible.feed(chunk)
+                if text:
+                    size += len(text)
+                    if size > 1024 * 1024:
+                        raise ValueError("STREAM_OUTPUT_LIMIT")
+                    parts.append(text)
+                    await on_delta(text)
+            tail = visible.feed("", final=True)
+            if tail:
+                parts.append(tail)
+                await on_delta(tail)
+            usage = streamed.usage
+            return WritingResult(
+                "".join(parts).strip(), usage.input_tokens, usage.output_tokens,
+                usage.requests, streamed.response.finish_reason,
+                streamed.response.model_name,
+            )
     result = await agent.run(prompt)
     output = str(result.output or "").strip()
     text = re.sub(

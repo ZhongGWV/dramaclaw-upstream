@@ -389,6 +389,9 @@ class DocumentRepository:
             envelope = {
                 "schemaVersion": 2,
                 "commandId": command.command_id,
+                # Autosave must advance from this transaction, not a later GET
+                # which could have already observed another editor's version.
+                "workRevision": self.store._work(db, command.work_id)["revision"],
                 "result": result,
             }
             db.execute(

@@ -69,7 +69,7 @@ class FinalizeCommand(WireContract):
     content_hash: Sha256
     report_id: Identifier
     report_hash: Sha256
-    human_checks: list[HumanCheck] = Field(min_length=1, max_length=10)
+    human_checks: list[HumanCheck] = Field(min_length=1, max_length=10010)
 
     @model_validator(mode="after")
     def unique_checks(self) -> "FinalizeCommand":

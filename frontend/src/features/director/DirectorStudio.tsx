@@ -24,6 +24,7 @@ import {
   type DirectorQualityReport,
   type FinalizeDirectorCommand,
   type DirectorWorkDetail,
+  type DirectorMediaKind,
 } from '@/api/director';
 import { ApiError } from '@/api/client';
 import { DirectorPresetDialog, GENRES, PRESET_DEFAULTS, type DirectorWorkDraft } from './DirectorPresetDialog';
@@ -31,12 +32,14 @@ import { DirectorSettingsDialog } from './components/DirectorSettingsDialog';
 import { DirectorHistoryPopover } from './components/DirectorHistoryPopover';
 import { DirectorPopover } from './components/DirectorPopover';
 import { DirectorCanvas } from './components/DirectorCanvas';
+import { DirectorMediaNodes } from './components/DirectorMediaNodes';
 import { DirectorRichText } from './components/DirectorRichText';
 import { directorTokenLimit, readDirectorPreference, saveDirectorPreference, notifyDirectorTask } from './director-ui-state';
 import { DirectorWindow } from './components/DirectorWindow';
 import { executionCommand, getExecutionCapability, getRetainedResult, isExecutionActive, listExecutionRuns, sendExecutionCommand,
   type ExecutionCapability, type ExecutionCommand, type ExecutionQuote, type ExecutionRun, type RetainedResult } from '@/api/director-execution';
-import { ExecutionHistory } from './components/ExecutionHistory';
+import { DirectorConversation, ConversationScroll } from './components/DirectorConversation';
+import { useExecutionStream } from './useExecutionStream';
 import { PlanningWorkflow } from './components/PlanningWorkflow';
 import type { PlanningState } from '@/api/director-execution';
 import { DocumentVersionPanel } from './components/DocumentVersionPanel';
@@ -44,6 +47,7 @@ import { QualityReviewDialog } from './components/QualityReviewDialog';
 import { OutlineReviewDialog } from './components/OutlineReviewDialog';
 import { RevisionImpactDialog } from './components/RevisionImpactDialog';
 import { DirectorDocumentEditor } from './components/DirectorDocumentEditor';
+import { DirectorMediaPanel } from './components/DirectorMediaPanel';
 import './director.css';
 
 const SECTIONS: Array<{ kind: DirectorDocumentKind; key: string }> = [
@@ -102,6 +106,10 @@ export function DirectorStudio({ project }: { project: string }) {
   const [methodsOpen, setMethodsOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [mediaKind, setMediaKind] = useState<DirectorMediaKind | null>(null);
+  const [mediaAnchor, setMediaAnchor] = useState<HTMLElement | null>(null);
+  const editorFlush = useRef<(() => Promise<boolean>) | null>(null);
   const [proposalPreview, setProposalPreview] = useState(false);
   const [editorText, setEditorText] = useState('');
   const [reviewText, setReviewText] = useState('');
@@ -143,6 +151,8 @@ export function DirectorStudio({ project }: { project: string }) {
     (planningPhase !== 'NOT_STARTED' || !detail?.documents.length));
   useEffect(() => { visibleWork.current = work?.id ?? null; }, [work?.id]);
   const hasActiveExecution = executions.some(isExecutionActive);
+  const stream = useExecutionStream(project, work?.id, hasActiveExecution);
+  const stoppable = executions.find(item => item.canCancel && !item.parameters.stage);
   const ordinal = selectedEpisode ?? work?.current_episode ?? 1;
   const episodeReadOnly = Boolean(selectedKind === 'episode' && work &&
     (ordinal !== work.current_episode || ordinal > work.preset.episode_count));
@@ -160,6 +170,7 @@ export function DirectorStudio({ project }: { project: string }) {
   }, [project]);
 
   const openWork = useCallback(async (workId: string) => {
+    if (editorFlush.current && !await editorFlush.current()) return;
     const reopeningCurrent = visibleWork.current === workId;
     visibleWork.current = workId;
     setPreview(null);
@@ -170,6 +181,7 @@ export function DirectorStudio({ project }: { project: string }) {
     setRevisionImpact(null);
     setSelectedEpisode(null);
     setEditorOpen(false);
+    setMediaKind(null); setMediaAnchor(null);
     setReviewOpen(false);
     approvalIntent.current = null;
     // Reopening the same history item does not change the effect dependencies.
@@ -191,7 +203,7 @@ export function DirectorStudio({ project }: { project: string }) {
 
   const refreshDetail = useCallback(async (workId: string) => {
     const next = await getDirectorWork(project, workId);
-    if (visibleWork.current === workId) setDetail(next);
+    if (visibleWork.current === workId) setDetail(current => current?.work.id === workId && current.work.revision > next.work.revision ? current : next);
     return next;
   }, [project]);
 
@@ -230,7 +242,7 @@ export function DirectorStudio({ project }: { project: string }) {
           previous = signature;
           await refreshDetail(workId);
           const current = await getDirectorDocument(project, workId, docKey);
-          if (active && visibleWork.current === workId) setDocument(current);
+          if (active && visibleWork.current === workId) setDocument(previous => previous?.doc_key === current.doc_key && previous.version > current.version ? previous : current);
         }
       } catch (reason) {
         if (active) setError(describeError(reason));
@@ -274,7 +286,7 @@ export function DirectorStudio({ project }: { project: string }) {
     setDocument(current => current?.doc_key === docKey ? current : null);
     let active = true;
     void getDirectorDocument(project, work.id, docKey).then((value) => {
-      if (active) setDocument(value);
+      if (active) setDocument(previous => previous?.doc_key === value.doc_key && previous.version > value.version ? previous : value);
     }).catch((reason) => { if (active) setError(describeError(reason)); });
     return () => { active = false; };
   }, [project, work?.id, work?.revision, docKey]);
@@ -366,7 +378,7 @@ export function DirectorStudio({ project }: { project: string }) {
   };
 
   const startGeneration = async (purpose: 'draft' | 'review' = 'draft') => {
-    if (!work || !document || document.doc_key !== docKey || !capability || hasActiveExecution || documentReadOnly) return;
+    if (!work || !document || document.doc_key !== docKey || !capability || hasActiveExecution || documentReadOnly || editorDirty) return;
     const instruction = purpose === 'review' ? '' : composer.trim();
     await run('preview', async () => {
       const result = await sendExecutionCommand<ExecutionQuote>(project,
@@ -496,13 +508,24 @@ export function DirectorStudio({ project }: { project: string }) {
     link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const showMenu = (menu: typeof composerMenu, anchor: HTMLElement) => { setPopoverAnchor(anchor); setComposerMenu(composerMenu === menu ? null : menu); };
-  const newConversation = () => {
+  const newConversation = async () => {
+    if (editorFlush.current && !await editorFlush.current()) return false;
     if ((composer || (!work && (draft.title || draft.sourceText || draft.preset.primary_genre))) && !window.confirm(t('director.ui.discardDraft'))) return false;
     visibleWork.current = null;
     window.localStorage.removeItem(savedWorkKey); setDetail(null); setDocument(null);
     setDraft({ ...initialDraft(), preset: { ...initialDraft().preset, model_name: modelContract?.model_name ?? '' } }); setComposer('');
     setExecutions([]); setPreview(null); setPlanningPhase(null); setPanelOpen(true);
-    setError(''); setSelectedKind('outline'); setSelectedEpisode(null); return true;
+    setError(''); setSelectedKind('outline'); setSelectedEpisode(null); setEditorOpen(false); setMediaKind(null); return true;
+  };
+  const openMedia = async (kind: DirectorMediaKind) => {
+    if (editorFlush.current && !await editorFlush.current()) return;
+    setMediaAnchor(null); setMediaKind(kind); setPanelOpen(true);
+  };
+  const selectDocument = async (kind: DirectorDocumentKind, episode?: number) => {
+    if (editorFlush.current && !await editorFlush.current()) return false;
+    setSelectedKind(kind);
+    if (episode !== undefined) setSelectedEpisode(episode);
+    return true;
   };
   const attachSource = async (file?: File) => {
     if (!file) return;
@@ -515,7 +538,7 @@ export function DirectorStudio({ project }: { project: string }) {
   };
 
   return (
-    <div className="dc-studio">
+    <div className={`dc-studio${editorOpen ? ' dc-editor-active' : ''}`}>
       <header className="dc-canvas-topbar">
         <span className="dc-brand"><Sparkles size={16} /> {t('director.title')}</span>
         <span className="dc-topbar-project">{title}</span>
@@ -524,12 +547,12 @@ export function DirectorStudio({ project }: { project: string }) {
         <button type="button" onClick={(event) => { setPopoverAnchor(event.currentTarget); setHistoryOpen(true); }}><History size={16} /> {t('director.history')}</button>
       </header>
 
-      <DirectorCanvas project={project} onCreate={() => { if (newConversation()) setPresetOpen(true); }} onDirector={() => setPanelOpen(true)}>
+      <DirectorCanvas project={project} onCreate={() => { void newConversation().then(created => { if (created) setPresetOpen(true); }); }} onDirector={() => setPanelOpen(true)}>
         {work ? (
           <div className="dc-script-node">
             <div className="dc-node-toolbar" role="toolbar" aria-label={t('director.ui.nodeActions')}>
-              <span title={t('director.ui.mediaUnavailable')}><button type="button" disabled><NodeCharacter size={18} />{t('director.ui.characterImage')}<ChevronDown size={13} /></button></span>
-              <span title={t('director.ui.mediaUnavailable')}><button type="button" disabled><Sparkles size={20} />{t('director.ui.creation')}</button></span>
+              <button type="button" aria-haspopup="menu" aria-expanded={Boolean(mediaAnchor)} onClick={event => setMediaAnchor(mediaAnchor ? null : event.currentTarget)}><NodeCharacter size={18} />{t('director.ui.characterImage')}<ChevronDown size={13} /></button>
+              <button type="button" onClick={() => void openMedia(['characters', 'scenes', 'props'].includes(selectedKind) ? selectedKind as DirectorMediaKind : 'characters')}><Sparkles size={20} />{t('director.ui.creation')}</button>
               <i aria-hidden="true" />
               <button type="button" onClick={openEditor} aria-label={t('director.editor')}><Maximize2 size={18} /></button>
               <button type="button" disabled={!document?.content} onClick={downloadDocument} aria-label={t('director.ui.download')}><Download size={18} /></button>
@@ -543,9 +566,11 @@ export function DirectorStudio({ project }: { project: string }) {
                   {SECTIONS.map((section) => (
                     <button type="button" key={section.key} aria-current={selectedKind === section.kind ? 'page' : undefined}
                       onClick={() => setSelectedKind(section.kind)}>
-                      {section.kind === 'episode' ? episodeLabel : t(`director.section.${section.kind}`)}
+                      {t(`director.section.${section.kind}`)}
                     </button>
                   ))}
+                  {selectedKind === 'episode' && episodes.filter(item => !item.archived).map(episode => <button type="button" className="dc-episode-child" key={episode.id}
+                    aria-current={ordinal === episode.orderKey ? 'page' : undefined} onClick={() => setSelectedEpisode(episode.orderKey)}>{episode.deliveryLabel}</button>)}
                 </nav>
                 <div className="dc-document-preview">
                   <h2>{currentLabel}</h2>
@@ -564,7 +589,7 @@ export function DirectorStudio({ project }: { project: string }) {
                 </div>
               </div>
               <button type="button" className="dc-document-edit" onClick={openEditor}>
-                {documentReadOnly ? t('director.view') : t('director.edit')} <Maximize2 size={14} />
+                <DirectorReferenceIcon name="Edit" size={16} /> {documentReadOnly ? t('director.view') : t('director.edit')}
               </button>
               <details className="dc-document-versions"><summary>{t('director.version', { number: document?.version ?? 0 })}</summary>
                 <DocumentVersionPanel key={work.id} project={project} workId={work.id} revision={work.revision} docKey={docKey}
@@ -577,6 +602,7 @@ export function DirectorStudio({ project }: { project: string }) {
             <button type="button" className="dc-primary-button" onClick={() => setPresetOpen(true)}>{t('director.start')}</button>
           </div>
         )}
+        {work && <DirectorMediaNodes key={work.id} project={project} work={work.id} onPlan={kind => void openMedia(kind)} />}
       </DirectorCanvas>
 
       {panelOpen && (
@@ -593,8 +619,8 @@ export function DirectorStudio({ project }: { project: string }) {
               <button type="button" title={t('director.close')} aria-label={t('director.close')} onClick={() => setPanelOpen(false)}><Minus size={16} /></button>
             </div>
           </header>
-          <div className="dc-messages">
-            {!work && <div className="dc-welcome"><DirectorReferenceIcon name="Welcome" size={38} /><h2>{t('director.ui.startGenre')}</h2>
+          <ConversationScroll key={work?.id ?? 'new'} revision={`${stream.state.cursor}:${executions.map(run => `${run.id}:${run.revision}`).join('|')}:${pending?.id ?? ''}`}>
+            {!work && <div className="dc-welcome"><div className="dc-welcome-heading"><DirectorReferenceIcon name="Welcome" size={40} /><h2>{t('director.ui.startGenre')}</h2></div>
               <div className="dc-welcome-presets">{GENRES.map((genre, index) => <button type="button" key={genre} onClick={() => { const { name: _name, ...preset } = PRESET_DEFAULTS[index]; setDraft({ ...draft, preset: { ...draft.preset, ...preset } }); setPresetOpen(true); }}><span>#{index + 1}</span>{t(`director.genre.${index + 1}`)}</button>)}</div>
             </div>}
             {work && <>
@@ -604,15 +630,17 @@ export function DirectorStudio({ project }: { project: string }) {
                 maxOutputTokens={maxOutputTokens} hasDocuments={Boolean(detail?.documents.length)}
                 onChanged={refreshDetail} onState={setPlanningPhase} quoteAction={planningQuoteAction} />}
               {detail?.runs.filter((item) => !executions.some((execution) => execution.id === item.id)).map((item) => <div className="dc-message" key={item.id}><strong>{t('director.run')} · {item.action}</strong><p>{item.status === 'failed' ? item.error : t(`director.runStatus.${item.status}`)}</p></div>)}
-              <ExecutionHistory runs={executions} busy={Boolean(busy)} onAction={(item, type) => void controlExecution(item, type)} onViewResult={(item) => void viewExecutionResult(item)} />
+              <DirectorConversation runs={executions} previews={stream.state.runs} busy={Boolean(busy)} onAction={(item, type) => void controlExecution(item, type)} onViewResult={(item) => void viewExecutionResult(item)}
+                onRefine={async item => { if (!await selectDocument('episode', Number(item.docKey.slice(8)))) return; setComposer(t('director.stream.refinePrompt')); setPanelOpen(true); }} />
               {pending && <div className="dc-message dc-change-card"><strong>{t('director.reviewRequired')}</strong><p>{pending.reason}</p><div className="dc-change-excerpt">{pending.content.slice(0, 240)}</div>
                 <div className="dc-card-actions"><button type="button" onClick={() => { setProposalPreview(true); setEditorText(pending.content); setEditorOpen(true); }}>{t('director.openDraft')}</button><button type="button" onClick={() => void decide(pending, false)}>{t('director.reject')}</button><button type="button" className="dc-primary-button" onClick={() => void decide(pending, true)}>{t('director.accept')}</button></div>
               </div>}
-              {selectedKind === 'episode' && document && document.version > 0 && !pending && !documentReadOnly && <button type="button" className="dc-finalize-entry" onClick={() => void openFinalization()}>{t('director.finalizeEpisode')}</button>}
+              {selectedKind === 'episode' && document && document.version > 0 && !pending && !documentReadOnly && <button type="button" disabled={hasActiveExecution || editorDirty || Boolean(busy)} className="dc-finalize-entry" onClick={() => void openFinalization()}>{t('director.finalizeEpisode')}</button>}
             </>}
-          </div>
+          </ConversationScroll>
+          {stream.reconnecting && <p className="dc-stream-connection" role="status">{t('director.stream.reconnecting')}</p>}
           {error && !preview && <div className="dc-error" role="alert">{error}<button type="button" aria-label={t('director.close')} onClick={() => setError('')}><X size={14} /></button></div>}
-          {!notificationDismissed && <div className="dc-notification-banner"><span>{t('director.surface.notificationBanner')} <button type="button" onClick={() => setSettingsOpen(true)}>{t('director.surface.enable')}</button></span><button type="button" aria-label={t('director.surface.dismissNotification')} onClick={() => { setNotificationDismissed(true); saveDirectorPreference('notificationDismissed', true); }}><X size={16} /></button></div>}
+          {!notificationDismissed && <div className="dc-notification-banner"><span><span>{t('director.surface.notificationBanner')}</span><button type="button" onClick={() => setSettingsOpen(true)}>{t('director.surface.enable')}</button></span><button type="button" aria-label={t('director.surface.dismissNotification')} onClick={() => { setNotificationDismissed(true); saveDirectorPreference('notificationDismissed', true); }}><X size={12} /></button></div>}
           <div className="dc-composer" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void attachSource(event.dataTransfer.files[0]); }}>
             <div className="dc-composer-chips"><button type="button" className="dc-preset-chip" onClick={() => setPresetOpen(true)}><ScrollText size={13} />{t('director.presetTitle')}</button>
               {work && <button type="button" className="dc-context-chip" onClick={openEditor}><FileText size={14} /><span>{title}</span></button>}
@@ -634,14 +662,18 @@ export function DirectorStudio({ project }: { project: string }) {
               </div>
               <button type="button" className="dc-model-name" onClick={event => showMenu('model', event.currentTarget)} aria-label={t('director.surface.chooseModel')} title={modelContract?.locked ? t('director.fixedModel') : t('director.textModel')}>{modelContract?.locked ? modelContract.model_name : draft.preset.model_name || modelContract?.model_name || t('director.modelUnavailable')}<ChevronDown size={12} /></button>
               <span className="dc-composer-spacer" />
-              {work && <select aria-label={t('director.sections')} value={selectedKind} onChange={(event) => setSelectedKind(event.target.value as DirectorDocumentKind)}>{SECTIONS.map((section) => <option value={section.kind} key={section.kind}>{t(`director.section.${section.kind}`)}</option>)}</select>}
+              {work && <select aria-label={t('director.sections')} value={selectedKind} onChange={(event) => void selectDocument(event.target.value as DirectorDocumentKind)}>{SECTIONS.map((section) => <option value={section.kind} key={section.kind}>{t(`director.section.${section.kind}`)}</option>)}</select>}
               <button type="button" className="dc-icon-button dc-manual" onClick={event => showMenu('manual', event.currentTarget)} title={t('director.manualApprovalOnly')} aria-label={t('director.ui.manual')}><Hand size={18} /></button>
-              <button type="button" className="dc-send" disabled={Boolean(busy) || Boolean(pending) || hasActiveExecution || !capability || Boolean(work && (!document || document.doc_key !== docKey)) || documentReadOnly || (planningMain && !['NOT_STARTED', 'WAIT_COST', 'FAILED_RECOVERABLE', 'CANCELLED'].includes(planningPhase ?? ''))} aria-label={t('director.send')}
-                onClick={() => { if (planningMain) planningQuoteAction.current?.(); else void (work ? startGeneration() : createWork()); }}>{busy ? '…' : <ArrowUp size={18} />}</button>
+              {stoppable ? <button type="button" className="dc-send dc-stop" disabled={Boolean(busy)} aria-label={t('director.execution.stop')} onClick={() => void controlExecution(stoppable, 'run.cancel')}><span aria-hidden="true">■</span></button> : <button type="button" className="dc-send" disabled={editorDirty || Boolean(busy) || Boolean(pending) || hasActiveExecution || !capability || Boolean(work && (!document || document.doc_key !== docKey)) || documentReadOnly || (planningMain && !['NOT_STARTED', 'WAIT_COST', 'FAILED_RECOVERABLE', 'CANCELLED'].includes(planningPhase ?? ''))} aria-label={t('director.send')}
+                onClick={() => { if (planningMain) planningQuoteAction.current?.(); else void (work ? startGeneration() : createWork()); }}>{busy ? '…' : <ArrowUp size={18} />}</button>}
             </div>
           </div>
+          {mediaKind && work && <DirectorMediaPanel key={`${work.id}:${mediaKind}`} project={project} workId={work.id} kind={mediaKind} onKind={setMediaKind} onClose={() => setMediaKind(null)} />}
         </DirectorWindow>
       )}
+      {mediaAnchor && <DirectorPopover anchor={mediaAnchor} label={t('director.ui.characterImage')} width={176} onClose={() => setMediaAnchor(null)}>
+        <div className="dc-menu-rows" role="menu">{(['characters', 'scenes', 'props'] as const).map(kind => <button key={kind} type="button" role="menuitem" onClick={() => void openMedia(kind)}>{t(`director.media.${kind}`)}</button>)}</div>
+      </DirectorPopover>}
 
       {presetOpen && <DirectorPresetDialog draft={draft} onClose={() => setPresetOpen(false)} onConfirm={(confirmed) => void savePreset(confirmed)} readOnly={hasActiveExecution || Boolean(busy)} sourceLocked={settingsFrozen} fixedModel={modelContract?.locked ? modelContract.model_name : undefined} />}
 
@@ -659,16 +691,24 @@ export function DirectorStudio({ project }: { project: string }) {
       </DirectorPopover>}
 
       {editorOpen && !proposalPreview && work && document?.doc_key === docKey && <DirectorDocumentEditor key={`${work.id}:${docKey}`} project={project} work={work}
-        initial={document} currentVersion={document.version} readOnly={documentReadOnly || Boolean(pending)} busy={Boolean(busy)} error={error} label={currentLabel}
+        initial={document} currentVersion={document.version} readOnly={documentReadOnly || Boolean(pending) || hasActiveExecution} busy={Boolean(busy)} error={error} label={currentLabel} companionOpen={panelOpen}
         onClose={() => setEditorOpen(false)} onSave={(text, version) => void saveEditor(text, version)}
-        sections={SECTIONS.map(section => ({ id: section.kind, label: t(`director.section.${section.kind}`), selected: selectedKind === section.kind }))}
-        onSection={id => { setSelectedKind(id as DirectorDocumentKind); }}
-        onReference={(text, version) => { const value = `${composer}\n${t('director.surface.referenceLabel', { label: currentLabel, version })}\n> ${text.replace(/\n/g, '\n> ')}`; if ([...value].length > 10000) { setError(t('director.surface.referenceTooLong')); return; } setComposer(value); setEditorOpen(false); setPanelOpen(true); }}
+        flushRef={editorFlush} onDirty={setEditorDirty} onAutosaved={(saved, revision) => {
+          if (visibleWork.current !== work.id) return;
+          setDocument(previous => previous?.doc_key === saved.doc_key && previous.version > saved.version ? previous : saved);
+          setDetail(previous => !previous || previous.work.id !== work.id || previous.work.revision > revision ? previous : {
+            ...previous, work: { ...previous.work, revision }, documents: [...previous.documents.filter(item => item.doc_key !== saved.doc_key), { doc_key: saved.doc_key, version: saved.version }],
+          });
+        }}
+        onConversation={() => setPanelOpen(value => !value)}
+        sections={SECTIONS.flatMap(section => [{ id: section.kind, label: t(`director.section.${section.kind}`), selected: selectedKind === section.kind && section.kind !== 'episode' }, ...(section.kind === 'episode' ? episodes.filter(item => !item.archived).map(episode => ({ id: `episode-${episode.orderKey}`, label: episode.deliveryLabel, selected: selectedKind === 'episode' && ordinal === episode.orderKey })) : [])])}
+        onSection={id => { if (id.startsWith('episode-')) { setSelectedKind('episode'); setSelectedEpisode(Number(id.slice(8))); } else setSelectedKind(id as DirectorDocumentKind); }}
+        onReference={(text, version) => { const value = `${composer}\n${t('director.surface.referenceLabel', { label: currentLabel, version })}\n> ${text.replace(/\n/g, '\n> ')}`; if ([...value].length > 10000) { setError(t('director.surface.referenceTooLong')); return; } setComposer(value); setPanelOpen(true); }}
         onPropose={(text, version) => { setReviewText(text); setReviewBaseVersion(version); setEditorOpen(false); setReviewOpen(true); }} />}
 
-      {editorOpen && proposalPreview && <div className="dc-editor-overlay dc-screenplay-editor" role="dialog" aria-modal="true" aria-label={t('director.editor')} onKeyDown={event => { if (event.key === 'Escape') setEditorOpen(false); }}>
-        <header><strong>{title} · {currentLabel}{proposalPreview ? ` · ${t('director.reviewRequired')}` : ''}</strong><span>{t('director.version', { number: document?.version ?? 0 })}</span><button type="button" onClick={() => setEditorOpen(false)} aria-label={t('director.close')}><X size={20} /></button></header>
-        <DirectorRichText value={editorText} onChange={() => {}} readOnly label={currentLabel} />
+      {editorOpen && proposalPreview && <div className="dc-editor-overlay dc-screenplay-editor" role="dialog" aria-modal={!panelOpen} aria-label={t('director.editor')} onKeyDown={event => { if (event.key === 'Escape') setEditorOpen(false); }}>
+        <header><strong>{title} · {currentLabel}{proposalPreview ? ` · ${t('director.reviewRequired')}` : ''}</strong><span>{t('director.version', { number: document?.version ?? 0 })}</span><button type="button" className="dc-editor-chat-toggle" aria-pressed={panelOpen} onClick={() => setPanelOpen(value => !value)}>{t('director.openPanel')}</button><button type="button" onClick={() => setEditorOpen(false)} aria-label={t('director.close')}><X size={20} /></button></header>
+        <DirectorRichText value={editorText} onChange={() => {}} readOnly label={currentLabel} screenplay={selectedKind === 'episode'} />
         <div className="dc-editor-safety"><div className="dc-editor-actions">{pending && <><button type="button" disabled={Boolean(busy)} onClick={() => void decide(pending, false)}>{t('director.reject')}</button><button type="button" className="dc-primary-button" disabled={Boolean(busy)} onClick={() => void decide(pending, true)}>{t('director.accept')}</button></>}</div></div>
       </div>}
 
@@ -678,6 +718,7 @@ export function DirectorStudio({ project }: { project: string }) {
         <div className="dc-small-modal" role="dialog" aria-modal="true" aria-label={t('director.execution.viewResult')}>
           <h2>{t('director.execution.viewResult')}</h2>
           <p>{t('director.execution.retainedHint')}</p>
+          {retainedResult.factAudit && !retainedResult.factAudit.passed && <div role="alert"><strong>{t('director.factAudit.title')}</strong><p>{t('director.factAudit.hint')}</p><ul>{retainedResult.factAudit.issues.map((issue, index) => <li key={index}>{issue.entityId} · {issue.field ? t(`director.factAudit.fields.${issue.field}`, { defaultValue: issue.field }) : issue.code}{issue.value ? `：${issue.value}` : ''}</li>)}</ul></div>}
           <textarea readOnly aria-label={t('director.execution.retainedText')} value={retainedResult.output ?? ''} />
           <footer><button type="button" onClick={() => setRetainedResult(null)}>{t('director.close')}</button></footer>
         </div>
@@ -689,7 +730,7 @@ export function DirectorStudio({ project }: { project: string }) {
           <p>{t('director.parameterReviewHint')}</p>
           {error && <div className="dc-error" role="alert">{error}</div>}
           <div className="dc-parameter-list">
-            {Object.entries(preview.parameters).map(([key, value]) => <div key={key}><span>{key}</span><strong>{value == null ? '—' : String(value)}</strong></div>)}
+            {Object.entries(preview.parameters).map(([key, value]) => <div key={key}><span>{key}</span><strong>{value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value)}</strong></div>)}
             <div><span>{t('director.execution.maxOutputTokens')}</span><strong>{preview.limits.maxOutputTokens}</strong></div>
             <div><span>{t('director.execution.attempts')}</span><strong>{preview.limits.maxAttempts}</strong></div>
             <div><span>{t('director.execution.expires')}</span><strong>{new Date(preview.expiresAt * 1000).toLocaleTimeString()}</strong></div>

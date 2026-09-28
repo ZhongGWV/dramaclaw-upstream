@@ -8,7 +8,7 @@
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 本机当前分支 `codex/sync-main-remotes`；合并提交 `60c22be` 已推送同名远端；中文项目名、拼音目录与 LibTV 原名功能已实现并获提交/推送授权，实时 HEAD / 差异以 Git 为准。
+- 本机当前分支 `codex/sync-main-remotes` 的合并fb80eafb已推送私有同名分支并核验；完整保留4c9dee4f的模型/H3/中文项目名及main的b5883b8f。最后追加交接记录，实时HEAD以Git为准。主目录和私有main仍为b5883b8f，公开origin/PR与服务未动；旧历史指针不作当前依据。
 - 历史隔离分支 `codex/sync-main-remotes`，`96bda53c`已合入四个TV Director提交并推送私有同名分支。
   后续协调提交后的HEAD以Git为准。`main=zhonggwv/main=f057a867`保持不动，公开fork/PR未更新。
 - 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
@@ -37,7 +37,7 @@
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
 | [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 执行中 | 隔离 worktree 集成本地画布三提交与远端六提交；主检出目录的 HEVC 未提交工作保留，正常推送结果以 Git 为准 |
-| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | cb3833ee已推送私有main（未deploy）；471后端/78前端/build/提交钩子通过。已保存大纲证据审查接通，但6笔审稿全漏关键错，未过文学门、不能自动放行；M07 2.2.0保留short-drama根基。下一步literary-benchmark §9.5原子事实确认+最小正反反例；UI/M10/Windows/完整退出门与素材再分发许可仍未全过 |
+| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。b5883b8f已推私有main，本轮合入同步分支；未部署 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
@@ -56,8 +56,8 @@
 | [shot-breakdown](tasks/shot-breakdown.md) | 逐帧拉片三维度：分镜 / 动态 / 音乐 | 待验收 | 三层提交与干净快照通过；待真实视觉模型及有/无 demucs 两种音乐路径 |
 | [depth-motion-da3](tasks/depth-motion-da3.md) | 拉片动态维度：Depth Anything 3 深度视频 | 待验收 | 任务中心名称与 20 项聚焦回归已补齐；待 CUDA 真机 720p 硬切样片验收 |
 | [story-writer](tasks/story-writer.md) | 创作阶段（虾本）：写手 agent + 通用文档存储 + 前端路由 | 待验收 | 14 项后端契约测试与前端 build 已通过；待真实模型四阶段流程和导入链路验收 |
-| [local-stack](tasks/local-stack.md) | 命令行 CE 本地栈：local_gateway + ComfyUI Qwen/Krea | 待验收 | 新增独立“编辑”Identity Edit，单图实测成功；原 Krea 流程保留，双图及 Mac INT8 待验收 |
-| [canvas-lod-perf](tasks/canvas-lod-perf.md) | 画布 LOD 剔除、低缩放交互、视频抽帧封面 | 待验收 | 指定导入画布 20% 缩放已显示图片/视频标题，类型检查及页面视觉核对通过；慢图交接和性能量化仍待后续验收 |
+| [local-stack](tasks/local-stack.md) | 命令行 CE 本地栈：local_gateway + ComfyUI Qwen/Krea | 待验收 | 已按用户选择启动945baa9f同步分支，复用原配置/数据；3001/8781/5173/8188和前端代理均200，原6项目可读。Comfy部分triton/FP8插件不可用，具体出图未测，未触发生成；历史双图/Mac验收保留 |
+| [canvas-lod-perf](tasks/canvas-lod-perf.md) | 画布 LOD 剔除、低缩放交互、视频抽帧封面 | 待验收 | 20% 缩放的图片/视频标题与页面视觉已核对，ImageGenNode 懒加载和发布容错已回归；慢图交接与大画布帧率仍待量化 |
 
 已完成或放弃的线移到 `docs/agent/archive/`，不要在上表里留尸体。状态只用
 `提案中 / 方案就绪 / 执行中 / 待验收 / 已阻塞 / 已完成 / 已归档`。
@@ -88,7 +88,7 @@
 
 ## 四、恢复顺序（不是功能优先级）
 
-用户最新优先级（2026-09-26）：`tv-director-implementation` 结构是基础，文学质量最重要，须多套真实样本尽量对齐；short-drama是根基。集数/时长由用户决定，30秒仅历史测试值。literary-benchmark §1–§8保留五套/14请求/LibTV完整大纲对照，§9新增已保存大纲独立审查及6笔真实漏判证据；引用格式通过仍非事实正确，须先补原子事实确认和正反例，再评审模型对照。UI/布局/操作全对齐及M10等完整目标保留，不从测试数推完成率；失败实验不晋级，不重买旧UNKNOWN。
+用户最新优先级（2026-09-27）：main的b5883b8f已推；本轮按新授权同步至codex/sync-main-remotes，保留目标已有模型/H3/中文名功能，只推该私有分支、不部署。批量图片/画布恢复、M12全文事实与三视口像素检查已落地，失败与剩余项以batch-facts-pixels为准。后续同内容全态像素、长篇审计和语义质量仍需实施；short-drama为根基，不从同步成功或测试数推产品完成率。
 
 1. 交接协议与 handoff 回归修复已独立提交并推送。
 2. 只读分类 `legacy-unassigned-diff`，任何未确认归属的文件继续保持隔离。

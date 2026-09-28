@@ -1,11 +1,12 @@
 # 全新 TV Director 剧本工作台实现
 
 **状态**：执行中
-**最后更新**：2026-09-26
-**基线**：`e7b1fbce7ee814fb3fd7343b74f68d331f24ec70`（本线实现起点）；本地实现已提交`cb3833ee`、研究`180aac9f`、协调`ba101496`，尚未push。下次业务写入前重新审计实际HEAD并同步本台账/claim基线；受保护资料不动
-**认领者**：`codex/tv-director-outline-review-20260926`
-**相关文档**：`docs/guides/liblib-tv-director-analysis.md`、`docs/guides/liblib-tv-director-development.md`、`docs/guides/tv-director-skill-fusion.md`
+**最后更新**：2026-09-27
+**基线**：`0298aefa4734c3d8e5a02362cbf068351833c343`（合并结果已同步本地主目录；私有同步分支已推，私有main未推）；历史实现起点e7b1fbce。保留同步线未提交交接和受保护资料。
+**认领者**：`codex/tv-director-commit-20260927`
+**相关文档**：`docs/guides/liblib-tv-director-analysis.md`、`docs/guides/liblib-tv-director-development.md`、`docs/guides/tv-director-skill-fusion.md`、`docs/guides/tv-director/character-parity.md`、`docs/guides/tv-director/scene-parity.md`、`docs/guides/tv-director/prop-parity.md`
 **相关分支 / PR**：无
+**本轮详细证据**：`docs/guides/tv-director/batch-facts-pixels.md`；前轮编辑/媒体见`interaction-closure.md`，分集见`episode-parity.md`
 
 ## 目标
 
@@ -68,6 +69,120 @@
 - **共享文件顺序**：当前无别的持锁者；本线持锁串行修改。复查发现 story-writer 对 `routeTree.gen.ts` 和项目导航均已有 wildcard 共享，无需改对方台账；新增路由源后由工具生成。API 注册/三语也已有 wildcard 共享，合并时由本线对本轮键负责。
 
 ## 实施方案
+
+### 2026-09-27 · 按用户授权提交当前实现
+
+本轮只提交本线已完成的连续增量，不新增业务行为、不继续收费测试、不push/部署。Git为main/0298aefa、ahead49，索引为空，guard29线966claims且无活动锁；人物/场景/道具/分集/自动保存/媒体/事实检查及其测试、方法包、六份验收指南均由前轮本线留存。DESIGN与三语diff仅本线内容；同步线两份文档、STATE中同步线段落及受保护本地资料保持未暂存。现有origin/main没有Director域同类实现，私有同步分支仍在同基线，不pull/rebase。
+
+提交边界沿本claim的实际已修改/新增精确路径（由status生成候选并逐路径preflight），不使用整树git add；STATE仅暂存本线日期、索引行与恢复优先级。先复核候选/密钥与diff门，重跑Director后端/前端与构建，执行实际暂存文件的pre-commit检查，创建带DCO的单一同工作线提交；验证提交路径、DCO和剩余状态，再handoff/release。回退仅将来显式revert该提交，不清理工作树。已有像素FAIL/文学漏判/长篇分块及实际图片质量欠项不因提交改成通过，本线维持执行中。
+
+### 2026-09-27 · 批量画布、全文事实与整页像素（执行中）
+
+用户明确补齐三项，不以单素材、六项总评、局部几何代替。恢复基线0298aefa/main，guard29线959claims无锁；旧Director差异归本线保留，同步线及受保护资料不动。检查拟改路径diff及本地origin/main：无同域替代实现、无director/story同名分支，不pull。short-drama/skill-creator/Playwright及单集/可拍性/改编/事件覆盖参考已读，知识查询无匹配。
+
+1. 批量采用已存设计稿顺序的确定性规划（不付费让模型重新发明素材），自动为每项形成可编辑提示词、源文档版本和稳定节点ID。新增独立batch/node表，沿既有媒体意图及队列，不改旧canvas/freezone。计划原子落库、批准集一次冻结、未选中不发、取消只停未提交项，重连/恢复沿相同意图；部分失败/未知不得自动重买。节点与任务一一对应，结果只从项目任务读取，拖动位置CAS持久化。图像结果不写回剧本。
+2. 扩展独立M12而非在M11自评：全稿逐段、完整来源及全部已写前集进入冻结上下文；逐段列原子主张和状态转移（主体/物件/位置/动作完成/内外与画中层次），逐一引文锚定，不允许未覆盖段落冒充完整。来源/跨集/本集均可回看，矛盾阻断、未知需逐项人工判断；新审查版本使旧报告失效，正文与付费旧回包保留。读取覆盖不是语义完美，明确人工复核边界。复用short-drama两份M12参考，窄修方法与指纹；新请求使用完整合同，旧回执按旧版本保留。
+3. 同视口原站/本地整页截图、可复跑像素指标及差异图；记录页面状态/尺寸/数据差异、不得把遮掉正文或整块区域后结果当全页通过。按可比状态逐屏实点并修差距，源码方法/图像质量/像素状态分别验收。原站仅读现有稿与上次占位节点，不再重复购买。不能取得相同业务内容时报告原始全页差异与原因，不编造零差。
+
+精确写入：新增director/media_batch.py、episode_facts.py；既有media.py、quality.py、schemas/quality.py、skills/builtin/episode-review/{SKILL.md,method.md,manifest.json,provenance.json}、skills/{runtime.py,pinned.py}、API routes/director.py。前端api/director.ts、DirectorStudio.tsx、components/{DirectorMediaPanel.tsx,DirectorCanvas.tsx,QualityReviewDialog.tsx}、director.css，新增useDirectorMedia.ts、components/DirectorMediaNodes.tsx。测试新增tests/director/{test_media_batch.py,test_episode_facts.py,live_episode_facts.py,pixel_compare.py}、frontend/src/__tests__/{director-media-batch.test.tsx,director-facts.test.tsx}，既有test_media.py/test_quality.py/test_skill_runtime.py/preview_execution.py及director-media.test.tsx；三语/DESIGN/临时preview HTML，本台账/claim/STATE，新增guides/tv-director/batch-facts-pixels.md。上述新域独占，三语共享串行追加，旧业务/凭据/用户稿只读。新增路径先scope/preflight。
+
+顺序：合同与失败回归→服务端批次/画布与完整审查→UI→离线全Director→最多4笔独立真实文本审查（各请求8192输出上限、无自动重试，UNKNOWN停，复用已有稿不重买）→浏览器/像素→门禁与交接。实际金额未知不报免费，上限非账单保证；当前无新增真实图片购买，图片链以隔离队列和持久结果验证，真实图片如需另记明确单笔范围。验证pytest、Vitest/build、ruff/i18n/设计/CE/gitleaks/guard；回退只关新入口保留表/报告/费用，不删数据、不自动迁移事实、不提交部署。
+
+实测分叉：首笔CE settings.db优先于env，未进入隔离网关，回执UNKNOWN保留且不重试；新正例实际V4-Flash返回完整内容，但OTHER_EPISODE携带有效事实被宿主互斥条件误拒。修正枚举语义并收紧场景头（内外/时间不能当纯标题跳过），补负例后安排新版正反两笔，总计最多4次授权请求。供应商reported outputTokens可含推理而超过8192，保留实际usage，不声称账单硬封顶。
+
+### 2026-09-27 · 编辑、媒体与来源事实收口（执行中）
+
+最新请求同时覆盖自动保存、编辑时聊天浮窗、角色/场景/道具媒体操作，以及年龄/称呼/动作/场景类型补写。基线0298aefa/main，guard29线954claims、无锁；已完整读台账、协议、DESIGN、Playwright、short-drama和skill-creator及人物/单集/可拍性/改编/事件覆盖参考，知识查询无匹配。既有人物场景道具分集diff归本线原样延续，同步线与用户资料冻结；拟改精确路径已检查diff，本地origin/main没有Director域替代实现，无同类远端分支，不在脏树pull。
+
+分批实施而不以子批冒充全量：A编辑闭环复用既有document.commitManual幂等命令，不增第二正文权威：1秒空闲自动保存用户编辑（非模型采纳/定稿），串行合并后续输入；失败保留会话恢复稿及原命令，409不重基覆盖；关闭/切栏目/选区引用先flush，刷新未知响应重放同命令；保存状态置顶，私稿收进更多菜单，移除56px聊天偏移。聊天开关/停靠/拖放/窄屏按原站实测，待审采纳栏另行保留可达。B核对原站角色/场景/道具下拉和全能创作真实动作，接现有媒体目录、参数校验、项目任务与素材，不复制旧画布UI、不造可点击假入口；新持久化/API选择如需扩展，先补本段和精确scope再写。C来源事实先建立带来源和未知态的字段/动作约束及负例，冻结到请求并保留候选与人工确认，不把模型抽取当用户已确认。依据失败回包窄修应用内M08/M11，保留short-drama参考，真实样本在隔离项目有界执行，不改原站/用户稿，不重放旧UNKNOWN。
+
+A精确路径：frontend/src/api/director.ts、features/director/{DirectorStudio.tsx,director.css,components/DirectorDocumentEditor.tsx,components/DirectorWindow.tsx}，新增useDocumentAutosave.ts；src/novelvideo/director/repository.py（既有幂等响应补事务workRevision，不改DB）；新增frontend/src/__tests__/director-autosave.test.tsx，既有director-execution.test.tsx/director-richtext.test.tsx/director-ui.test.tsx、tests/director/test_documents.py/preview_execution.py；三语、DESIGN、本台账/claim/STATE，新增guides/tv-director/interaction-closure.md；临时preview HTML。其他B/C文件读审后逐一追加。原站只读现有稿，实测媒体菜单已确认角色/场景/道具三类。
+
+验证A：零改动不写；连续输入/输入法/保存中继续输入；断网/丢响应同命令重试；外部版本冲突不覆盖；关闭/切栏/引用/刷新恢复；保存不生成/不采纳模型/不定稿。三视口同几何与叠层可达，后端事务/前端用例/build/i18n/ruff/设计/密钥/guard。B/C有各自请求证据和行为断言，实际费用未知如实标记；不把schema通过当文学质量。回退只移除新入口/接点，保留正文、版本、费用与回包，不删库；本轮不提交/push/部署。
+
+B取证纠正：源站场景图菜单实际自动切换全能创作、发送附文档的任务，读取3份创作文本并创建6个待生成图片节点，然后询问90积分确认。本轮未确认，已取消；原剧本文字未改，但测试已创建该对话和待生成节点，不再写成纯只读。此自动规划不等于图像已生成，费用余额观察仍930，不据此保证文本规划免费。全能创作与图片执行分离是必须保留的语义。
+
+B技术选择已以非阻塞问题告知用户：新Director界面复用现有媒体模型目录及任务服务，保留显式费用审批。默认沿此兼容选择实施，不重建供应商网关。新增独立媒体意图表，不改正文表或已有媒体任务；prepare按已保存设计文档的H2顺序提取素材，用户勾选及编辑提示词，冻结文档版本、模型目录指纹、实际参数和一次执行ID；confirm原子claim，丢响应只GET/同ID查询、不自动重发。既有freezone/gen负责权限、模型参数映射、队列和供应商；Director薄路由适配，领域不导入API。没有目录选项的兼容模型只显示接口默认值并提示，不编造可用档位。金额未知明确显示且需独立确认，禁止报免费/0积分。新图像只在本次源素材下关联展示，文稿不被改写。
+
+B精确新增：src/novelvideo/director/media.py，frontend/src/features/director/components/DirectorMediaPanel.tsx，tests/director/test_media.py，frontend/src/__tests__/director-media.test.tsx；既有src/novelvideo/api/routes/director.py、frontend/src/api/director.ts、DirectorStudio.tsx、director.css、三语、DESIGN、preview_execution.py及本台账/scope/指南。其余freezone/catalog/任务只读调用。先实现单素材独立确认；批量必须逐个冻结且逐个明确确认，不宣称与源站批量agent完整等价。验证空文档/跨作品/版本变化/同ID不同参数/双击/丢响应/供应商异常/仅选中素材/参数一致，前后端及浏览器隔离适配测试通过后再考虑单笔真实图像。
+
+C具体化：对独立人物/场景生成，在冻结请求中附来源事实边界，模型给关键字段提供原文引证；宿主核对引用真实存在、主体和值匹配。人物具体数字年龄、称呼规则、记忆动作与受压动作，场景内外类型、空间限制及可复用位置，无证据则保持未知。未经证实的结果留在原回包，不产生可采纳变更、不自动重试购买。此门只是高风险字段引证检查，不宣称证明所有散文语义或M11动作；改编叙述解释不能变成新动作，分集仍需独立审稿。旧回包和旧已保存稿不迁移、不自动删改。
+
+C精确新增src/novelvideo/director/fact_guard.py、tests/director/test_fact_guard.py；既有writing.py、execution_repository.py、skills/builtin/character-bible/{method.md,manifest.json,provenance.json}、skills/pinned.py、tests/director/{test_characters.py,test_scenes.py,test_skill_runtime.py,test_workflow.py,live_characters.py,live_scenes.py}。响应schema只在新单文档请求附sourceProofs；解析前验证并去除审计字段交既有业务schema，筹备M08及M11保持当前合同并记为未覆盖，禁止用局部规则声称全量已解决。真实模型上限本轮人物workplace和场景workplace各一次8192输出token，费用未知、无自动重试；失败原回包保留再人工审查，不盲目购买。技能按skill-creator增量改应用内包，更新版本/hash；不修改全局short-drama。
+
+C版本门补充：运行时Manifest显式枚举允许版本，新增精确skills/runtime.py仅允许本轮已审计2.4.1，不放宽任意包/工具权限。回归在该门发现未登记版本会拒绝整个方法包，先登记再进行模型测试。
+
+C两笔实测后的分叉：两笔均返回完整JSON但来源门未过；人物仍编示例对白且漏pressureResponse引证，另有句末标点误拦；场景把长段概括当原句，并漏内外证明。零费用修标点比较，voice列入高风险来源字段；新增schema关键文本字段的来源片段候选枚举与结尾检查说明，保持其他文学字段可写解释但不得新增事实。追加同两样本各一次对照（本轮文本最多4笔，各8192输出token，绝不覆盖首轮回包、不自动重试），用于验证不是仅靠拦截让功能无法使用。若仍失败如实留待审，不降低门槛以凑成功。方法2.4.2及全部指纹同步，筹备M08和M11未覆盖仍显式记录。
+
+C结果可检查性：追加精确frontend/src/api/director-execution.ts，仅为既有只读result响应声明factAudit可选字段；repository.retained_result返回同一已存审计，DirectorStudio原回包弹窗展示失败字段和值，三语补文案。不新增收费接口或自动修订。
+
+最终回归补充：tests/director/test_props.py仅同步共享M08方法版本断言2.4.2（不改道具合同）。A补聊天栏目切换/打磨动作同一flush屏障；B修目录空选项、必选参数显示和完成结果只读恢复，预览仅合成队列；C同一空间去重不把室内/室外不同地点强并。四笔模型已执行，不再自动追加调用，场景对照失败留证，修复后先用原回包零费用重验。
+
+A冲突可用性补充：409只拦截会导致用户反复打开恢复稿仍无法前进。沿原A路径添加显式“下载本地副本并读取最新稿”，读取服务器后先导出本地文本，用户确认已备份才替换编辑区；不向正文POST、不合并/覆盖远端、不在请求仍执行或未知结果时重置。配套三语与hook回归，未知响应仍仅同命令重放。
+
+### 2026-09-27 · 分集剧本与真实增量交互（方案就绪→执行中）
+
+用户优先分集要素/操作/布局，特别要求对话、模型与技能流式打磨。基线仍0298aefa/main，29线949claims且无锁；逐项diff确认人物场景道具旧变更属于本线保留，同步台账和用户资料不动。现有origin/main无Director同域实现、无同类director/story分支，不在脏树pull。已完整读台账/协议/DESIGN/Playwright/short-drama/skill-creator及单集所需六参考、改编两参考，知识查询无匹配。
+
+源站只读现存分集：H1集号/标题；目标时长、题材/口味、节拍、核心氛围、本集承接、本集钩子、关联资产七项；剧情梗概H2/正文H2/场号地点日夜内外H3；出场人物、△动作、粗体说话人/斜体表演提示/分行对白。1920正文x620/y178/680px、15/28，与前三页一致。参考稿含用户后续镜头修改，不能把每一处运镜都强制成文学剧本字段。既有研究已实测write_file活动、分段append、独立review及人工修改/定稿；复用合法留证不再付费购买旧样例，不操作原站正文。
+
+现状：Agent.run等完整回包，UI每2.5秒刷新状态；已有持久execution_events/after_seq只读接口但前端未消费。M11已加载short-drama与保存人物/场景/道具/前集，但未规定原站分集交付要素。先接真实供应商run_stream，将文字增量和实际方法加载/模型开始/结束写同一运行事件；客户端按seq去重恢复，仅只读读取，不因重连重发生成。保留原独立报价/显式采纳/审稿/定稿，不新增自动收费审稿修订。本轮向用户说明该推荐方式；无相反选择时复用既有事件API，不引入第二种会话协议或数据库迁移。SSE长连接与事件短轮询两种可行，先复用现有鉴权事件游标（活跃时短轮询），不以传输方式冒充模型文字流式。
+
+验收：七项/梗概/场次对白方法和可见缺项提示；模型实际增量在最终结果前到达并保留，思维链不展示；流中停止/中断/刷新/切作品不重复调用、不串稿、不将半稿变正式；用户指令及真实方法版本可回看；聊天按时间、跟随仅在底部、回到底部；分集目录可展开到每集/场次、交付卡可定位目标集、继续修改只预填不自动扣费。编辑器与聊天共存须保持版本CAS及未保存保护。生成、修订、审阅、定稿分开，末集不自动写续集。保留旧稿，不称自动审稿、完整M10或全套Director完成。
+
+精确写入：writing.py/dispatch.py/execution_repository.py/execution.py，新增director/streaming.py和episode_format.py；skills/builtin/episode-writing/{SKILL.md,method.md,manifest.json,provenance.json}、runtime.py/pinned.py（方法指纹）；前端api/director-execution.ts、DirectorStudio.tsx、components/{ExecutionHistory.tsx,DirectorDocumentEditor.tsx,DirectorRichText.tsx}、director.css，新增useExecutionStream.ts与components/DirectorConversation.tsx；三语translation.json仅新增director键；DESIGN。测试新增tests/director/{test_streaming.py,test_episode_format.py,live_episodes.py}与frontend/src/__tests__/director-streaming.test.tsx，既有test_execution.py/test_skill_runtime.py/preview_execution.py及director-execution.test.tsx/director-richtext.test.tsx；临时preview HTML；新增docs/guides/tv-director/episode-parity.md、本台账/claim/STATE。网关已支持透传SSE只读不改，API既有events路由只读复用。其余业务/原稿/凭据不动。
+
+步骤：源站及现有SDK/接口审计→方法/格式→供应商流+持久事件→对话与目录/打磨动作→零费用断线/取消/重放/分块Unicode/隐藏思考/多作品与UI测试→最多三次隔离真实模型（首集、承接、定向修订，各一次8192输出token、无自动重试，UNKNOWN停）→三视口浏览器与完整参数回包归档→文档/门禁/交接。费用未知不冒称免费或硬账单封顶。回退只撤新增接点、保留账单/事件/正式稿，不删库。验证Director pytest、定向Vitest/build、ruff/i18n/设计lint/密钥扫描/guard；文学事实另判，不用静态要素通过替代质量。
+
+### 2026-09-26 · 道具设计要素、操作与布局（方案就绪→执行中）
+
+用户优先对齐道具设计。登录态只读核对既有LibTV道具稿：道具清单H1→物名H2→类型/戏剧作用/使用边界/首次出场/关键集次五项；同类物按持有人区分，画中物与现实物、拍摄/持有/发送完成状态不混淆。实测1920视口正文x620/y178/680px、15/28、H1 23.25/H2 19.5，与场景共享布局。类型只观测到科技/证据，不据此虚构封闭枚举；采用输出语言自由分类。short-drama的episode-writing/ai-producibility/adaptation-core/event-coverage已读，知识查询无匹配，skill-creator用于维护应用内M08，不改全局技能。
+
+基线0298aefa/main；guard29线946claims无锁。已核对拟改路径diff，人物/场景既有改动归本线完整保留；同步台账及用户资料不动。origin/main对应Director路径不存在（diff为D），无director/story同名分支；不pull/rebase。现状props仅Asset(id/name/description)，单文档未路由M08、M11未读取保存道具，需同时接通而非仅换排版。
+
+验收：新增版本化PropDocument、五项三语人类投影，两入口共用；稳定ID/首次和关键集次由宿主校验，空清单必须说明但不得为凑数发明道具；历史旧描述只读兼容。M08独立道具只加载prop-craft，筹备加载三份，保留现有方法；持有人/位置/流转/状态/屏幕呈现范围融入戏剧作用及使用边界，不额外堆UI字段。正式道具与人物场景装入下游M11并绑定版本/hash，编辑使旧授权失效。UI核验切换/目录/编辑保存/刷新/引用/生成待审采纳，不覆盖别的稿。非目标：原站改稿、媒体调用、新API/数据库迁移、自动定稿及整套TVDirector等价；原站自动保存/聊天浮层与本地安全保存差异继续如实披露。
+
+精确路径：新增src/novelvideo/director/props.py、skills/builtin/character-bible/references/prop-craft.md；既有schemas/planning.py、planning.py、writing.py、execution_repository.py、skills/runtime.py、skills/pinned.py、character-bible/{SKILL.md,method.md,manifest.json,provenance.json,schemas/input.json,schemas/output.json,fixtures/contracts.json}；新增tests/director/{test_props.py,live_props.py}，既有test_workflow.py/test_scenes.py/test_characters.py/preview_execution.py、frontend/src/__tests__/director-richtext.test.tsx；如需修复交互仅既有DirectorStudio.tsx/components/DirectorDocumentEditor.tsx/components/DirectorRichText.tsx/director.css；DESIGN、三语仅必要新增文案；临时frontend/director-preview.local.html沿既有claim；新增docs/guides/tv-director/prop-parity.md、本台账/scope/STATE。
+
+步骤：字段和几何证据→合同/方法/筹备及单文档/M11→正负回归→最多三笔隔离合成真实模型（单集流转、双集同类不同物、改编画中物/未完成动作），各一次8192输出token，无自动重试，UNKNOWN停止；费用未知不报零、请求上限不承诺结算封顶。原请求/回包/usage/SQLite在忽略output完整保留→浏览器1920/1200/390与完整保存生成闭环→pytest/Vitest/build/ruff/i18n/设计/安全/guard交接。文学事实单独人工核对，字段通过不等于质量通过；不会盲目追加购买。M08升2.4.0与hash使旧报价失效；旧历史不迁移覆盖。回退仅撤本轮接点，不删文档/账单/旧回执。所有测试数为本方验证，不冒充源站内部Skill还原。
+
+浏览器接点补充：执行卡把docKey=props直接显示为英文，不符合道具页的人类栏目名。追加精确frontend/src/features/director/components/ExecutionHistory.tsx（旧diff为空）及既有director-execution.test.tsx，仅复用已有三语section键映射四类设计稿的标题/无障碍名称，参数原始docKey不改、未知key保留、分集编号不改。不触及审批费用或新翻译键。
+
+### 2026-09-26 · 场景设计要素、操作与布局（方案就绪→执行中）
+
+用户将优先级转为场景设计。只读登录既有LibTV作品：场景清单H1→场景名H2→类型、戏剧作用、空间对行动的限制、可复用动作位置、关键集次五项；六个场景含室内/室外/电视画面中的空间。节点仍为通用“生成角色图”菜单，不按当前页伪造新按钮；编辑器正文x620/y178/680px（1920视口），延续人物轮排版。已读short-drama及episode-writing/ai-producibility/adaptation-core/event-coverage，经验查询无匹配；仅更新应用内M08派生技能，不修改全局技能。
+
+基线0298aefa/main，guard通过且无活动锁；人物轮全部未提交改动属本线保留，同步线台账及受保护资料只读。拟改路径diff已逐项对账；本地origin/main无Director域替代实现，无director/story远端分支；不pull/rebase。现状locations仅id/name/description，场景单文档未挂M08，M11未读保存后的场景。解决这些接点，不以英文JSON投影冒充设计稿。
+
+验收：两入口共用SceneDocument合同和五项可读投影，稳定ID、宿主集次/顺序、旧稿兼容不伪造；场景单独生成不覆盖人物道具；M11读取正式场景版本/hash，改场景使旧报价失效；UI切换/目录/编辑/保存/刷新/引用可用，沿已测共享布局；真实请求与原回包完整保留，结构与文学事实分别审查。不扩张到媒体生成、新API、数据库迁移、自动定稿或完整TVDirector等价。
+
+精确路径：新src/novelvideo/director/scenes.py；既有schemas/planning.py、planning.py、writing.py、execution_repository.py、skills/runtime.py、skills/pinned.py及skills/builtin/character-bible包（增references/scene-craft.md）；既有frontend/src/features/director/{DirectorStudio.tsx,director.css,components/DirectorRichText.tsx,components/DirectorDocumentEditor.tsx}仅场景相关验证后必要改动；新tests/director/{test_scenes.py,live_scenes.py}及既有test_workflow.py/test_skill_runtime.py/preview_execution.py、frontend/src/__tests__/{director-richtext.test.tsx,director-ui.test.tsx}；DESIGN、三语仅必要新文案；新docs/guides/tv-director/scene-parity.md、本台账/scope/STATE。临时preview HTML沿已有精确认领。
+
+步骤：冻结源站字段/几何→合同/技能/两入口/M11→正负例回归→三组隔离合成原创单集/原创多集/改编场景模型实测（每组最多一笔、8192输出token、无自动重试，UNKNOWN停止）→浏览器三视口与持久化→指南/交接。请求上限非金额封顶，实际费用未知；输出到忽略的output，公开只记安全摘要。新合同有sceneVersion，旧版读投影独立；更新包hash使旧授权失效。失败保留付费原回包，不自动重购。回退只撤本轮接点，不删文档/账单。验证Director pytest、定向Vitest/build、ruff、i18n、设计lint、gitleaks及guard；文学不合格如实记录，不由schema代替。
+
+精确测试追加tests/director/test_characters.py：只更新M08版本断言至2.3.0（人物文档合同仍2.2.0），保留全部原人物回归；包版本与内容hash同时变，不能改了技能还报旧版本。
+
+三例后分叉：2.3.0回包暴露两类具体缺陷：空间未知被强化成排他限制（唯一门/陈伯不碰盒），电视内车厢仅嵌入实景而未独立列项。不是schema错误，不伪称质量过关。沿已认领包/runtime/schema/writing/test_scenes修改M08内部documentKind路由，人物方法不再全量塞场景请求，共同原则仍保留；加入正反例：不替开盒≠不能触盒，有门≠仅一门、电视可见场所单列且不得当实际到访。包升2.3.1，人物合同不改。先增加零费用方法选择/禁区测试，再追加同silent/adaptation各一笔对照（本轮总上限5笔，各一次8192，无重试，UNKNOWN即停止），原三笔保持不覆盖。即使改善也只报告样本结果，仍不宣称可靠自动事实门。
+
+UI报价点测追加：当前确认框把sceneRoot/responseSchema对象显示为[object Object]，不利于核对真实提交。沿DirectorStudio.tsx把对象转可读JSON（与现有ExecutionHistory一致），不改实际参数或授权动作；追加已认领frontend/src/__tests__/director-execution.test.tsx回归。没有新文案，不扩展设置或模型API。
+
+类型检查补充精确路径frontend/src/api/director-execution.ts：现有quote.parameters还声明为标量，但服务端已经返回schema/root等嵌套对象；修正TS为JSON值类型，不改变API请求或响应。构建发现的类型错应修合同，不在测试强制类型转换掩盖。
+
+### 2026-09-26 · 人物小传要素与编辑体验对齐（方案就绪→执行中）
+
+用户最新优先级是人物小传，生成要素、操作、布局一致。已登录只读核对原站既有人物稿：人物清单H1、人名H2、加粗字段列表；主角/主要/次要分级，人物设定、剧中作用、标签、语言风格、说话破绽、记忆点、弧光、受压反应、称呼规则、首次/关键集次；次要人物简化，未知信息不编造。编辑器680px正文、15px/28px正文、23.25/19.5px标题、168px目录。观察不是私有Skill源码。short-drama /characters及villain-design已读，知识查询无匹配；skill-creator用于更新应用内派生包，不改全局技能。
+
+现状：M08只有appearance/motive/knowledge/voice/arc等简项；筹备投影泄露英文key/ID；单文档characters入口未调用M08；节点仅裁切且编辑按钮在左下，人物目录只支持通用标题。业务拟改路径diff为空；本地origin/main不存在同域替代实现；三语/DESIGN合并实现已在HEAD，串行保留。无活动锁，29线940claims。同步线三份协调diff和三份未跟踪资料不覆盖，不pull/rebase。
+
+验收范围：①版本化人物合同覆盖观测字段及short-drama动机/知情边界/关系，主次分层、未知不强造；②筹备M08和单独生成人物共用人物合同/方法，严格JSON/集次/ID校验，原回包保留、失败不自动重购；③三语人类可读投影、兼容旧稿只读不改历史；④人物编辑器标题/目录/字段排版、节点右上编辑、切换/保存/重载/选区引用不串稿，保留CAS/显式审批；⑤离线回归+真实浏览器三视口+有界真实模型样本，费用未知如实记录。非目标：角色图/H3媒体链、全能模式、全TVDirector等价、可靠文学事实审计与自动定稿；原站用户稿不修改，不在原站付费重生已存在人物。
+
+精确路径：`src/novelvideo/director/characters.py`、`schemas/planning.py`、`planning.py`、`writing.py`、`execution_repository.py`、`skills/runtime.py`、`skills/pinned.py`、`skills/builtin/character-bible/`既有包及新增SKILL.md/人物方法来源摘录；`frontend/src/features/director/DirectorStudio.tsx`、`director.css`、`components/DirectorRichText.tsx`、`components/DirectorDocumentEditor.tsx`；必要窄UI辅助文件在同域内先追加说明。测试`tests/director/test_characters.py`、`live_characters.py`、`test_workflow.py`、`test_skill_runtime.py`、`preview_execution.py`、`frontend/src/__tests__/director-richtext.test.tsx`、`director-ui.test.tsx`；三语、DESIGN、`docs/guides/tv-director/character-parity.md`及本台账/scope/STATE。临时预览HTML沿既有认领。
+
+步骤：先冻结取证字段/几何；扩充严格合同与派生技能，完整签名刷新使旧授权失效；接单文档/筹备投影，不新增API/迁移；补人物渲染/跳转与不丢稿交互；离线正负例后以隔离合成故事真实调用最多3笔、每笔一次、最多8192输出token/300秒，UNKNOWN立即停且不重放。保留完整请求/响应/usage/SQLite到忽略output，公开指南仅安全摘要。默认测试不联网不扣费。
+
+风险/回退：新字段缺失拒绝但付费原回包仍留存；旧2.1产物读取用独立兼容投影不伪造字段；关系/集次只做结构验证，不冒充文学判断。回退代码/方法注册，不回滚用户文档和费用历史；正文编辑必须显式CAS保存。验证：Director pytest、定向Vitest、pnpm build、ruff、i18n/设计lint、gitleaks、diff/guard；真实模型语义另作人工逐项审核，不用schema通过替代质量。
+
+接点审计补充：单文档M11当前未装入已保存人物稿，生成后的人物设定会在后续写集时丢失。沿已认领writing.py补必需人物上下文与版本/hash，人物更新使未消费报价过期；新增同文件测试，不扩大到场景/道具阶段。编辑器仍保留本地显式保存安全栏与私稿；不冒充原站自动保存或全能媒体链已通。
 
 ### 2026-09-26 · 续轮：独立大纲事实与因果证据审查
 
@@ -278,9 +393,77 @@ V4-Flash 联机验收分叉（2026-09-25）：定位到此前的 502 是本机 H
 - [x] `uv run ruff check src/novelvideo/director src/novelvideo/api/routes/director.py tests/test_tv_director.py`。
 - [ ] `cd frontend && pnpm build && pnpm test`；构建通过，三语定向测试/检查通过；全量测试仍有未归属的既有失败项。
 - [x] 浏览器 1200×863 / 1920×1080：浮窗、Top8、模式/设定、节点、编辑器与确认动作；网关 502 时不假装生成成功。
-- [ ] `python3 scripts/agent_guard.py check`、handoff/release、本线改动均在范围内，无凭据进入 Git。
+- [x] 本轮道具`agent_guard.py check`为29线949claims，handoff通过（41归属脏路径）；收尾release再次强制检查。最终ruff、双端i18n、diff、gitleaks增量/相关目录复验通过。两个浏览器会话及三个自建临时服务已关闭，3001/18780/15173无监听；临时preview已删、证据保留。
 
 ## 进展记录
+
+### 2026-09-27 · 提交检查点
+
+用户要求提交代码。本轮将人物/场景/道具/分集、流式打磨、自动保存、批量图片节点、来源证据与M12全文审计作为同工作线连续实现一并提交，并包含三语、设计规范、测试与验收指南；不带用户素材、运行态、Cookie、供应商配置或付费原回包。同步线文档和STATE中同步事实保留未暂存。代码沿上轮已通过620后端/225前端/build的同一内容，本轮仍复跑离线测试及暂存检查，不新增模型费用。实际提交号以Git记录为准；没有推送或部署授权。完整产品与全页像素尚未全过的状态保持不变。
+
+本轮复验结果：`.venv/bin/python -m pytest tests/director tests/test_tv_director.py -q` 620通过（11条依赖弃用警告）；前端 `pnpm exec vitest run director` 17文件225通过，`pnpm build` 成功（既有大chunk警告）。`.venv/bin/ruff check .`、双端i18n棘轮、CE端口闭合11项、CE导入/禁词/禁用包名与diff检查全部通过。对91个精确候选路径执行 `pre-commit run --files …`，密钥扫描、agent guard与禁用词检查通过；STATE仅暂存本线3处，未暂存同步线内容。只复验离线代码，无新模型费用；提交后核验DCO、路径和剩余改动并交接释放锁。
+
+### 2026-09-27 · 批量节点、全文事实与全页像素实测
+
+- 批量图片从正式人物/场景/道具H2顺序自动形成可编辑计划，原子保存批次/意图/节点；批准集冻结、按源顺序逐项精确提交既有队列，取消只停未提交、UNKNOWN不重买。画布350px宽且比例跟随实际参数，结果持久恢复，坐标CAS与缩放换算、连续拖回原位回归，适配全部节点。没有复制旧freezone业务或自动发真实图片任务。
+- M12保留short-drama两参考，方法包2.2.0与固定指纹，新增SKILL.md；宿主全文factUnits覆盖当前稿/完整来源/锁定要求/确认设计/全部前集。原子事实、before/after、现实/画中/台词、逐字引证与偏移、独立比较及人工逐段核对；矛盾阻断，漏段/假引文不可定稿，修改旧前集也使审查失效。事实合同最终1.1.1，收紧含事件集标题不能当纯编号跳过；同段两句非重叠矛盾允许取证，不接受重复自引。覆盖不等于语义无遗漏，60,000字符上限内不截断，长篇分块仍未实现。
+- 真实派发四次：首笔UNKNOWN不重试；首次网关正例暴露OTHER_EPISODE互斥误拒并修复；新版V4-Flash正例REVIEWED9/9，负例FAIL6/9且含手机位置/文件夹/纸状态问题，三段引证未过也未放行。供应商三笔有usage合计16942输入/46076输出，金额unknown，8192输出请求非账单封顶。无自动采纳/定稿。1.1.1复用原回包零费用重验仍正9/9、负FAIL6/9，原回执不改。临时CE网关设置隔离，不改用户settings.db。
+- 浏览器真API/SQLite合成队列：三项只选第一/第三，恰两笔任务，保留三节点/两图；75.46%缩放拖动保存到版本2，刷新位置和任务数不变。实际逐项请求/结果已存忽略output的director-batch-browser-receipt.json；不能称真实图片画质已验收。
+- 全页像素工具已运行而非只量局部：不遮罩、不缩放、不自动对齐，差异超1%或尺寸不同即失败。1920设定器5.4324%；1200/390原站fullPage越界宽度不同，判尺寸失败。按实测修64px输入区、欢迎/按钮/通知间距、网点、小地图/缩放被浮窗遮挡；聊天区域16.9012%→2.3273%，最终全页14.6060%仍FAIL。账户壳/内容/动态球体/未接功能差异不造假；不能按局部百分比宣称完成率。三宽最终缩放可点、无本地横向溢出。
+- 验证：620后端、17文件225前端、build通过；最后标题规则另跑41后端通过。全仓ruff、双端i18n、CE11端口/import、禁词/包名/diff通过；M12 skill quick_validate通过；DESIGN缓存同包CLI 0error/20既有对比度与未引用token warning；gitleaks前后端/测试/台账/指南/本轮模型证据未发现密钥。未跑全仓测试/物理Windows/真实图片供应商，整页像素门明确未过。
+- 詳细合同、模型每笔原始状态、像素失败图与下一步见batch-facts-pixels.md；旧四轮diff、同步线台账和受保护资料保留，未提交/push/部署。工作线仍执行中，不把本轮功能链完成等同完整产品/文学/像素完成。
+- 收尾：1.1.1最终全Director后端再次620通过，批量浏览器请求回执密钥扫描通过。已关闭本轮两浏览器及隔离API/Vite/网关，18780/15173/29419均无监听；删除本轮临时preview HTML，保留可复建的preview_execution工具、隔离数据库、截图与全部模型回包。未停止用户其他服务，未删除用户资料。guard29线966claims，执行handoff/release。
+
+### 2026-09-27 · 自动保存、编辑聊天、媒体入口与有限来源事实门
+
+- 原站实点纠正：场景图入口会进入全能创作、读3份文本、建6个图片待生成节点，再询问90积分。本轮取消图片确认；产生测试对话和占位节点，未改原文字，不能称全程只读或保证文本规划免费。单素材面板不能冒充源站批量Agent等价。
+- 自动保存复用既有document.commitManual，返回事务workRevision；空闲1秒、串行后续编辑、IME/只读保护、断网保留/丢响应原命令恢复、409不重基。编辑器关闭/栏目/选区与聊天栏目/打磨/历史/新对话共用flush屏障；顶部状态/更多菜单、移除聊天56px偏移。冲突可下载本地副本，明确确认后GET服务器稿，不覆盖远端，不丢未知请求。
+- 三媒体菜单接真实目录与既有图片任务服务，新增隔离媒体意图表。正文H2顺序选材、旧关系/世界规则不当角色，参数/版本/目录指纹冻结、未知金额明确确认、同ID原子领取，丢响应不自动重购；历史图片可按持久job恢复。当前仅单素材图，不是全能批量规划/画布节点/多参考图。
+- 保留short-drama，应用M08升2.4.2及pin，编译器2.6.0；独立人物/场景请求附sourceProofs和未知态，高风险字段原句/主体/类型核验，拒绝结果保留原回包且不造可采纳变更。UI回包窗展示失败字段；不覆盖筹备M08或M11全文。场景别名误拦与同一场所重复分开处理，不默默合并室内外。
+- 真实V4-Flash共4笔，无自动重试/采纳：人物对照关键事实门通过；首轮两例及场景对照失败均保留。总回报38277输入/12145输出tokens，费用unknown。场景对照原回包经零费用重验仍同一会议室重复和第二项类型引证缺失；不降门槛凑成功。详见interaction-closure §7。
+- 浏览器真实API/SQLite合成队列：编辑立刻新对话/切聊天栏目，再重开仍保留；1920/1200/390聊天400×640（窄屏374）与全屏编辑并存。第三素材16:9/1K/high/seed42实收，未确认不能生成；结果显示、刷新恢复、队列仅1笔。测试未调用实际图片供应商。最终截图区别于早期测试服务重启造成的旧404/包指纹错误截图。
+- 验证：Director后端598通过，全部Director前端15文件219通过，本轮相关6文件91通过，build通过。全仓ruff、双端i18n、CE11端口/import、禁词/包名、diff通过；包quick_validate通过；DESIGN0error/20既有warning，npx网络失败后用同包缓存CLI复验。gitleaks红化扫描前后端Director无泄露。未跑全仓测试/Windows/全页像素差异、实际图片供应商。本轮未提交/push/部署，保留已有四轮diff和同步线资料。
+- 交付范围与明确未完成项集中到interaction-closure，不把局部通过等同整套目标。收工停止本轮自建临时服务/浏览器，删临时preview入口但保留测试输出，执行guard handoff/release。
+- 收尾实况：219项前端与build最终重跑通过；新增合成图片请求/回执及场景零费用重验JSON留在忽略output。临时preview已删除，测试服务均正常停止，3001/18780/15173无监听；本地验收浏览器已关闭，原站研究会话已不在运行。guard为29线959claims，handoff通过72归属脏路径；随后release再次校验。不删除隔离数据库或付费回包。
+
+### 2026-09-27 · 分集要素、编辑器共存与真实模型增量
+
+- 原站只读确认集头七项、梗概/正文、场次/人物/△动作/说话人/表演/对白结构和右侧聊天共存；M11升2.2.0，六份short-drama参考保留，新增包内SKILL和交付结构/局部改稿边界，manifest/provenance/pinned同步，编译器2.5.0。不是恢复私有Skill或完整M10。
+- `run_stream`供应商正文增量→持久事件→既有events游标GET；真实方法加载/所选参考/模型开始可见，跨chunk think标签不展示；重连退避、分页去重、切作品取消旧读取、读者上滑不强拉到底。增量不写正式稿/候选；停止、断线、截断和晚到结果沿明确状态处理，不自动重发收费请求。
+- UI增加用户请求/方法/模型/正文/状态时间序列、继续打磨预填、运行中停止按钮、分集到场次目录、编辑器与浮窗共存；审批层仍在上方。修正内部分隔线误判YAML导致源码模式、对白软换行、浮窗遮挡安全栏、运行变只读后本地未保存保护。1920正文x620/y178/680px、15/28.0005与原站一致；三宽1920/1200/390无横向溢出。为本地安全栏让出56px，不报整个浮窗像素等价。
+- 三次真实DeepSeek-V4-Flash，每例一次8192输出请求上限，无自动采纳/重试。首集和续集七项结构齐全但新增道具、手持变桌面等事实漂移；局部改稿只替换指定一句，全文其他文字/空行/标点逐字一致，旧稿结构缺项提示保留。原始请求/返回/事件/SQLite在忽略output。首例SDK把累计usage逐chunk相加，旧回执标无效保留；改用continuous_usage_stats，重复累计usage的HTTP模拟回归通过；后两例分别14611/679与20585/127 tokens，费用unknown，不用坏回执合计或猜账单。最终线上参数同时显式给两个兼容输出上限。
+- 浏览器真实API/SQLite＋模拟供应商：输入/审批/部分正文时正式v1→待审→查看→接受v2→继续打磨不发请求；再流中停止无候选；模拟断流刷新恢复，运行数仍3、正式v2、待审0。不把模拟UI调用当文学验收。
+- 验证：`pytest tests/director tests/test_tv_director.py -q`569通过；四个定向Director Vitest77通过；`pnpm build`通过（原有chunk警告）。全仓ruff、双端i18n、CE11端口/import、禁词/包名、diff和gitleaks通过；DESIGN lint0error/20既有warning。初次端口检查误用系统Python无novelvideo，已用.venv重跑通过。未跑全仓pytest/全仓前端/Windows；没追加第四笔付费。
+- 保留人物/场景/道具旧diff及同步线资料，未提交/push/部署。详细边界、原始模型反例、复跑和截图在episode-parity.md；整套目标和事实质量门继续执行中，不归档。本轮临时服务和浏览器收尾关闭，凭据未打印或入仓。
+
+### 2026-09-26 · 道具五项/M08方法/M11消费与三笔真实样本
+
+- 原站只读核对道具清单、物名及类型/戏剧作用/使用边界/首次出场/关键集次五项和编辑器几何。未改源站、未调用源站生成。新增PropDocument及三语安全投影，筹备M08和单文档共用；历史描述保守兼容、空清单须说明，集次/重复键/ID校验拒绝坏格式，原回包先留存、不自动重购。
+- short-drama四份方法保留并融入应用内prop-craft，M08 2.4.0按documentKind路由；人物场景方法未丢弃，筹备加载三类。最终包eeb6cd535f2dc40644190d7510fd855cb536cf28965018f1284ec12b1c43d5a8与三笔真实请求一致。单道具读取正式人物/场景，M11读取正式道具并绑定版本/hash；改道具使旧授权发送前失效，不发生模型调用。
+- DeepSeek-V4-Flash真实三笔：单集90秒交接、双集180秒双手机、改编120秒/source EP02；各一次8192输出上限，无自动重试、未采纳。合计24,546输入/3,549输出token，金额unknown。结构全过；交接把放桌上写成归还、改编擅自补锁盒归属并混淆画/信递送目标，双手机另列数字视频导致粒度不同，不能称文学质量等价。输入、完整参数/系统方法、原始回包/usage/SQLite及人工判据在忽略output/playwright/director-prop-live-20260926/，未继续盲买。
+- 原站/本地1920正文x620/y178/宽680、15/28及标题/列表间距实测相同，粗体字宽约0.3px差异；1200/390本地无横溢。实点目录定位、未保存切换取消、保存v2/刷新、带版本引用、报价取消/再确认、一次模拟生成待审、富文本草稿、显式全部接受、刷新v3及待审数0。执行卡显示三语道具设计而非props，原始参数不变。本方仍显式保存/模态编辑、媒体未接，不能称全页逐像素或全部操作相同。
+- 最终验证：`.venv/bin/python -m pytest tests/director tests/test_tv_director.py -q` 555通过（31项新增道具）；三个Director Vitest文件71通过；`pnpm build`含类型检查通过、既有chunk警告。全仓ruff、双端i18n、CE11端口/import、禁词/包名、skill quick_validate、gitleaks、diff/guard通过，DESIGN lint0错误/20既有警告。初次道具回归抓到props误入分集门，4项失败已修后全量通过，未带错发真实请求。未跑全仓前端、全仓pytest或Windows，不以局部数替代。
+- 本轮不提交/push/部署、不重启用户常驻栈，人物场景既有diff及同步线/用户资料保留。收尾只关闭本轮临时模型中转/隔离API/Vite/两浏览器会话，删除临时preview HTML；保留合成SQLite、截图与全部模型证据。全Director继续执行中，质量门与完整UI未完成项不归档。最新范围、复跑及差异以prop-parity.md为准。
+
+### 2026-09-26 · 场景五项/M08路由/M11消费与五笔实测
+
+- 只读核对LibTV六场景、编辑器和目录：清单/场景名/类型/戏剧作用/空间限制/动作位置/关键集次。未改源站、未发生源站生成；short-drama四份静态方法和skill-creator用于应用内M08，原人物工作完整保留。详见scene-parity.md。
+- 新SceneDocument/安全三语投影/集次校验同时接筹备M08与单文档场景；旧描述兼容、不强制重写，不串人物道具；M11读取保存场景并绑定版本/hash，旧授权遇场景变更在发送前失效。场景参数JSON实际进入请求，不再显示[object Object]；客户端嵌套参数类型已修正。
+- 三例暴露过度补写/电视场景未单列后，M08升2.3.1、documentKind按需加载character-craft或scene-craft，筹备加载两者，人物合同保持2.2.0。技能反例与来源/指纹同时维护，原五筆回包完整保留不覆盖；最终包99da154d，后两笔即在此包下运行。不是获得原站私有Skill，也不是可靠事实门。
+- 五笔均DeepSeek-V4-Flash，40,890输入/4,147输出token，金额unknown，一次/8192输出上限、无自动重试、均未采纳定稿。前3笔2.3.0，后2笔同默剧/改编2.3.1：车厢单列改善，但仍类型unknown/新增入场动作；职场唯一门等反例未冲销。字段成功不等于严格事实通过，停止继续购买。完整参数/回包/SQLite在忽略output/playwright/director-scene-live-20260926/。
+- 原站/本地1920正文同x620/y178/宽680，15/28字号行距、23.25/19.5标题一致；截图人工检查。1200/390无横溢，场景目录、未保存切换取消、保存v2/刷新、带版本引用、场景报价取消/确认、模拟生成待审/显式采纳后刷新全部实点。开发HMR曾重置章节生成模拟大纲，已忽略且不算场景验收。本地模态/显式保存栏与源站浮窗/自动保存、未接媒体仍明确不同。
+- 验证最终：523后端（32场景）/69定向前端，生产build/类型检查通过；全仓ruff、i18n、CE11端口/import、禁词/包名、skill校验、gitleaks增量与director源码/测试目录、diff/guard通过；设计lint0错误20既有警告。首次系统Python端口检查缺包，使用仓库venv重跑通过；新增真实JSON测试暴露TS参数过窄，已修合同再build，不靠cast规避。
+- 未提交、push或部署；不重启用户常驻栈。临时模型中转/隔离API/Vite/浏览器关闭，临时预览HTML删除，合成SQLite与全部证据保留。同步线diff与用户资料未碰；全Director线仍执行中，事实门/完整UI欠项不归档。
+
+### 2026-09-26 · 人物小传要素/M08/局部布局与三笔真实模型验收
+
+- 按用户新优先级只读登录LibTV既有人物文档，实测主次人物分层、12类适用字段、节点/目录/编辑器几何和角色图菜单；未改源站稿、未调用源站生成。short-drama人物方法与villain-design完整读取，阶段经验查询无匹配；skill-creator用于应用内M08包，未修改全局技能。详见character-parity.md。
+- 修复源头接点：筹备M08与单文档人物共用严格人物合同/方法；single入口只返回人物，不顺带覆盖场景道具；集次由宿主ID及顺序校验，重复JSON key/关系缺失拒绝；旧稿兼容读不伪造。原回包/usage先保留，格式失败不重试扣费。保留short-drama动机/知情/关系，M11实际读取保存后人物稿并绑定版本/hash。
+- UI按原站640×350节点、右上编辑、680正文、15/28正文和标题/字段间距调整；1920视口正文x620/y178与源站相同。目录按位置区分重名，实测发现末项滚动被夹住会错误高亮上一人，已修复并加回归。1200与390视口无整页横向溢出；正式保存v1→v2后刷新保留、未保存切换取消不丢稿、选区带版本引用到对话均实点通过；隔离服务没有调用真实模型。原站聊天浮窗/自动保存、本地安全保存栏及未接角色图等差异明确保留，不称全部UI相同。
+- 真实三笔：默剧1×60、职场2×180、改编1×120/source EP02；回执均为DeepSeek-V4-Flash，一次请求、8192输出上限、零自动重试。24,463输入/5,043输出token，实际金额unknown，全部未采纳未定稿。结构均过，但职场补称呼、改编推断年龄/受压行为，文学事实未过；不继续盲目购买。完整参数、system、冻结快照、原响应、稿、usage和隔离SQLite保存在忽略的output/playwright/director-character-live-20260926/。
+- M08 2.2.0实测包c26d1f19；收尾仅修正不装入prompt的正例fixture外形/默剧矛盾，最终包2674d1f0。method/template/reference/schema不变；真实测试未冒充在最终包指纹下运行。合成浏览器例从单测EP02标签改回实际EP01，并重启仅本轮隔离服务更新截图。
+- 验证：`.venv/bin/python -m pytest tests/director tests/test_tv_director.py -q` **491 passed**；三个定向前端文件**67 passed**；`pnpm build`通过（已有chunk警告）；Director/test ruff、双端i18n、CE11端口、禁词/EE/import lint、skill quick_validate、gitleaks diff及新代码/测试目录扫描、diff/guard均通过。design.md在线npx因DNS失败，改用已安装0.4.0 CLI，0错误/20既有警告。初次测试两处夹具版本/回包键断言及一个TS测试参数错误已修复；不隐藏真实内容失败。
+- 同步线三份既有协调diff及受保护资料未改；不提交、不push、不部署/重启用户常驻栈。本轮模型/浏览器临时服务与会话收尾关闭，临时HTML删除，截图/付费回包保留。整条Director线仍执行中，不归档；具体剩余质量与操作差异见指南§5/7。
 
 ### 2026-09-26 · 已按授权完成本地提交（未推送）
 
@@ -543,6 +726,19 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 
 ## 待办
 
+- [x] 自动保存/编辑聊天共存/离开前flush/冲突备份；三媒体菜单到真实目录/幂等意图/确认/任务结果；独立人物场景高风险来源门与4笔回包。598后端/219前端/build，见interaction-closure.md。
+- [x] 批量图片规划→明确审批→持久画布节点/结果/拖动恢复；独立M12全段事实清单、全部已写前集、逐字证据和人工核对，正反真实模型留证；整页像素计算与失败定位已接通。620后端/225前端/build，见batch-facts-pixels.md。
+- [ ] 本轮未通过的验收：完整页同内容/全状态像素（当前1920全页14.6060%差异）；长篇跨块事实审查、模型逐原子语义召回与物件状态图；场景同址跨集正常生成/M08筹备事实门、多会话媒体关联、实际图片质量。已有失败不得勾成完整目标，下一动作见batch-facts-pixels §7。
+
+- [x] 分集七项/梗概/场次对白方法、M11 2.2.0/六参考、真模型流/持久游标恢复、浮窗与编辑器/场次目录/继续打磨/停止；569后端/77前端/build，真实三例完整留证，局部修改逐字正确。
+- [ ] 分集文学对齐仍未完成：M12已用跨集手机/确认单/新增文件夹最小正反例接通完整段落审查和人工核对，语义漏判及负例无效引证仍在；不被七项齐全或9/9覆盖抵销。完整M10/结构化所有历史集物件状态图/超长分块/逐处修改差异仍未实现，不重买旧稿。
+
+- [x] 道具五项合同、两入口/三语投影/旧稿兼容、M08 2.4.0方法分路、M11读取正式道具及旧授权失效、局部布局/保存引用/候选采纳刷新闭环；555后端/71前端/build，三份真实参数与回包保留。
+- [ ] 道具事实门：以物件ID绑定有来源的持有/所有权/位置/流转/使用完成状态及屏幕呈现范围，人工确认未知项；补放桌上≠归还、持钥匙≠拥有锁盒、递送画≠递送信正反例，再验证跨字段投影。三份schema通过不冲销两份语义漂移；源站自动保存/聊天覆盖与本地方显式保存/模态、媒体操作尚不同，见prop-parity.md。
+- [x] 场景五项合同、两入口/三语投影/旧稿兼容、M08按文档方法分路、M11场景消费、局部UI与完整场景生成交互；523后端/69前端/build，5笔真实请求留证。
+- [ ] 场景事实门：场所清单/实景或画中或提及/内外类型与原子动作绑定来源及人工确认；2.3.1仍有类型unknown和新增动作。模态、保存语义与媒体操作差异见scene-parity.md，不能称完全等价。
+- [x] 人物M08两入口统一、主次/12类适用要素/旧稿兼容、M11读取保存人物、局部节点/编辑器布局与三视口操作；491后端/67定向前端/build通过，3笔真实输出完整留证。
+- [ ] 人物事实门：将称谓推年龄、职务推称呼、未呈现受压行为与关系丢投影做正反例并接用户确认的原子事实；本轮职场/改编未过，不能以schema或提示词规则宣称文学质量等价。模态编辑/保存栏/角色图链与源站的操作差异亦未消除，见character-parity.md。
 - [x] M07故事大纲十类要素、short-drama方法根基、两入口统一合同/三语言投影、时长由用户决定；427后端/64前端/build通过，真实两笔失败和成功格式均留证。
 - [x] 冻结五套多题材、非30秒单多集判据并实测；14次本方请求及一个LibTV完整大纲对照留证，失败均未删除，实验提示未晋级。
 - [x] 已保存大纲独立证据审查接入、单独费用批准及失效合同；6次真实同稿审查留证，实验模板冲突消除，漏判明确展示；454后端/78前端及浏览器链路通过。
@@ -563,13 +759,13 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 
 ## 阻塞
 
-当前没有阻止继续本线编码的外部阻塞。五套大纲文学未PASS；新独立证据审查6次仍漏判，模板分离不能宣称解决语义问题；旧UNKNOWN无结算不重发。源站同简报仅一例并多经过方向选择，不是同模型盲测；尚无24份与真人评审。454后端/78前端/build与本轮合成报告UI通过，未复验物理第二设备或全量前端（历史3文件7项失败仍未解决）。时长实测、原子事实确认、完整来源审计/阶段编排和完整UI是未完成实现，不包装成外部阻塞。素材再分发许可待核验；未部署用户常驻栈。
+当前没有阻止继续本线编码的外部阻塞。620后端/全部Director225前端/build通过，批量图片与M12全段审计已接通；真实正例9/9、负例FAIL6/9，不能称语义全面。全页像素实测FAIL，1920聊天局部改善不能覆盖账户壳/画布内容/动态效果差距；长篇上限外尚无分块审计。先前大纲文学/场景同址/24份真人评审欠项不冲销；旧UNKNOWN无结算不重发。未复验物理第二设备、全仓测试或付费图片供应商；素材再分发许可待核验，未部署用户常驻栈。实现和验收欠项不包装成外部阻塞。
 
 ## 交接摘要
 
-- **最后完成到**：已保存大纲独立证据审查UI/API/费用/报告完成；6笔同稿真实审查仍漏判，1.1.0去掉正文模板冲突仍未修好语义。提交准备复验含网关471后端/78前端/build及钩子通过；全部付费证据/用量落档。历史14次生成诊断及LibTV《页脚》对照保留。M07仍2.2.0、short-drama根基与用户时长权威不变。实现已本地提交cb3833ee，未push/deploy；整套目标未完成，本实现线不归档。
-- **下一步唯一动作**：先读literary-benchmark §9.5与workplace-reference-only/warmth审查原回包，在本台账开精确边界，把五类漏判沉淀为带原要求/剧情锚点及最小正反变异的反例fixture；设计可人工确认的原子事实版本，联通来源/方向/大纲，区别模型提议与用户事实。当前句覆盖与引用检查不代替该事实表。反例能区分正反后才做同稿已配置模型对照；不先加长prompt或购买新稿，旧UNKNOWN不重发。后续M10/完整来源/完整UI仍照原合同。
-- **先读这些文件**：本台账顶部、literary-benchmark.md §9、outline_review.py/schemas/outline_review.py及test_outline_review.py/live_outline_review.py、outline_benchmark.py、outline-parity.md；M07看story-plan/{SKILL.md,method.md,manifest.json}。总目标看implementation-closure/runtime-validation和skill/workflow合同，UI看ui-parity/DESIGN/feature-contracts。6适配包不等于24完整方法，历史开销不等于内容改善。
+- **最后完成到**：批量图片计划/批准/画布持久节点、M12全文和所有前集事实审计/人工核对、全页像素失败门；620后端/225前端/build。模型正9/9、负FAIL6/9；聊天局部2.3273%，整页14.6060%FAIL。人物场景道具分集旧diff均保留，0298aefa主目录未提交部署，不归档。
+- **下一步唯一动作**：读batch-facts-pixels §5/7，对比已留的final-welcome整页差异图和源站DOM，先建立不覆盖用户稿的两站同内容基准与页面状态矩阵，再修画布外壳/动态题材球/编辑器全态，不遮罩过门。事实线先复用负例原回包离线定位三段引证与遗漏原子主张；长篇分块需先写总费用/跨块状态合同，不自动重购或重发UNKNOWN。
+- **先读这些文件**：本台账最新计划与进展、batch-facts-pixels.md、media_batch.py/episode_facts.py/quality.py、DirectorMediaPanel/DirectorMediaNodes/useDirectorMedia、pixel_compare.py及相应测试；自动保存沿interaction-closure、文学失败沿episode/scene/prop旧指南。6适配包不等于24完整方法，开销不等于内容改善。
 - **不要动这些文件 / 决策**：现有 story/freezone/canvas 业务代码、用户源稿、研究 Cookie。
 
 ### 2026-09-28 · 连线配色串行协调
