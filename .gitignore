@@ -16,6 +16,7 @@ __pycache__/
 /config/local/krea2_identity_edit_api.json
 /.venv/
 /.playwright-mcp
+/.playwright-cli/
 /.nicegui
 /output
 /state

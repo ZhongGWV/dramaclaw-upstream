@@ -95,6 +95,7 @@ import {
 } from '@/features/canvas/ui/nodeFrameStyles';
 import { useNaturalSizeRecordTrust } from '@/features/canvas/hooks/useNaturalSizeRecordTrust';
 import { useNodeBodyVariantBudget } from '@/features/canvas/hooks/useNodeBodyVariantBudget';
+import { useDecodedNodeImage } from '@/features/canvas/hooks/useDecodedNodeImage';
 import { useCanvasStore, useIsBoxSelecting } from '@/stores/canvasStore';
 import { ReferenceValidationDialog, referenceIssues, matchesReference, referenceIssueName, type ReferenceIssue } from './shared/ReferenceValidationDialog';
 import { useShallow } from 'zustand/react/shallow';
@@ -185,7 +186,7 @@ import {
   extractUpstreamContent,
   joinUpstreamText,
 } from '@/features/canvas/application/graphContentResolver';
-import { useUpstreamNodes } from '@/features/canvas/application/useUpstreamGraph';
+import { useUpstreamReferenceNodes } from '@/features/canvas/application/useUpstreamGraph';
 import { useNodeGenerationTaskState } from '@/features/canvas/application/useNodeGenerationTaskState';
 import {
   PromptMentionEditor,
@@ -568,7 +569,7 @@ export const ImageGenNode = memo(({ id, data, selected, width, height }: ImageGe
   // Subscribe to the upstream graph once. Calling useUpstreamContents here and
   // useUpstreamNodes below created two independent Zustand selectors, so every
   // canvas-store update walked the full nodes/edges arrays twice per image node.
-  const upstreamNodes = useUpstreamNodes(id);
+  const upstreamNodes = useUpstreamReferenceNodes(id);
   const upstreamContents = useMemo(
     () => upstreamNodes.map(extractUpstreamContent),
     [upstreamNodes],
@@ -933,7 +934,7 @@ export const ImageGenNode = memo(({ id, data, selected, width, height }: ImageGe
     width: resolvedWidth,
     height: resolvedHeight,
   });
-  const bodyImage = useMemo(
+  const requestedBodyImage = useMemo(
     () =>
       visiblePreviewUrl
         ? nodeBodyImageSrc(visiblePreviewUrl, recordedNaturalSize, {
@@ -950,6 +951,12 @@ export const ImageGenNode = memo(({ id, data, selected, width, height }: ImageGe
     ],
   );
 
+  const previewDisplay = useDecodedNodeImage(
+    requestedBodyImage,
+    JSON.stringify([id, visiblePreviewUrl]),
+    JSON.stringify([preferOriginalImage, distrusted, recordedNaturalSize?.width, recordedNaturalSize?.height]),
+  );
+  const bodyImage = previewDisplay.displayed;
   const hasGeneratedResult = Boolean(data.imageUrl);
   // Natural pixel size of the displayed image, mirrored from data when present
   // (persisted by the onLoad handler below) and refreshed on every <img> load so
@@ -1696,6 +1703,7 @@ export const ImageGenNode = memo(({ id, data, selected, width, height }: ImageGe
               // 双击进查看器的必须是原图，不能跟着 src 走降采样副本。
               viewerSourceUrl={visiblePreviewUrl}
               onLoad={(event) => {
+                previewDisplay.onLoad(event.currentTarget);
                 // 记录描述的不是这张图：降采样副本上量不出源图真尺寸。第一次退回
                 // 原图重测（preferOriginal 会让下一轮 downscaled 为 false，不会来
                 // 回抖）；已经退过一次还是对不上，就什么都不写——记录和副本都不是

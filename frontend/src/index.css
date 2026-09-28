@@ -711,6 +711,16 @@ body.canvas-node-drag-focus [role="listbox"] {
   cursor: grabbing;
 }
 
+/* Hand drags have a single owner (the pane), even over a node's nopan controls
+   or an edge hit path. Reference picking temporarily uses the move tool data
+   attribute; menus outside the viewport keep their normal pointer handling. */
+[data-canvas-tool='hand'] .react-flow__viewport .react-flow__node,
+[data-canvas-tool='hand'] .react-flow__viewport .react-flow__node *,
+[data-canvas-tool='hand'] .react-flow__viewport .react-flow__edge,
+[data-canvas-tool='hand'] .react-flow__viewport .react-flow__edge * {
+  pointer-events: none !important;
+}
+
 .react-flow__handle {
   width: 8px;
   height: 8px;
@@ -869,9 +879,30 @@ body.canvas-node-drag-focus [role="listbox"] {
 
 /* 低缩放档节点外壳（withLodShell）。刻意朴素：整块画布此档下每帧的渲染树遍历
  * 成本与元素数量成正比；图片/视频仅额外保留一行标题。 */
+.dc-node-preview-handoff {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease-out-quint);
+}
+.dc-node-preview-handoff img {
+  width: 100%;
+  height: 100%;
+}
+.dc-node-preview-handoff--fading { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .dc-node-preview-handoff { transition: none; }
+}
+
 .dc-lod-shell {
   position: relative;
   overflow: hidden;
+}
+.dc-lod-shell,
+.dc-node-preview-handoff {
   /* 外壳直接套用卡片的圆角/卡面/描边：它替身的就是那张卡，颜色对不上时
      跨缩放档的那一次切换会「闪一下颜色」，低缩放整屏也比 liblib 亮一截。 */
   border-radius: var(--node-radius);

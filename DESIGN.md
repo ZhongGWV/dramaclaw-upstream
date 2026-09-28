@@ -21,6 +21,9 @@ colors:
   group-label-red: "#4e1714"
   group-label-cyan: "#014a5a"
   group-label-green: "#0c4327"
+  canvas-edge: "#86909c"
+  canvas-edge-hover: "#c0c8d0"
+  canvas-edge-flow: "#64b4ff"
   accent: "#5ba0ff"
   # ── shadcn 语义层（来源：.dark 块的 oklch 值）──
   primary: "#00bdcf"
@@ -312,6 +315,14 @@ DramaClaw（虾导）是一个专业 AIGC 视频工作台：节点画布、故�
   `card` 变纯白，衬在 #f0f2f5 的页面底上。
 - `chart-1` … `chart-5` 是唯一批准的数据序列色，走「青 → 蓝绿 → 天蓝 → 湖蓝 → 绿」，
   保证同一色系不重复出现。
+
+### Canvas edges
+
+按用户指定：普通连线为不透明 1.5px `canvas-edge`，悬停/选中为 2px
+`canvas-edge-hover`；`canvas-edge-flow` 为亮头渐隐拖尾，沿源到目标方向 0.8 秒线性循环。
+颜色分别落在 `edges/CanvasEdgeFlow.tsx` 的主线常量与同名 CSS module 中，不修改全局 accent。
+动画仅在高亮时挂载，抓手、平移及 reduced-motion 下停止并隐藏；不使用高斯模糊滤镜。
+处理中连线保留原任务状态提示色。
 
 ## Typography
 

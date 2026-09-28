@@ -249,6 +249,21 @@ describe("withRemoteImageVariant", () => {
     expect(withRemoteImageVariant(snap, 1280)).toBe(snap);
   });
 
+  it("preserves combined resize and signing parameters byte for byte", () => {
+    for (const query of ['Signature=test&Expires=123', 'X-Amz-Signature=test', 'token=test', 'x-oss-signature=test']) {
+      const signed = `${CDN}?x-oss-process=image%2Fresize%2Cw_320&${query}#poster`;
+      expect(withRemoteImageVariant(signed, 640)).toBe(signed);
+    }
+  });
+
+  it("preserves unknown servers and fragments", () => {
+    const unknown = 'https://example.com/a.png';
+    expect(withRemoteImageVariant(unknown, 640)).toBe(unknown);
+    const resized = new URL(withRemoteImageVariant(`${CDN}#poster`, 640));
+    expect(resized.hash).toBe('#poster');
+    expect(resized.searchParams.get('x-oss-process')).toContain('w_640');
+  });
+
   it("本地路径与非图片后缀原样返回", () => {
     expect(withRemoteImageVariant("/static/projects/p/a.png", 640)).toBe("/static/projects/p/a.png");
     expect(withRemoteImageVariant("https://cdn.example/clip.mp4", 640)).toBe("https://cdn.example/clip.mp4");

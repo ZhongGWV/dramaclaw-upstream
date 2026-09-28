@@ -7,6 +7,10 @@ import {
   useEffect,
   useMemo,
   useRef,
+  lazy,
+  Suspense,
+  Profiler,
+  type ProfilerProps,
   type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -79,6 +83,7 @@ import {
   CANVAS_PANNING_CLASS,
   PANNING_CLASS_RELEASE_DELAY_MS,
   isLowDetailActive,
+  isCanvasGestureActive,
   isLowDetailZoom,
   onCanvasHydrateViewport,
   setCanvasGestureActive,
@@ -119,6 +124,7 @@ import { videoReferenceEnvelopeForNode } from '@/features/canvas/application/vid
 import { embedStoryboardImageMetadata } from '@/commands/image';
 import { nodeTypes as canvasNodeTypes, preloadCanvasNodeComponents } from './nodes';
 import { edgeTypes as canvasEdgeTypes } from './edges';
+import { mountSingleSvgEdgeLayer } from './application/singleSvgEdgeLayer';
 import { NodeSelectionMenu } from './NodeSelectionMenu';
 import { SelectedNodeOverlay } from './ui/SelectedNodeOverlay';
 import { MultiSelectionToolbar } from './ui/MultiSelectionToolbar';
@@ -128,6 +134,7 @@ import {
 } from './ui/MultiSelectionConnectButton';
 import { NodeSpawnPlusOverlay } from './ui/NodeSpawnPlusOverlay';
 import { ReferencePickBanner } from './ui/ReferencePickBanner';
+import { useReferencePickStore } from './application/referencePickStore';
 import { ViewportReturnHint } from './ui/ViewportReturnHint';
 import { CanvasContextMenu } from './ui/CanvasContextMenu';
 import { CanvasFileDropOverlay } from './ui/CanvasFileDropOverlay';
@@ -140,6 +147,7 @@ import { CanvasQuickActionBar } from './ui/CanvasQuickActionBar';
 import { BackToNodesHint } from './ui/BackToNodesHint';
 import { CanvasMinimapButton } from './ui/CanvasMinimapButton';
 import { CanvasFpsMeter } from './ui/CanvasFpsMeter';
+import type { PanProfile } from './ui/CanvasPanDiagnostics';
 import { CanvasSnapAlignButton } from './snap-align/CanvasSnapAlignButton';
 import { useTrackpadPanStore } from './trackpad-pan/trackpadPanStore';
 import { useSmoothMinimapPan } from './hooks/useSmoothMinimapPan';
@@ -160,6 +168,9 @@ import {
   type PastedNodeForMigration,
 } from './application/crossProjectAssets';
 
+const panDiagnosticsEnabled = import.meta.env.DEV && new URLSearchParams(window.location.search).has('canvasPerf');
+const CanvasPanDiagnostics = lazy(() => import('./ui/CanvasPanDiagnostics'));
+const FlowProfiler = panDiagnosticsEnabled ? Profiler : ({ children }: ProfilerProps) => children;
 const DEFAULT_VIEWPORT: Viewport = { x: 0, y: 0, zoom: 1 };
 const DEFAULT_EDGE_OPTIONS = { type: 'disconnectableEdge' };
 const REACT_FLOW_PRO_OPTIONS = { hideAttribution: true };
@@ -745,6 +756,19 @@ export function Canvas({
   const nodeTypes = useMemo(() => canvasNodeTypes, []);
   const edgeTypes = useMemo(() => canvasEdgeTypes, []);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // DEV diagnostics must retain an untouched Normal renderer for comparison.
+    if (panDiagnosticsEnabled || !wrapperRef.current) return;
+    return mountSingleSvgEdgeLayer(wrapperRef.current);
+  }, []);
+  const [viewportGestureActive, setViewportGestureActive] = useState(false);
+  const panProfile = useRef<PanProfile>({ active: false, commits: 0, renderMs: 0 });
+  const diagnosticPanActiveRef = useRef(false);
+  const recordCanvasRender = useCallback((_id: string, _phase: string, actualDuration: number) => {
+    if (!panProfile.current.active) return;
+    panProfile.current.commits += 1;
+    panProfile.current.renderMs += actualDuration;
+  }, []);
   const suppressNextPaneClickRef = useRef(false);
   // After a marquee box-select we must swallow the trailing pane `click` at the capture
   // phase: React Flow's Pane onClick calls resetSelectedElements() unconditionally (right
@@ -800,18 +824,6 @@ export function Canvas({
     minimapPanCommitSuppressedRef.current = true;
     setMinimapPanning(true);
   }, []);
-  // 这里的「结束」是 hook 保证的「松手且缓动已收敛」，不是 pointerup 那一刻，
-  // 所以可以直接解除挂载保护，不需要再赌一个固定延时（收敛耗时随剩余距离变化，
-  // 180ms 盖不住，会把缓动掐断在半路）。
-  const handleMinimapPanEnd = useCallback(
-    (pointerInsideMinimap: boolean) => {
-      minimapPanCommitSuppressedRef.current = false;
-      setMinimapPanning(false);
-      // 松手在小地图内 ⇒ 继续显示；在外 ⇒ 走 hover 的同一节奏收起。
-      setMinimapHover(pointerInsideMinimap);
-    },
-    [setMinimapHover],
-  );
   useEffect(
     () => () => {
       if (minimapHideTimerRef.current !== null) {
@@ -923,6 +935,7 @@ export function Canvas({
 
   const handleNodeMouseEnter = useCallback(
     (_event: ReactMouseEvent, node: CanvasNode) => {
+      if (isCanvasGestureActive() || useCanvasToolStore.getState().tool === 'hand') return;
       clearHoveredNodeTimer();
       setHoveredNodeId(node.id);
     },
@@ -930,6 +943,7 @@ export function Canvas({
   );
 
   const handleNodeMouseLeave = useCallback(() => {
+    if (isCanvasGestureActive() || useCanvasToolStore.getState().tool === 'hand') return;
     scheduleHoveredNodeClear();
   }, [scheduleHoveredNodeClear]);
 
@@ -1077,7 +1091,14 @@ export function Canvas({
   // 关闭则回到默认的滚轮缩放。
   const trackpadPanEnabled = useTrackpadPanStore((state) => state.enabled);
   // 指针工具：抓手（H）下左键拖动 = 平移画布。
-  const handToolActive = useCanvasToolStore((state) => state.tool === 'hand');
+  const handToolSelected = useCanvasToolStore((state) => state.tool === 'hand');
+  const referencePickActive = useReferencePickStore((state) => state.request !== null);
+  const handToolActive = handToolSelected && !referencePickActive;
+  useEffect(() => {
+    if (!handToolSelected) return;
+    clearHoveredNodeTimer();
+    setHoveredNodeId(null);
+  }, [handToolSelected, clearHoveredNodeTimer]);
   // 底部任务中心面板展开时，让出底部空间——隐藏画布快捷操作栏，避免与面板重叠。
   const taskPanelOpen = useAppStore((state) => state.taskPanelOpen);
   // Stable signatures of the nodes that need polling / resume, so those effects
@@ -1940,10 +1961,14 @@ export function Canvas({
     [nodes, edges]
   );
 
-  // 平移/缩放期间 onMove 每帧触发。把 currentViewport 写进 store 会让所有订阅者每帧
-  // 重跑 selector(如 BackToNodesHint 的 O(n) 可见性判断)。这里节流到 ~8fps,并在
-  // onMoveEnd 必定提交最终值,既消除每帧 store 风暴,又保证落库/可见性判断及时收敛。
-  const lastViewportCommitRef = useRef(0);
+  // The live camera belongs to React Flow. Publishing it to graph state while moving
+  // wakes unrelated graph selectors; persistence and offscreen hints need only the
+  // settled value. Programmatic pans can report the same end more than once.
+  const commitSettledViewport = useCallback((viewport: Viewport) => {
+    const current = useCanvasStore.getState().currentViewport;
+    if (current.x === viewport.x && current.y === viewport.y && current.zoom === viewport.zoom) return;
+    setViewportState(viewport);
+  }, [setViewportState]);
 
   // LOD 效果类一律走 classList 直改 DOM，不进 React state：平移期间每帧 setState
   // 会把「省下来的光栅化时间」原样还给 render，得不偿失。
@@ -1981,12 +2006,21 @@ export function Canvas({
       clearTimeout(panningReleaseTimerRef.current);
       panningReleaseTimerRef.current = null;
     }
-    wrapperRef.current?.classList.add(CANVAS_PANNING_CLASS);
+    if (!wrapperRef.current?.classList.contains(CANVAS_PANNING_CLASS)) {
+      clearHoveredNodeTimer();
+      setHoveredNodeId(null);
+      setViewportGestureActive(true);
+      wrapperRef.current?.classList.add(CANVAS_PANNING_CLASS);
+    }
     setCanvasGestureActive(true);
-  }, []);
+  }, [clearHoveredNodeTimer]);
 
   const handleMoveEnd = useCallback(
     (_event: unknown, viewport: Viewport) => {
+      // A setViewport call may emit an end while the pointer is still down.
+      // Releasing the gesture here lets shell upgrades and effects flicker back
+      // between slow input frames; only the gesture owner may finish this pan.
+      if (minimapPanCommitSuppressedRef.current || edgePanGestureRef.current?.moved || diagnosticPanActiveRef.current) return;
       applyLowDetailClass(viewport.zoom);
       // 降档（进入低缩放）的裁剪关闭只在手势结束时提交：全量挂载 ~240 个 shell 的
       // 波放在缩放手势中途会有可感知的顿挫，推迟到松手后手势保持流畅；中途已跨档
@@ -2000,44 +2034,45 @@ export function Canvas({
       panningReleaseTimerRef.current = setTimeout(() => {
         panningReleaseTimerRef.current = null;
         wrapperRef.current?.classList.remove(CANVAS_PANNING_CLASS);
+        setViewportGestureActive(false);
         setCanvasGestureActive(false);
       }, PANNING_CLASS_RELEASE_DELAY_MS);
-      // 小地图缓动是程序化平移：每帧一次 instance.setViewport，而 ReactFlow 对
-      // 每次 setViewport 都跑一遍 onMoveStart→onMove→onMoveEnd，结束事件只有
-      // panOnScroll 才有 150ms 合并（createPanZoomEndHandler 里写死
-      // `panOnScroll ? 150 : 0`）。用户关掉「触控板平移」后 panOnScroll=false，
-      // 合并消失，这里会变成每秒约 60 次 store 提交 —— 正是本次要消掉的东西。
-      // 跳过时连 lastViewportCommitRef 也不占，好让 handleMove 的 8fps 节流照常
-      // 供给可见性判断；最终值由 onViewportSettled 收敛时提交一次。
-      if (minimapPanCommitSuppressedRef.current) {
-        return;
-      }
-      lastViewportCommitRef.current = Date.now();
-      setViewportState(viewport);
+      commitSettledViewport(viewport);
     },
-    [applyLowDetailClass, setViewportState]
+    [applyLowDetailClass, commitSettledViewport]
   );
+
+  // The minimap hook ends only after pointer release AND animation convergence.
+  // Keep both its mounted UI and gesture protection until that point.
+  const handleMinimapPanEnd = useCallback(
+    (pointerInsideMinimap: boolean) => {
+      minimapPanCommitSuppressedRef.current = false;
+      setMinimapPanning(false);
+      setMinimapHover(pointerInsideMinimap);
+      handleMoveEnd(null, reactFlowInstance.getViewport());
+    },
+    [setMinimapHover, handleMoveEnd, reactFlowInstance],
+  );
+
+  const handleDiagnosticGesture = useCallback((active: boolean) => {
+    diagnosticPanActiveRef.current = active;
+    if (active) handleMoveStart();
+    else handleMoveEnd(null, reactFlowInstance.getViewport());
+  }, [handleMoveStart, handleMoveEnd, reactFlowInstance]);
 
   const handleMove = useCallback(
     (_event: unknown, viewport: Viewport) => {
-      // 缩放跨档要立刻生效（用户能看见节点内容切换），所以不受下面的节流限制。
+      // LOD still responds to zoom; x/y movement never publishes graph state.
       applyLowDetailClass(viewport.zoom);
-      const now = Date.now();
-      if (now - lastViewportCommitRef.current < 120) {
-        return;
-      }
-      lastViewportCommitRef.current = now;
-      setViewportState(viewport);
     },
-    [applyLowDetailClass, setViewportState]
+    [applyLowDetailClass]
   );
 
   const handleMinimapViewportSettled = useCallback(
     (viewport: Viewport) => {
-      lastViewportCommitRef.current = Date.now();
-      setViewportState(viewport);
+      commitSettledViewport(viewport);
     },
-    [setViewportState]
+    [commitSettledViewport]
   );
 
   // 小地图拖动走自己的实现，不用 MiniMap 的 pannable —— 内置增益会随视口拖离
@@ -2075,6 +2110,7 @@ export function Canvas({
       }
       // 模块级信号要跟着画布一起复位，否则卸载时若正在手势中，下一次挂载会
       // 一直以为「还在平移」而永远不测量。
+      diagnosticPanActiveRef.current = false;
       setCanvasGestureActive(false);
       setCanvasLowDetail(false);
       // 低细节档真值也复位成「非低细节」：否则卸载时若停在滞回带内（0.35–0.38），
@@ -2092,6 +2128,16 @@ export function Canvas({
 
     const edgePathSelector = '.react-flow__edge-path, .react-flow__edge-interaction';
     const dragThreshold = 4;
+    let frame: number | null = null;
+    let pendingViewport: Viewport | null = null;
+    const flushViewport = () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+      const viewport = pendingViewport;
+      pendingViewport = null;
+      if (viewport) void reactFlowInstance.setViewport(viewport, { duration: 0 });
+      return viewport;
+    };
 
     const handlePointerDown = (event: PointerEvent) => {
       if (event.button !== 0) {
@@ -2142,14 +2188,14 @@ export function Canvas({
       }
 
       suppressNextEdgeClickRef.current = true;
-      reactFlowInstance.setViewport(
-        {
-          x: gesture.startViewportX + deltaX,
-          y: gesture.startViewportY + deltaY,
-          zoom: gesture.zoom,
-        },
-        { duration: 0 }
-      );
+      pendingViewport = {
+        x: gesture.startViewportX + deltaX,
+        y: gesture.startViewportY + deltaY,
+        zoom: gesture.zoom,
+      };
+      // Pointer hardware may emit several moves per display frame. Apply only
+      // the latest, and flush on release so the final few pixels are not lost.
+      if (frame === null) frame = requestAnimationFrame(flushViewport);
     };
 
     const completeEdgePanGesture = () => {
@@ -2158,13 +2204,13 @@ export function Canvas({
         return;
       }
 
-      edgePanGestureRef.current = null;
       if (!gesture.moved) {
+        edgePanGestureRef.current = null;
         return;
       }
-
-      const viewport = reactFlowInstance.getViewport();
-      setViewportState(viewport);
+      const viewport = flushViewport() ?? reactFlowInstance.getViewport();
+      edgePanGestureRef.current = null;
+      handleMoveEnd(null, viewport);
     };
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -2187,16 +2233,21 @@ export function Canvas({
     window.addEventListener('pointermove', handlePointerMove, true);
     window.addEventListener('pointerup', handlePointerUp, true);
     window.addEventListener('pointercancel', handlePointerCancel, true);
+    window.addEventListener('blur', completeEdgePanGesture);
 
     return () => {
       wrapperElement.removeEventListener('pointerdown', handlePointerDown, true);
       window.removeEventListener('pointermove', handlePointerMove, true);
       window.removeEventListener('pointerup', handlePointerUp, true);
       window.removeEventListener('pointercancel', handlePointerCancel, true);
+      window.removeEventListener('blur', completeEdgePanGesture);
+      if (frame !== null) cancelAnimationFrame(frame);
+      pendingViewport = null;
+      edgePanGestureRef.current = null;
     };
   }, [
     reactFlowInstance,
-    setViewportState,
+    handleMoveEnd,
   ]);
 
   const openNodeMenuAtClientPosition = useCallback((clientPosition: { x: number; y: number }) => {
@@ -4940,6 +4991,7 @@ export function Canvas({
       onDrop={handleCanvasDrop}
       onPointerMove={handleCanvasPointerMove}
     >
+      <FlowProfiler id="canvas-flow" onRender={recordCanvasRender}>
       <ReactFlow
         nodes={renderedNodes}
         edges={renderedEdges}
@@ -5019,7 +5071,7 @@ export function Canvas({
           onBatchDragMove={handleBatchConnectDragMove}
           onBatchDragEnd={handleBatchConnectDragEnd}
         />
-        <NodeSpawnPlusOverlay
+        {!handToolSelected && !viewportGestureActive && <NodeSpawnPlusOverlay
           hoveredNodeId={hoveredNodeId}
           hidden={isPlusConnectDragging}
           onOverlayHoverStart={clearHoveredNodeTimer}
@@ -5028,9 +5080,11 @@ export function Canvas({
           onPlusDragStart={handlePlusConnectDragStart}
           onPlusDragMove={handlePlusConnectDragMove}
           onPlusDragEnd={handlePlusConnectDragEnd}
-        />
+        />}
         <SnapAlignGuides />
       </ReactFlow>
+      </FlowProfiler>
+      {panDiagnosticsEnabled && <Suspense fallback={null}><CanvasPanDiagnostics rootRef={wrapperRef} profile={panProfile} onGestureChange={handleDiagnosticGesture} /></Suspense>}
 
       <ReferencePickBanner />
       <ViewportReturnHint />

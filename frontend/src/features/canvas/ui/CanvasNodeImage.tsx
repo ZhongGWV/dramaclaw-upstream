@@ -66,6 +66,7 @@ export const CanvasNodeImage = memo(({
       draggable={false}
       decoding="async"
       {...props}
+      data-canvas-preview="true"
       src={displaySrc}
       data-viewer-src={
         typeof viewerSourceUrl === 'string' && viewerSourceUrl.trim().length > 0

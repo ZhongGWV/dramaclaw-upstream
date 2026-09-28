@@ -174,6 +174,7 @@ export function setCanvasGestureActive(active: boolean): void {
   const wasDeferred = isCanvasMeasurementDeferred();
   gestureActive = active;
   notifyIfSettled(wasDeferred);
+  if (!active && upgradeQueue.length > 0) scheduleUpgradePump();
 }
 
 export function setCanvasLowDetail(active: boolean): void {
@@ -282,10 +283,10 @@ let upgradePumpScheduled = false;
 function pumpUpgrades(): void {
   upgradePumpScheduled = false;
   if (upgradeQueue.length === 0) return;
-  // 手势中不放行，但保持泵活着，手势一停下一帧就继续。
-  if (!gestureActive) {
-    for (const grant of upgradeQueue.splice(0, UPGRADES_PER_FRAME)) grant();
-  }
+  // Sleep while panning. The gesture-end signal wakes the queue, so a long
+  // drag does not burn one empty animation callback on every frame.
+  if (gestureActive) return;
+  for (const grant of upgradeQueue.splice(0, UPGRADES_PER_FRAME)) grant();
   if (upgradeQueue.length > 0) scheduleUpgradePump();
 }
 

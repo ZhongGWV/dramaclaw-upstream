@@ -20,11 +20,14 @@
  */
 import {
   memo,
+  useCallback,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ComponentType,
   type CSSProperties,
+  type Ref,
 } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
@@ -50,15 +53,16 @@ import {
   shouldSelfCaptureLodStill,
   subscribeLodStills,
 } from '@/features/canvas/application/videoFrameCapture';
-import { resolveImageDisplayUrl } from '@/features/canvas/application/imageData';
+import { canvasPreviewImage, resolveImageDisplayUrl } from '@/features/canvas/application/imageData';
 import { useNodeBodyVariant } from '@/features/canvas/hooks/useNodeBodyVariantBudget';
-import { withMediaVariant, type MediaVariant } from '@/lib/media-url';
+import { useDecodedNodeImage } from '@/features/canvas/hooks/useDecodedNodeImage';
 import {
   nodeHasSourceHandle,
   nodeHasTargetHandle,
 } from '@/features/canvas/domain/nodeRegistry';
 import type { CanvasNodeData, CanvasNodeType } from '@/features/canvas/domain/canvasNodes';
 import { localizeNodeDisplayName } from '@/features/canvas/domain/nodeDisplay';
+import { captureNodePreview, NodePreviewHandoff, type NodePreviewSnapshot } from '@/features/canvas/ui/NodePreviewHandoff';
 
 /**
  * 未测量且未显式设尺寸的节点（首屏恢复在低缩放档、且从未被渲染过）的兜底尺寸。
@@ -101,8 +105,9 @@ type ShellData = {
   isGenerating?: boolean;
   isUploading?: boolean;
   mediaKind?: 'image' | 'video' | 'audio' | 'other';
-  /** liblib 导入元数据；此处只取 sourceUrl 用于封面兜底现算。 */
-  liblibImport?: { sourceUrl?: string | null } | null;
+  committed_at?: string | null;
+  /** 原始与本地导入源同时用于校验封面归属。 */
+  liblibImport?: { sourceUrl?: string | null; importedLocalUrl?: string | null } | null;
   /** Text body of a text node — painted by the shell, see `.dc-lod-shell__text`. */
   content?: unknown;
 };
@@ -125,28 +130,26 @@ function LodMediaTitle({ type, data }: { type: CanvasNodeType; data: ShellData }
  * 个。解码成本只看源图像素数，所以原图在这里是纯浪费：一张 5504x3072 要付
  * 16.9MP，换成 320px 变体是 0.06MP。
  *
- * 前端只请求生产会预热的 320px thumb。超过预算的节点主体会使用原图；LOD shell
- * 仍固定回落 thumb，因为它只在低缩放、大量节点同时出现时使用，避免同时解码几十
- * 上百张完整原图。
+ * 使用已有 320/640/1280 三档；超出预算的 shell 封顶 1280，避免大量原图同时解码。
  *
  * 变体不适用时（blob: 预览、遗留路径、抓帧 data:）withMediaVariant 原样返回，
  * 行为与改动前一致。shell 不接 onLoad、不测尺寸、不进查看器/导出，所以这里
- * 没有节点主体那套「先知道真实尺寸才能换」的顾虑。
+ * 没有节点主体那套「先知道真实尺寸才能换」的顾虑，onLoad 只确认显示资源已就绪。
  */
 function resolveShellImage(
   type: string,
   data: ShellData,
-  variant: MediaVariant,
 ): string | null {
   const pick = (...candidates: Array<string | null | undefined>) => {
     for (const c of candidates) {
-      if (c) return withMediaVariant(resolveImageDisplayUrl(c), variant);
+      if (c) return resolveImageDisplayUrl(c);
     }
     return null;
   };
   switch (type) {
     case 'imageGenNode':
-      return pick(data.imageUrl, data.previewImageUrl, data.referenceImageUrl);
+      // Match the full node's currently visible edit/result during handoff.
+      return pick(data.previewImageUrl, data.imageUrl, data.referenceImageUrl);
     case 'uploadNode':
     case 'imageNode':
     case 'exportImageNode':
@@ -160,50 +163,53 @@ function resolveShellImage(
   }
 }
 
-function LodShell({ type, id, data, selected, width, height }: {
+function LodShell({ type, id, data, selected, width, height, shellRef }: {
   type: string;
   id: string;
   data: ShellData;
   selected: boolean | undefined;
   width: number | undefined;
   height: number | undefined;
+  shellRef?: Ref<HTMLDivElement>;
 }) {
   const fallback = SHELL_FALLBACK_SIZES[type] ?? DEFAULT_SHELL_SIZE;
   const w = width ?? fallback.width;
   const h = height ?? fallback.height;
-  // 一格盖不住时也继续喂 thumb：shell 的整个前提就是节点太多、不能同时解原图。
-  const variant = useNodeBodyVariant({ width: w, height: h }) ?? 'thumb';
+  const variant = useNodeBodyVariant({ width: w, height: h }) ?? 'card';
 
   // 视频缩略图：订阅模块级抓帧缓存；节点从未挂载过完整组件时（首屏即低缩放），
   // 这里负责把抓帧任务排进空闲队列，不依赖完整组件出现过。
   const isVideo = type === 'videoNode';
   const isLiblibVideo = type === 'liblibMediaNode' && data.mediaKind === 'video';
-  const videoSource = isVideo && data.videoUrl ? resolveImageDisplayUrl(data.videoUrl) : null;
+  const videoSource = (isVideo || isLiblibVideo) && data.videoUrl ? resolveImageDisplayUrl(data.videoUrl) : null;
   const lodStill = useSyncExternalStore(subscribeLodStills, () =>
     getLodStill(videoSource)
   );
   // 封面优先：落库封面 / liblib 源现算 / 远端服务端抽帧，任一命中都是现成小图、
   // 零本地解码。有它就不起离屏 <video> 自截。
   const liblibSourceUrl = data.liblibImport?.sourceUrl ?? null;
-  const posterCandidate = isVideo
-    ? derivedVideoPoster({ previewImageUrl: data.previewImageUrl, liblibSourceUrl, videoSource })
-    : null;
-  const videoPoster = posterCandidate
-    ? withMediaVariant(resolveImageDisplayUrl(posterCandidate), variant)
+  const importedVideoSource = data.liblibImport?.importedLocalUrl || liblibSourceUrl;
+  const previewImageUrl = isLiblibVideo ? data.posterUrl : data.previewImageUrl;
+  const posterCandidate = isVideo || isLiblibVideo
+    ? derivedVideoPoster({ previewImageUrl, liblibSourceUrl, importedVideoSource, videoSource })
     : null;
   useEffect(() => {
-    if (!isVideo) return;
+    if (!isVideo && !isLiblibVideo) return;
     // 有任何可直出的封面就跳过离屏自截，省本地解码。
-    if (!shouldSelfCaptureLodStill({ previewImageUrl: data.previewImageUrl, liblibSourceUrl, videoSource })) {
+    if (!shouldSelfCaptureLodStill({ previewImageUrl, liblibSourceUrl, importedVideoSource, videoSource })) {
       return;
     }
     requestLodStill(videoSource);
-  }, [isVideo, data.previewImageUrl, liblibSourceUrl, videoSource]);
+  }, [isVideo, isLiblibVideo, previewImageUrl, liblibSourceUrl, importedVideoSource, videoSource]);
 
-  const imageSrc =
-    isVideo
-      ? (videoPoster ?? lodStill)
-      : resolveShellImage(type, data, variant);
+  const originalImage = isVideo || isLiblibVideo
+    ? (posterCandidate ? resolveImageDisplayUrl(posterCandidate) : lodStill)
+    : resolveShellImage(type, data);
+  const previewDisplay = useDecodedNodeImage(
+    canvasPreviewImage(originalImage, variant),
+    JSON.stringify([id, videoSource, originalImage, data.committed_at, data.isGenerating, data.isUploading]),
+  );
+  const imageSrc = previewDisplay.displayed?.src;
 
   const busy = Boolean(data.isGenerating || data.isUploading);
 
@@ -222,25 +228,15 @@ function LodShell({ type, id, data, selected, width, height }: {
   return (
     <>
       {showMediaTitle && <LodMediaTitle type={type as CanvasNodeType} data={data} />}
-      <div className={`dc-lod-shell${selected ? ' dc-lod-shell--selected' : ''}`} style={style}>
+      <div ref={shellRef} className={`dc-lod-shell${selected ? ' dc-lod-shell--selected' : ''}`} style={style}>
         {nodeHasTargetHandle(type as CanvasNodeType) && (
           <Handle type="target" position={Position.Left} id="target" />
         )}
         {nodeHasSourceHandle(type as CanvasNodeType) && (
           <Handle type="source" position={Position.Right} id="source" />
         )}
-        {isLiblibVideo && data.posterUrl ? (
-          <img src={data.posterUrl} alt="" loading="lazy" draggable={false} className="dc-lod-shell__thumb" />
-        ) : isLiblibVideo && data.videoUrl ? (
-          <video
-            src={data.videoUrl}
-            muted
-            playsInline
-            preload="metadata"
-            className="liblib-media-node__lod-video"
-          />
-        ) : imageSrc ? (
-          <img src={imageSrc} alt="" loading={type === 'liblibMediaNode' ? 'lazy' : undefined} draggable={false} className="dc-lod-shell__thumb" />
+        {imageSrc ? (
+          <img src={imageSrc} alt="" decoding="async" onLoad={event => previewDisplay.onLoad(event.currentTarget)} loading={type === 'liblibMediaNode' ? 'lazy' : undefined} draggable={false} className="dc-lod-shell__thumb" />
         ) : shellText ? (
           <div className="dc-lod-shell__text">{shellText}</div>
         ) : null}
@@ -269,7 +265,20 @@ export function withLodShell(
   Component: AnyNodeComponent
 ): ComponentType<NodeProps> {
   const exempt = LOD_SHELL_EXEMPT_TYPES.has(type);
+  const supportsPreview = ['imageGenNode', 'imageNode', 'uploadNode', 'exportImageNode', 'videoNode'].includes(type);
   const Wrapped = (props: NodeProps) => {
+    const shellRef = useRef<HTMLDivElement>(null);
+    const [preview, setPreview] = useState<NodePreviewSnapshot | null>(null);
+    const clearPreview = useCallback(() => setPreview(null), []);
+    const media = props.data as ShellData;
+    // Identity excludes position/selection. A new result or generation state
+    // must never inherit an old cover, even if its image has not loaded yet.
+    const previewIdentity = JSON.stringify([
+      type, media.imageUrl, media.previewImageUrl, media.posterUrl,
+      media.referenceImageUrl, media.videoUrl, media.isGenerating, media.isUploading,
+      media.liblibImport?.sourceUrl, media.liblibImport?.importedLocalUrl,
+      media.committed_at, props.width, props.height,
+    ]);
     // 订阅模块级的低细节档单一真值（带滞回）。平移中 transform 每帧变但真值只在
     // 跨档时翻转，且带内（0.35–0.38）的抖动不会通知，不会造成每帧重渲染。
     const lowDetail = useSyncExternalStore(subscribeLowDetail, isLowDetailActive);
@@ -308,8 +317,16 @@ export function withLodShell(
     useEffect(() => {
       if (!heldShell || wantShell) return;
       // 返回的取消函数在卸载/重新降档时把自己撤出队列。
-      return requestShellUpgrade(() => setHeldShell(false));
-    }, [heldShell, wantShell]);
+      return requestShellUpgrade(() => {
+        setPreview(supportsPreview && !media.isGenerating && !media.isUploading
+          ? captureNodePreview(shellRef.current, previewIdentity) : null);
+        setHeldShell(false);
+      });
+    }, [heldShell, wantShell, previewIdentity, media.isGenerating, media.isUploading]);
+
+    useEffect(() => {
+      if (heldShell || (preview && preview.identity !== previewIdentity)) clearPreview();
+    }, [heldShell, preview, previewIdentity, clearPreview]);
 
     // 跨项目粘贴的素材占位遮罩、参考拾取遮罩都挂在每个节点上（shell 档也要有）：
     // `.react-flow__node` 本身是定位元素，遮罩用 inset-0 就精确贴合这个节点的盒子，
@@ -318,6 +335,7 @@ export function withLodShell(
       return (
         <>
           <LodShell
+            shellRef={shellRef}
             type={type}
             id={props.id}
             data={props.data as ShellData}
@@ -335,6 +353,7 @@ export function withLodShell(
     return (
       <>
         <Component {...props} />
+        {preview?.identity === previewIdentity && <NodePreviewHandoff snapshot={preview} onDone={clearPreview} />}
         <AssetMigrationNodeOverlay nodeId={props.id} data={props.data} />
         <ForeignMediaNodeOverlay nodeId={props.id} />
         <RemoteMediaBadge data={props.data} />

@@ -223,6 +223,8 @@ export type LodPosterInput = {
   previewImageUrl?: string | null;
   /** liblib 导入节点的原始素材地址（liblibImport.sourceUrl）。 */
   liblibSourceUrl?: string | null;
+  /** 导入完成时的视频源（本地化后优先 importedLocalUrl），用于识别原地重新生成。 */
+  importedVideoSource?: string | null;
   /** 展示用的视频源地址（可能已本地化）。 */
   videoSource?: string | null;
 };
@@ -240,6 +242,12 @@ export type LodPosterInput = {
  * （对绝对 https 地址两者都是 no-op，安全）。
  */
 export function derivedVideoPoster(input: LodPosterInput): string | null {
+  // 生成/替换结果保留导入元数据供审计；这些旧封面不能继续代表新视频。
+  // 缺少导入源的旧数据保持兼容，不把无法判断的封面直接丢掉。
+  if (input.importedVideoSource && input.videoSource &&
+      input.importedVideoSource !== input.videoSource) {
+    return serverSidePosterUrl(input.videoSource);
+  }
   const preview =
     typeof input.previewImageUrl === 'string' ? input.previewImageUrl.trim() : '';
   if (preview) return preview;

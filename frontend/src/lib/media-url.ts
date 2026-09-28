@@ -51,15 +51,14 @@ export const MEDIA_VARIANT_MAX_EDGE: Record<MediaVariant, number> = {
 const MEDIA_VARIANT_LADDER: MediaVariant[] = ["thumb", "thumb2x", "card"];
 
 /**
- * Return ``thumb`` when its 320px edge can fill the requested device pixels,
- * or ``null`` so the caller uses the original.
+ * Return the smallest sufficient 320/640/1280px tier, or null for the original.
  *
  * Device pixels, not CSS pixels: a 320px copy in a 315 CSS px box is crisp on a
  * 1x display and visibly soft on a 2x one, and that difference is exactly what
  * a fixed budget per call site cannot express. Callers compute the requirement
  * as `displayEdge * zoom * devicePixelRatio` and let this pick.
  *
- * `null` means "serve the original". Upscaling the 320px thumbnail is avoided
+ * `null` means "serve the original". Upscaling the largest thumbnail is avoided
  * because its decode saving would come with visible blur.
  */
 export function pickMediaVariant(requiredEdge: number): MediaVariant | null {
@@ -87,28 +86,30 @@ const THUMBNAILABLE_EXTENSION_RE = /\.(png|jpe?g|webp|bmp|tiff?)$/i;
  * 169x95 的框里约 33MB 位图,拖动直接卡死。LibTV 自己的画布就是这么解的——实测它给
  * 同一张图挂的是 `w_200/w_400/w_800` 三档 srcset。
  *
- * `ignore-error,1` 是关键:转换失败时 OSS 回落原图而不是报错,所以这个参数对不支持
- * 转换的地址天然安全。`format,webp` 顺带把 PNG 压下来。
+ * 仅对已知 OSS 来源或已有 image/resize 的地址使用此语法；未知 CDN 原样保留。
+ * `ignore-error,1` 允许 OSS 转换失败时回落原图，不能据此认定实际返回了小图。
  *
  * **只在没有任何查询参数时才加**。预签名地址的签名覆盖 query,多加一个参数会让签名
  * 失效、图直接裂掉;而预签名地址必然带 query,这条规则正好把它们排除干净。
- * 已经带 `x-oss-process` 的地址是例外——它自己就证明了服务端认这个语法,直接换宽度。
+ * 仅含 `x-oss-process` 的图片缩放地址可换宽度；它与任何其它 query 组合时都不改。
  */
 export function withRemoteImageVariant(url: string, maxEdge: number): string {
   if (!Number.isFinite(maxEdge) || maxEdge <= 0) return url;
   if (!/^https?:\/\//i.test(url)) return url;
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return url; }
   const process = `image/resize,w_${Math.round(maxEdge)},m_lfit/format,webp/ignore-error,1`;
-  const queryAt = url.indexOf('?');
-  if (queryAt === -1) {
-    if (!THUMBNAILABLE_EXTENSION_RE.test(url)) return url;
-    return `${url}?x-oss-process=${encodeURIComponent(process)}`;
-  }
-  const params = new URLSearchParams(url.slice(queryAt + 1));
+  const params = parsed.searchParams;
+  if ([...params.keys()].some(key => key !== 'x-oss-process')) return url;
   const existing = params.get('x-oss-process');
   // 视频抽帧(video/snapshot,...)不是图片缩放,别拿图片参数覆盖掉它。
-  if (!existing || !existing.startsWith('image/resize')) return url;
+  if (existing !== null && !existing.startsWith('image/resize')) return url;
+  if (existing === null) {
+    const knownOss = parsed.hostname === 'libtv-res.liblib.art' || parsed.hostname.endsWith('.aliyuncs.com');
+    if (!knownOss || !THUMBNAILABLE_EXTENSION_RE.test(parsed.pathname)) return url;
+  }
   params.set('x-oss-process', process);
-  return `${url.slice(0, queryAt)}?${params.toString()}`;
+  return parsed.toString();
 }
 
 // Exported for callers that have already resolved a URL through some other

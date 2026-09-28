@@ -12,17 +12,16 @@ import {
   type DragEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { flushSync } from "react-dom";
 import {
   Handle,
   Position,
   useUpdateNodeInternals,
   type NodeProps,
 } from "@xyflow/react";
-import {
-  isLowDetailActive,
-  setNodeMediaActive,
-  subscribeLowDetail,
-} from "@/features/canvas/application/canvasLod";
+import { setNodeMediaActive } from "@/features/canvas/application/canvasLod";
+import { useNodeBodyVariant } from "@/features/canvas/hooks/useNodeBodyVariantBudget";
+import { useDecodedNodeImage } from "@/features/canvas/hooks/useDecodedNodeImage";
 import {
   AlertTriangle,
   ArrowUp,
@@ -92,6 +91,7 @@ import {
 } from "@/features/canvas/nodes/shared/videoModelCapabilities";
 import {
   VIDEO_GENERATION_ASPECT_RATIOS,
+  canvasPreviewImage,
   resolveImageDisplayUrl,
   snapToAllowedAspectRatio,
 } from "@/features/canvas/application/imageData";
@@ -134,7 +134,7 @@ import {
   extractUpstreamContent,
   joinUpstreamText,
 } from "@/features/canvas/application/graphContentResolver";
-import { useUpstreamNodes } from "@/features/canvas/application/useUpstreamGraph";
+import { useUpstreamReferenceNodes } from "@/features/canvas/application/useUpstreamGraph";
 import {
   sortUpstreamByReferenceOrder,
   upstreamNodesInEdgeOrder,
@@ -637,11 +637,6 @@ export const VideoNode = memo(
       setVideoEl(el);
     }, []);
 
-    // 低缩放档：订阅模块级单一真值（带滞回），只在跨档时翻转、带内抖动不通知，
-    // 所以平移中不会每帧重渲染。
-    const lowDetailZoom = useSyncExternalStore(subscribeLowDetail, isLowDetailActive);
-    // 正在播放时不降级——用户主动播了就说明他在看，缩放小也别把播放器抽走。
-    const isVideoPlayingRef = useRef(false);
     // 卸载时清掉模块级播放标记：视口裁剪把播放中的节点卸掉时 <video> 不会派发
     // pause 事件，不清会留下陈旧的「播放中」豁免，该节点从此不再降级。
     useEffect(() => () => setNodeMediaActive(id, false), [id]);
@@ -677,7 +672,7 @@ export const VideoNode = memo(
     // Billing and submission must inspect the same one-hop inputs. Keeping the
     // subscription here also lets the displayed quote react when a source
     // video's browser-probed duration becomes available.
-    const upstreamNodes = useUpstreamNodes(id);
+    const upstreamNodes = useUpstreamReferenceNodes(id);
     const {
       models: availableVideoModels,
       isLoading: videoModelsLoading,
@@ -1885,66 +1880,94 @@ export const VideoNode = memo(
       [clearTransientPreview],
     );
 
+    const isUploading = Boolean(data.isUploading);
     const videoSource = useMemo(() => {
       if (data.videoUrl) return resolveImageDisplayUrl(data.videoUrl);
       if (transientPreviewUrl) return transientPreviewUrl;
       return null;
     }, [data.videoUrl, transientPreviewUrl]);
 
-    // 预览专用 src：preload="metadata" 不会绘制任何一帧，又没有 poster，画布上
-    // 就是一个纯黑框（视频本身正常，下载可看）。追加 `#t=0.1` 媒体片段，让浏览器
-    // seek 到 0.1s 并把那一帧画出来当封面——与 NodeGenerationHistory /
-    // CanvasHistoryAssetsModal 的缩略图用法一致。仅用于显示，不影响下载/抓帧/播放。
-    const videoPosterSource = useMemo(() => {
-      if (!videoSource) return null;
-      return videoSource.includes("#t=") ? videoSource : `${videoSource}#t=0.1`;
-    }, [videoSource]);
-
-    // 低缩放档要用的静态缩略图。封面优先：导入/生成时落库的封面（previewImageUrl，
+    // 各缩放档共用静态封面；只有显式播放才创建节点播放器。封面优先：
+    // 导入/生成时落库的封面（previewImageUrl，
     // 如 liblib 的 liblibVideoPosterUrl）是现成小图，零本地解码；没有它、也不是远端
     // 服务端抽帧能覆盖的，才走离屏 <video> + CORS 自截（见 videoFrameCapture）。
     // 在节点挂载时就排队，而不是等缩放缩下去才开始：低缩放档下画布上根本不挂
     // <video>，那时才抓的话用户会先盯着一屏占位块；而且首屏视口若恢复在低缩放档，
     // 展示用的 <video> 一次都不会挂载，永远等不到抓帧时机。
     const liblibSourceUrl = data.liblibImport?.sourceUrl ?? null;
+    const importedVideoSource = data.liblibImport?.importedLocalUrl || liblibSourceUrl;
     useEffect(() => {
       if (
         !shouldSelfCaptureLodStill({
           previewImageUrl: data.previewImageUrl,
           liblibSourceUrl,
+          importedVideoSource,
           videoSource,
         })
       ) {
         return;
       }
       requestLodStill(videoSource);
-    }, [data.previewImageUrl, liblibSourceUrl, videoSource]);
+    }, [data.previewImageUrl, liblibSourceUrl, importedVideoSource, videoSource]);
 
     // 订阅模块级缓存：节点被 onlyRenderVisibleElements 反复 mount/unmount 后缩略图
     // 仍然在，重挂即用。快照是原始值，抓帧完成前后各渲染一次，不会每帧重渲染。
     const lodStill = useSyncExternalStore(subscribeLodStills, () =>
       getLodStill(videoSource)
     );
-    // 低缩放档展示的封面：落库封面 / liblib 源现算 / 远端服务端抽帧优先，都没有
+    // 静态预览：落库封面 / liblib 源现算 / 远端服务端抽帧优先，都没有
     // 才回落离屏自截结果。
     const posterCandidate = derivedVideoPoster({
       previewImageUrl: data.previewImageUrl,
       liblibSourceUrl,
+      importedVideoSource,
       videoSource,
     });
-    const lodPoster =
+    const posterVariant = useNodeBodyVariant({ width: resolvedWidth, height: resolvedHeight });
+    const originalPoster =
       (posterCandidate ? resolveImageDisplayUrl(posterCandidate) : null) ?? lodStill;
+    const posterDisplay = useDecodedNodeImage(
+      canvasPreviewImage(originalPoster, posterVariant),
+      JSON.stringify([id, videoSource, originalPoster]),
+    );
+    const lodPoster = posterDisplay.displayed?.src ?? null;
 
     useEffect(() => {
       updateNodeInternals(id);
     }, [id, resolvedHeight, resolvedWidth, updateNodeInternals]);
 
-    const [hasMetadata, setHasMetadata] = useState(false);
+    // 按素材源绑定播放会话，替换视频时不能把旧视频的播放/首帧状态带过去。
+    const [requestedVideoSource, setRequestedVideoSource] = useState<string | null>(null);
+    const [decodedVideoSource, setDecodedVideoSource] = useState<string | null>(null);
+    const playerRequested = Boolean(videoSource && requestedVideoSource === videoSource);
+    const hasVideoFrame = playerRequested && decodedVideoSource === videoSource;
     const [videoLoadError, setVideoLoadError] = useState(false);
     useEffect(() => {
-      setHasMetadata(false);
+      setRequestedVideoSource(null);
+      setDecodedVideoSource(null);
       setVideoLoadError(false);
-    }, [videoSource]);
+      setNodeMediaActive(id, false);
+    }, [id, videoSource, isGenerating, isUploading]);
+
+    const requestVideoPlayback = useCallback(() => {
+      if (!videoSource || isGenerating || isUploading) return;
+      // 同步挂载只发生在点击播放时，让 play() 保持在用户手势内，避免浏览器
+      // 将 effect 中的延迟播放视为自动播放。平移/缩放完全不经过此路径。
+      setNodeMediaActive(id, true);
+      flushSync(() => {
+        setVideoLoadError(false);
+        setRequestedVideoSource(videoSource);
+      });
+      const el = videoRef.current;
+      if (!el) {
+        setNodeMediaActive(id, false);
+        return;
+      }
+      void el.play().catch(() => {
+        // 换源/卸载可能中断旧 Promise；不能清掉后来那个播放器的活跃标记。
+        if (videoRef.current === el && el.paused) setNodeMediaActive(id, false);
+      });
+    }, [id, videoSource, isGenerating, isUploading]);
 
     // ---- subtitle erase mode (libtv-style 智能去字幕) ------------------------
     const subtitleEraseMode = data.subtitleEraseMode ?? null;
@@ -3236,7 +3259,6 @@ export const VideoNode = memo(
       mainline: hasMainlineContext,
     });
 
-    const isUploading = Boolean(data.isUploading);
     const isEmptyVideoBody = !videoSource && !isUploading && !isGenerating && !hasGenerationError;
     const bodySurfaceClass = isEmptyVideoBody
       ? CANVAS_NODE_INPUT_SURFACE_CLASS
@@ -3411,7 +3433,6 @@ export const VideoNode = memo(
               }
             />
             {videoSource &&
-            hasMetadata &&
             !videoLoadError &&
             typeof data.widthPx === "number" &&
             typeof data.heightPx === "number" &&
@@ -3465,78 +3486,64 @@ export const VideoNode = memo(
           {/* 生成/上传中优先显示 loading：原地重新生成时 videoUrl 仍是上一条结果，
               若不加这层 guard，旧视频会一直占位、isGenerating 分支永远到不了。
               失败时 isGenerating 归 false，旧视频自动复现（videoUrl 未被清空）。 */}
-          {/* 低缩放档：<video> 换成静态图/占位块。每个 <video> 都是一个独立
-              合成层，数量随可见节点数线性增长——实测 69 节点 / zoom 0.1 下，
-              只有连同视频层一起降级才能把 p90 帧时从 26ms 拉回 14ms。 */}
-          {!isGenerating &&
-          !isUploading &&
-          videoSource &&
-          lowDetailZoom &&
-          !isVideoPlayingRef.current ? (
-            lodPoster ? (
-              <img
-                src={lodPoster}
-                alt=""
-                className="h-full w-full object-contain"
-                draggable={false}
-                onClick={() => setSelectedNode(id)}
-              />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center bg-black/40"
-                onClick={() => setSelectedNode(id)}
-              >
-                <VideoIcon className="h-1/4 max-h-10 w-1/4 max-w-10 text-white/25" />
-              </div>
-            )
-          ) : !isGenerating && !isUploading && videoSource ? (
-            <video
-              ref={setVideoRef}
-              src={videoPosterSource ?? undefined}
-              className="h-full w-full object-contain"
-              playsInline
-              preload="metadata"
-              onPlay={() => {
-                isVideoPlayingRef.current = true;
-                // shell 决策在组件外层（withLodShell），读不到组件内 ref，
-                // 播放态同步进模块级注册表：播放中的节点低缩放档不降级。
-                setNodeMediaActive(id, true);
-              }}
-              onPause={() => {
-                isVideoPlayingRef.current = false;
-                setNodeMediaActive(id, false);
-              }}
-              onClick={() => {
-                // 点击视频本体只负责选中节点 —— 播放/暂停统一交给左下角按钮。
-                setSelectedNode(id);
-              }}
-              onLoadedMetadata={(event) => {
-                const el = event.currentTarget;
-                setHasMetadata(true);
-                setVideoLoadError(false);
-                if (el.videoWidth && el.videoHeight) {
-                  // 只把视频真实像素记到 widthPx/heightPx；不要写回 aspectRatio。
-                  // aspectRatio 仅保存用户选的比例预设（16:9 / auto…），否则
-                  // chip 会显示成像素串(1248:704)，且会作为非法 aspect_ratio 带进
-                  // 下一次生成请求。
-                  const updates: Partial<VideoNodeData> = {};
-                  if (data.widthPx !== el.videoWidth)
-                    updates.widthPx = el.videoWidth;
-                  if (data.heightPx !== el.videoHeight)
-                    updates.heightPx = el.videoHeight;
-                  if (data.durationMs !== Math.round(el.duration * 1000)) {
-                    updates.durationMs = Math.round(el.duration * 1000);
-                  }
-                  if (Object.keys(updates).length > 0) {
-                    updateNodeData(id, updates);
-                  }
-                }
-              }}
-              onError={() => {
-                setHasMetadata(true);
-                setVideoLoadError(true);
-              }}
-            />
+          {!isGenerating && !isUploading && videoSource ? (
+            <div className="relative h-full w-full" onClick={() => setSelectedNode(id)}>
+              {playerRequested && (
+                <video
+                  key={videoSource}
+                  ref={setVideoRef}
+                  data-canvas-preview="true"
+                  src={videoSource}
+                  poster={lodPoster ?? undefined}
+                  className="h-full w-full object-contain"
+                  playsInline
+                  preload="metadata"
+                  onPlay={() => setNodeMediaActive(id, true)}
+                  onPause={() => setNodeMediaActive(id, false)}
+                  onEnded={() => setNodeMediaActive(id, false)}
+                  onLoadedData={() => setDecodedVideoSource(videoSource)}
+                  onLoadedMetadata={(event) => {
+                    const el = event.currentTarget;
+                    setVideoLoadError(false);
+                    if (el.videoWidth && el.videoHeight) {
+                      // 媒体像素只记录到 widthPx/heightPx，不改变节点几何或生成比例。
+                      const updates: Partial<VideoNodeData> = {};
+                      if (data.widthPx !== el.videoWidth) updates.widthPx = el.videoWidth;
+                      if (data.heightPx !== el.videoHeight) updates.heightPx = el.videoHeight;
+                      if (Number.isFinite(el.duration) && el.duration > 0 &&
+                          data.durationMs !== Math.round(el.duration * 1000)) {
+                        updates.durationMs = Math.round(el.duration * 1000);
+                      }
+                      if (Object.keys(updates).length > 0) updateNodeData(id, updates);
+                    }
+                  }}
+                  onError={() => {
+                    setVideoLoadError(true);
+                    setRequestedVideoSource(null);
+                    setDecodedVideoSource(null);
+                    setNodeMediaActive(id, false);
+                  }}
+                />
+              )}
+              {/* 首帧可显示前保留图片，防止播放器挂载时把现成封面换成黑框。 */}
+              {!hasVideoFrame && (
+                lodPoster ? (
+                  <img
+                    src={lodPoster}
+                    data-canvas-preview="true"
+                    onLoad={event => posterDisplay.onLoad(event.currentTarget)}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-contain"
+                    decoding="async"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <VideoIcon className="h-1/4 max-h-10 w-1/4 max-w-10 text-white/25" />
+                  </div>
+                )
+              )}
+            </div>
           ) : isUploading ? (
             <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-text-muted/85">
               <Loader2 className="h-7 w-7 animate-spin opacity-70" />
@@ -3686,20 +3693,21 @@ export const VideoNode = memo(
             </button>
           )}
 
-          {videoSource && !hasMetadata && !isUploading && !isGenerating && (
+          {playerRequested && !hasVideoFrame && !videoLoadError && !isUploading && !isGenerating && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-bg-dark/40">
               <Loader2 className="h-6 w-6 animate-spin text-text-muted/70" />
             </div>
           )}
 
           {videoSource &&
-            hasMetadata &&
-            !videoLoadError &&
             !isGenerating &&
             !isUploading &&
             !subtitleEraseMode && (
               <VideoPlayerControls
-                videoEl={videoEl}
+                key={videoSource}
+                videoEl={playerRequested ? videoEl : null}
+                knownDurationSeconds={typeof data.durationMs === "number" ? data.durationMs / 1000 : 0}
+                onRequestPlay={requestVideoPlayback}
                 isCapturingFrame={isCapturingFrame}
                 onCapture={handleCaptureFrame}
               />
@@ -4120,6 +4128,8 @@ export type ReferenceMediaItem =
 
 interface VideoPlayerControlsProps {
   videoEl: HTMLVideoElement | null;
+  knownDurationSeconds: number;
+  onRequestPlay: () => void;
   isCapturingFrame: boolean;
   onCapture: (mode: "first" | "last" | "current") => void;
 }
@@ -4134,22 +4144,34 @@ function formatTime(seconds: number): string {
 
 function VideoPlayerControls({
   videoEl,
+  knownDurationSeconds,
+  onRequestPlay,
   isCapturingFrame,
   onCapture,
 }: VideoPlayerControlsProps) {
   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const fallbackDuration = Number.isFinite(knownDurationSeconds) && knownDurationSeconds > 0
+    ? knownDurationSeconds : 0;
+  const [duration, setDuration] = useState(fallbackDuration);
   const [isMuted, setIsMuted] = useState(false);
   const [isHoveringFrame, setIsHoveringFrame] = useState(false);
 
   useEffect(() => {
-    if (!videoEl) return;
+    if (!videoEl) {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(fallbackDuration);
+      setIsMuted(false);
+      return;
+    }
+    const readDuration = () => Number.isFinite(videoEl.duration) && videoEl.duration > 0
+      ? videoEl.duration : fallbackDuration;
     const syncAll = () => {
       setIsPlaying(!videoEl.paused);
       setCurrentTime(videoEl.currentTime);
-      setDuration(Number.isFinite(videoEl.duration) ? videoEl.duration : 0);
+      setDuration(readDuration());
       setIsMuted(videoEl.muted);
     };
     syncAll();
@@ -4157,7 +4179,7 @@ function VideoPlayerControls({
     const onPause = () => setIsPlaying(false);
     const onTime = () => setCurrentTime(videoEl.currentTime);
     const onDur = () => {
-      setDuration(Number.isFinite(videoEl.duration) ? videoEl.duration : 0);
+      setDuration(readDuration());
     };
     const onVol = () => setIsMuted(videoEl.muted);
     videoEl.addEventListener("play", onPlay);
@@ -4174,16 +4196,15 @@ function VideoPlayerControls({
       videoEl.removeEventListener("loadedmetadata", onDur);
       videoEl.removeEventListener("volumechange", onVol);
     };
-  }, [videoEl]);
+  }, [videoEl, fallbackDuration]);
 
   const togglePlay = useCallback(() => {
-    if (!videoEl) return;
-    if (videoEl.paused) {
-      void videoEl.play().catch(() => undefined);
+    if (!videoEl || videoEl.paused) {
+      onRequestPlay();
     } else {
       videoEl.pause();
     }
-  }, [videoEl]);
+  }, [videoEl, onRequestPlay]);
 
   const toggleMute = useCallback(() => {
     if (!videoEl) return;
@@ -4239,9 +4260,10 @@ function VideoPlayerControls({
         max={duration > 0 ? duration : 0}
         step={0.05}
         value={currentTime}
+        disabled={!videoEl || videoEl.readyState < 1 || duration <= 0}
         onChange={onSeek}
         onMouseDown={(event) => event.stopPropagation()}
-        className="video-player-scrubber h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full"
+        className="video-player-scrubber h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full disabled:cursor-default"
         style={{ background: sliderBg }}
       />
 
@@ -4252,7 +4274,8 @@ function VideoPlayerControls({
       <button
         type="button"
         onClick={toggleMute}
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-dark/90 transition-colors hover:bg-white/[0.12] hover:text-text-dark"
+        disabled={!videoEl}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-dark/90 transition-colors hover:bg-white/[0.12] hover:text-text-dark disabled:opacity-50"
         title={
           isMuted
             ? t("node.videoNode.player.unmute", { defaultValue: "取消静音" })

@@ -239,8 +239,8 @@ describe('shell 升级队列', () => {
     expect(isCanvasGestureActive()).toBe(true);
     tick();
     expect(granted).not.toHaveBeenCalled();
-    // 泵保持活着（重新排到下一帧），而不是死掉
-    expect(rafCallbacks.length).toBeGreaterThan(0);
+    // No empty polling loop while the gesture owns the camera.
+    expect(rafCallbacks.length).toBe(0);
 
     setCanvasGestureActive(false);
     tick();
