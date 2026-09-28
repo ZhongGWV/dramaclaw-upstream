@@ -29,14 +29,14 @@
 | [canvas-pan-stability-analysis](tasks/canvas-pan-stability-analysis.md) | 拖动画布卡顿与闪烁的 LibTV 对照分析 | 待验收 | 已捕获 LibTV 旧缩略图覆盖/淡出交接与抓手禁用命中规则；报告新增节点拖动订阅/指纹链，优先抓手归属与预览交接；只改文档，持续低缩放闪烁仍待可信轨迹 |
 | [project-chinese-names](tasks/project-chinese-names.md) | 中文项目名与拼音目录 | 待验收 | 中文重命名及 LibTV 原名功能完成；132 项回归与真实 API 通过，48 文件提交审计/密钥检查通过，推送结果见 Git |
 | [multi-provider-models](tasks/multi-provider-models.md) | 多供应商模型目录与路由 | 待验收 | H3 引用 422 和数量提示修复已重启；26 项提交审计/密钥检查通过，本地提交结果见 Git，火山图片仍待单独验收 |
-| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 标题修复已补 DCO，剩余画布代码、测试和设计已提交；交接文档独立提交。排除本机录屏取帧、凭据和本地工作流，未推送 |
+| [pending-code-checkpoint](tasks/pending-code-checkpoint.md) | 已有代码分批提交 | 待验收 | 标题修复已补 DCO，剩余画布代码、测试、设计与交接文档已提交并随 `9d2e486` 推至私有同名分支；本机截图、凭据和工作流未入库 |
 | [h3-prompt-optimizer](tasks/h3-prompt-optimizer.md) | H3 参考图完整保留与提示词格式转换 | 待验收 | 本地/云端共用字段布局，去共用段重复、统一空行/音效标题；服务已重启，待用户试转 |
 | [h3-completion-recovery](tasks/h3-completion-recovery.md) | H3 完成结果认领及超时恢复 | 待验收 | 按任务 ID 认领修复并重启生效；545秒成品已接回、任务恢复完成，待下次正常生成通知验收 |
 | [video-prompt-split](tasks/video-prompt-split.md) | 时间分镜一键拆分 | 待验收 | 完整镜头≤15秒、横排避让、清旧封面；18项回归及类型检查通过，当前五段坐标已修复，待空占位刷新复核 |
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 执行中 | 隔离 worktree 集成本地画布三提交与远端六提交；主检出目录的 HEVC 未提交工作保留，正常推送结果以 Git 为准 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 待验收 | `9d2e486` 保留本地画布三提交与远端六提交并已正常推送、远端 SHA 核对一致；主检出目录 HEVC 未提交工作原样保留 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。b5883b8f已推私有main，本轮合入同步分支；未部署 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |

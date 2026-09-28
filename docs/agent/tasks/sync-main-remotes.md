@@ -1,6 +1,6 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：执行中
+**状态**：待验收
 **最后更新**：2026-09-29
 **基线**：`af8fdc1`；本地三个画布提交与远端 `e4877e4` 六个提交在隔离 worktree 集成。
 **认领者**：`codex/push-all-20260929`
@@ -136,6 +136,10 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-29 · 画布提交与远端 Director 正常集成并推送
+
+隔离 worktree 中先提交本轮方案 `5109ae1`，再以它为第一父正常合并远端 `e4877e4`，生成带 DCO 的 `9d2e486`。文本冲突仅为本台账和 STATE；STATE 保留远端最新 Director/本地栈进度与本地画布工作线记录，claim 基线同步为 `af8fdc1`。画布源码相对本地 `af8fdc1` 没有变化，Director 源码相对远端 `e4877e4` 没有变化。合并索引无未解决项或冲突标记，`git diff --cached --check` 与 `agent_guard check` 通过，两端原头均为合并提交祖先。普通推送 `HEAD:refs/heads/codex/sync-main-remotes` 成功，随后 `ls-remote` 返回 `9d2e486`。本轮仅做集成静态检查，未运行测试套件；不触碰主检出目录正在进行的 HEVC 未提交工作，不推 main 或公开 fork。此后只补交接文档状态并正常推送。
 
 ### 2026-09-27 · 最新Director已交付私有同步分支
 
