@@ -1,13 +1,21 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：待验收
+**状态**：执行中
 **最后更新**：2026-09-29
-**基线**：`2f664127`；目标分支最新方案提交，以它为第一父合入私有main的`9741c622`。
-**认领者**：`codex/sync-director-20260929`
+**基线**：`86462f4c`；私有同步分支已包含main的`9741c622`，现只需安全快进主目录。
+**认领者**：`codex/merge-sync-main-20260929`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 2026-09-29 · 将已验证同步分支合回私有main
+
+用户在核对两个私有分支提交后明确要求“合并回main”。当前本地主目录`main=zhonggwv/main=9741c622`，隔离分支`codex/sync-main-remotes=zhonggwv/codex/sync-main-remotes=86462f4c`；前者是后者祖先，差异0/13提交。主目录无已跟踪脏文件、无锁，仅有受保护未跟踪`_to_delete/`与`曹操.md`；目标树不含同名路径。两端远端SHA已实时核对，没有新提交。已有同步分支812项后端、313项前端、生产构建、Ruff/i18n/CE/pre-commit/DCO通过，文学与像素欠项不因本轮变为通过。
+
+可验收目标：本地主目录main和私有远端`zhonggwv/main`快进包含`86462f4c`全部历史；同名分支也包含本轮最终交接提交且两个私有分支最终同SHA。仅普通快进/普通push，不创建业务新实现。非目标：公开`origin/main`/PR、服务重启、模型调用、数据/配置迁移、受保护资料提交或删除。手工写入边界仅本台账、STATE和同名claim三份协调文件；业务代码只由已提交Git树导入，不手改。main与同步分支没有新的业务冲突；历史公开同步不借本次授权推进。
+
+步骤：在隔离分支记录方案、校准claim并提交DCO计划后，核验远端未变和主目录跟踪状态，再于主目录执行`git merge --ff-only`到计划提交；检查主目录与源非agent树一致、未跟踪资料仍在、无未解释diff，运行Director/画布聚焦回归、前端build、guard及DCO。随后仅补交接状态与实测结果，DCO提交；正常推私有main与同名分支，分别`ls-remote`核验同SHA。任何远端非快进、主目录新脏文件或未跟踪路径冲突均停止重新审计；不用stash/reset/force/rebase。推后若需撤销须另行批准显式revert。与其他工作线重叠的业务文件仅接受现有已验证提交，不手工写入，因此不夺取其scope。
 
 ### 2026-09-29 · 将最新私有main完整同步到同名分支
 
@@ -162,6 +170,10 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-29 · 私有main快进方案门
+
+隔离分支与私有远端同为`86462f4c`，主目录及私有远端main同为`9741c622`；祖先关系为0/13，目标Git树无两份受保护未跟踪资料的同名路径。当前只登记三份协调路径的方案与scope，guard通过，已取得本检出锁并对精确路径preflight通过；尚未移动main、推远端或触发模型。下一步先提交方案，再在主目录用严格快进导入已验证提交。
 
 ### 2026-09-29 · 最新 Director 同步分支交付
 
