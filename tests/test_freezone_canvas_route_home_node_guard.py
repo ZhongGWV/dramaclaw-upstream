@@ -263,9 +263,9 @@ def test_only_canvas_routes_opt_out_of_the_home_node_guard() -> None:
         and _opts_out_of_the_guard(call)
     }
 
-    # fork 的 depth/shot/LibTV 路由与上游的素材拷贝/视频延长合流后共 87 个装饰器；
-    # 只有 16 条画布路由允许显式绕过 home-node 守卫。
-    assert router_decorators == 87
+    # fork 的 depth/shot/LibTV 路由与上游的视频增强报价、探测合流；
+    # 后两者是非画布路由，只有 16 条画布路由允许绕过 home-node 守卫。
+    assert router_decorators == 92
     assert len(canvas_routes) == 16
 
     # 正向：画布路由必须全部、且每一处调用都 opt-out。

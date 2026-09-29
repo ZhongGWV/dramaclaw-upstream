@@ -17,6 +17,8 @@
 
 精确写入边界为本台账、STATE、同名claim，以及`git merge-tree`预演的六个内容冲突：`frontend/src/api/ops.ts`、`frontend/src/features/canvas/domain/canvasNodes.ts`、`src/novelvideo/api/schemas.py`、`src/novelvideo/task_backend/runners/freezone.py`、`tests/test_freezone_canvas_route_home_node_guard.py`、`tests/test_p0g4i_freezone_leaf_classification.py`。自动合并的三语、工具条、许可证清单、Freezone路由/任务和视频生成器只读取证；若测试暴露语义缺口，先在台账加窄scope并重新preflight。共享文件由本隔离会话在既有工作线提交之后串行集成，不覆盖未归属脏文件，也不重写Director或H3业务。
 
+合并实际产生另外12个上游独有或自动合并路径，已逐项登记为只读导入：`frontend/src/__tests__/api/freezone-video-upscale-probe.test.ts`、`frontend/src/__tests__/features/canvas/generation-resume-race.test.ts`、`frontend/src/__tests__/features/canvas/video-upscale-resolutions.test.ts`、`frontend/src/features/canvas/application/resumeGeneration.ts`、`frontend/src/features/canvas/domain/videoUpscaleResolutions.ts`、`frontend/src/features/canvas/ui/VideoUpscaleEditorOverlay.tsx`、`src/novelvideo/freezone/video_slowdown.py`、`tests/contract/test_m06_route_contracts.py`、`tests/test_freezone_video_upscale_backend.py`、`tests/test_p0_gray_shared_egress_seam.py`、`tests/test_p0g4c_video_egress.py`、`tests/test_video_processing_request.py`。这些文件仅接受Git三方结果，本轮不手改；此次补认领是响应guard对暂存合并路径的精确归属要求，不扩大产品实现范围。
+
 互认门禁补充：上述共享路径在旧任务仍有精确claim，需仅协调更新`docs/agent/claims/`与`docs/agent/tasks/`下`canvas-audio-actions`、`canvas-audio-split`、`depth-motion-da3`、`h3-prompt-optimizer`、`project-chinese-names`、`shot-breakdown`、`text-node-liblib-visual-parity`及`liblib-canvas-parity`八线的对应文件，逐路径加本线为后序集成者并在台账记先后；`multi-provider-models`已有通配互认，`legacy-unassigned-diff`的测试路径已明确互认，不改其文件。这些协调写入不改变旧业务所有权、旧验收结论或`legacy-unassigned-diff`冻结的未归属脏文件。
 
 步骤：先登记方案与claim、guard/acquire/preflight，再以私有main为第一父正常merge最新`origin/main`；逐冲突保留双方合同，并对自动合并的同名功能做差异审查。验证相关后端/前端回归、生产build、Ruff/i18n/CE/许可证/密钥扫描、DCO、三语键与双祖先；公开前确认原素材文件和来源清单逐blob不变。只有绿灯才用普通非强制push更新现有fork PR分支，复核PR head/冲突状态。不得改私有main、公开origin/main、服务或项目数据；非快进拒绝重新fetch，不rebase/force/stash。公开上游审核为外部条件，若仍阻塞就明确交接，不宣称已合入origin/main。回退需另行批准revert，不重写远端历史。
@@ -182,6 +184,14 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-29 · 公开PR合并冲突与回归分层验收
+
+以私有`bc051ed3`为第一父正常合入公开`origin/main=30ab52c7`，六个文本冲突逐段合并：保留拉片/DA3的API和节点字段、上游视频增强报价/探测及网络出站分类，不把网关超分误列本地leaf。合并实际另有12个上游独有或自动合并的暂存路径，先暂停业务写入、登记精确只读scope，guard从BLOCKED恢复为33线/1228 claims；原35张图片、图标目录和来源清单相对私有main逐文件零差异。没有改私有main或公开origin/main。
+
+验证：Freezone/H3交界定向后端125通过，前端关联15通过，`pnpm build`、Ruff、前后端i18n、CE 11端口闭合及三类lint通过。全量后端`5682 passed, 10 failed, 20 skipped, 2 deselected`；其中7项业务/环境清单测试在未合并的私有main以同一命令同样失败，2项SSE端口测试在两边沙箱外也同样以`StopAsyncIteration`失败，余1项wheel在允许依赖下载并用隔离uv缓存后复测通过。全量前端使用本机Node24为`3558 passed, 1 failed`；唯一上传解析/MSW失败在私有main逐项复现；本机默认Node25额外引入5项localStorage测试假失败，不能作为项目回归。全量套件未全绿，不能写成通过。
+
+方案门调整：原“只有绿灯才推”的门禁解释为**本次新增/集成路径与适用构建门禁无回归**，不因已经在私有main逐项复现的存量失败阻断用户明确要求的公开PR提交；这些已知红灯必须在交接和PR里披露，后续独立工作线修复，不借本轮扩大到H3、环境模板、许可证清单或上传MSW。推送仍以索引diff、gitleaks、DCO、双祖先、远端非快进及素材原样校验为最终门；任何新增失败或远端变动即暂停。此调整不表示TV Director文学质量、全页像素或素材再分发许可已验收。
 
 ### 2026-09-29 · 公开PR集成方案门与共享互认
 

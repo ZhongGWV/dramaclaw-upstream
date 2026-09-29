@@ -2207,3 +2207,63 @@ reason = "Record serial public-upstream conflict integration after the existing 
 path = "docs/agent/tasks/text-node-liblib-visual-parity.md"
 mode = "coordination"
 reason = "Document the shared-path ordering without changing prior product conclusions."
+
+[[claims]]
+path = "frontend/src/__tests__/api/freezone-video-upscale-probe.test.ts"
+mode = "read-only"
+reason = "Import the public-upstream probe regression through normal Git merge only."
+
+[[claims]]
+path = "frontend/src/__tests__/features/canvas/generation-resume-race.test.ts"
+mode = "read-only"
+reason = "Accept the public-upstream resume regression through automatic merge only."
+
+[[claims]]
+path = "frontend/src/__tests__/features/canvas/video-upscale-resolutions.test.ts"
+mode = "read-only"
+reason = "Import the public-upstream resolution regression through normal Git merge only."
+
+[[claims]]
+path = "frontend/src/features/canvas/application/resumeGeneration.ts"
+mode = "read-only"
+reason = "Accept the public-upstream resume behavior through automatic merge only."
+
+[[claims]]
+path = "frontend/src/features/canvas/domain/videoUpscaleResolutions.ts"
+mode = "read-only"
+reason = "Import the public-upstream resolution selector through normal Git merge only."
+
+[[claims]]
+path = "frontend/src/features/canvas/ui/VideoUpscaleEditorOverlay.tsx"
+mode = "read-only"
+reason = "Accept the public-upstream enhancement UI through automatic merge only."
+
+[[claims]]
+path = "src/novelvideo/freezone/video_slowdown.py"
+mode = "read-only"
+reason = "Import the public-upstream slowdown helper through normal Git merge only."
+
+[[claims]]
+path = "tests/contract/test_m06_route_contracts.py"
+mode = "read-only"
+reason = "Accept the public-upstream route-contract regression through automatic merge only."
+
+[[claims]]
+path = "tests/test_freezone_video_upscale_backend.py"
+mode = "read-only"
+reason = "Accept the public-upstream enhancement backend regression through automatic merge only."
+
+[[claims]]
+path = "tests/test_p0_gray_shared_egress_seam.py"
+mode = "read-only"
+reason = "Accept the public-upstream egress regression through automatic merge only."
+
+[[claims]]
+path = "tests/test_p0g4c_video_egress.py"
+mode = "read-only"
+reason = "Accept the public-upstream video egress regression through automatic merge only."
+
+[[claims]]
+path = "tests/test_video_processing_request.py"
+mode = "read-only"
+reason = "Import the public-upstream processing contract regression through normal Git merge only."

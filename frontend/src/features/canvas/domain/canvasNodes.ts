@@ -203,8 +203,18 @@ export interface VideoNodeData extends NodeDisplayData {
   upscaleSourceUrl?: string;
   /** 目标清晰度档位。 */
   upscaleResolution?: '1080p' | '2k' | '4k';
-  /** 降噪强度。 */
+  /** 旧版高清节点的降噪草稿；当前网关请求不再提交此参数。 */
   upscaleDenoise?: 'none' | '1x' | '2x';
+  /** 目标帧率；auto 保持源帧率。 */
+  upscaleTargetFps?: 'auto' | 30 | 60 | 90;
+  /** 慢放倍率；auto 保持原速。 */
+  upscaleSlowdown?: 'auto' | '2x';
+  /** 帧率调整时是否启用智能插帧。 */
+  upscaleSmartInterpolation?: boolean;
+  /** 源视频场景类型。 */
+  upscaleScene?: 'realistic' | 'anime';
+  /** 是否启用人脸专项增强。 */
+  upscaleFaceEnhance?: boolean;
   // 片段重拍（libtv-style 片段重拍）------------------------------------------
   // 重拍节点是「视频编辑」的一种专用形态：源视频从上游连线来，节点自己额外记着
   // 用户在源视频时间轴上圈出的若干段，提交时把这些段展开成提示词。生成仍走

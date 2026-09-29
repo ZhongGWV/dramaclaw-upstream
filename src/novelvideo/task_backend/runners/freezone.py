@@ -74,7 +74,7 @@ class LeafEgressRule:
     eg_id: str
 
 
-# 键是**调用点显式给出的名字**，不是函数对象：19 个调用点的 import 都在 runner
+# 键是**调用点显式给出的名字**，不是函数对象：各调用点的 import 都在 runner
 # 函数体内，测试替换掉的是那个局部名，模块级建的对象表必然查不中；`leaf.__name__`
 # 同理（假 leaf 叫别的名字）。名字由调用点提供，替身也就盖不住分类。
 FREEZONE_LEAF_EGRESS: dict[str, LeafEgressRule] = {
@@ -90,9 +90,6 @@ FREEZONE_LEAF_EGRESS: dict[str, LeafEgressRule] = {
     ),
     "run_freezone_bgm_separate": LeafEgressRule(
         "novelvideo.freezone.bgm_separate", LeafEgress.LOCAL, "EG-20a"
-    ),
-    "run_freezone_video_upscale": LeafEgressRule(
-        "novelvideo.freezone.jobs", LeafEgress.LOCAL, "EG-20a"
     ),
     "run_freezone_depth_motion_capture": LeafEgressRule(
         "novelvideo.freezone.depth_motion", LeafEgress.LOCAL, "EG-20a"
@@ -110,6 +107,10 @@ FREEZONE_LEAF_EGRESS: dict[str, LeafEgressRule] = {
         "novelvideo.freezone.audio_transform", LeafEgress.LOCAL, "EG-20a"
     ),
     # EG-18b `freezone.image.generate`（:52，`gateway-routed`）
+    # 视频增强也通过媒体模型网关出网；leaf 内部的慢放阶段仍由受限 ffmpeg 执行。
+    "run_freezone_video_upscale": LeafEgressRule(
+        "novelvideo.freezone.jobs", LeafEgress.NETWORK, "EG-18b"
+    ),
     "run_freezone_gen": LeafEgressRule(
         "novelvideo.freezone.jobs", LeafEgress.NETWORK, "EG-18b"
     ),
@@ -1142,8 +1143,17 @@ async def _run_freezone_video_upscale_async(
         job_id=job_id,
         source_path=str(payload["source_path"]),
         resolution=str(payload.get("resolution") or "1080p"),
-        frame_interpolation=str(payload.get("frame_interpolation") or "none"),
-        denoise_strength=str(payload.get("denoise_strength") or "1x"),
+        target_fps=payload.get("target_fps"),
+        smart_interpolation=bool(payload.get("smart_interpolation", True)),
+        slowdown=str(payload.get("slowdown") or "auto"),
+        scene=str(payload.get("scene") or "realistic"),
+        face_enhance=bool(payload.get("face_enhance", False)),
+        upscale_backend=payload.get("upscale_backend"),
+        upscale_model_params=payload.get("upscale_model_params"),
+        upscale_request_schema=payload.get("upscale_request_schema"),
+        frame_rate_backend=payload.get("frame_rate_backend"),
+        frame_rate_model_params=payload.get("frame_rate_model_params"),
+        frame_rate_request_schema=payload.get("frame_rate_request_schema"),
     )
     rel = output_path.relative_to(project_dir).as_posix()
     return {

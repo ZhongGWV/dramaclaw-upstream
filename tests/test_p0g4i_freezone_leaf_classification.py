@@ -4,10 +4,9 @@
 `egress_context`，不接受且信封属组织即抛 `InvalidTaskEnvelope`。签名形状不是
 出网与否的证据，于是两个方向同时错：
 
-- **误拦**：5 个纯本地 ffmpeg leaf（`run_freezone_extract_frames` /
-  `run_freezone_video_upscale` / `run_freezone_video_compose` /
-  `run_freezone_video_erase` / `run_freezone_audio_separate` /
-  `run_freezone_audio_transform`，均为
+- **误拦**：当前 5 个本地媒体 leaf（`run_freezone_extract_frames` /
+  `run_freezone_video_compose` / `run_freezone_video_erase` /
+  `run_freezone_audio_separate` / `run_freezone_audio_transform`，均为
   `egress-inventory.md:54` 的 EG-20a `service/local`，不出网、不取凭证）没有
   该形参，组织成员一律撞 `invalid task envelope`——用户报的「上传视频接脚本
   生成器、任务停在 ffmpeg 抽取关键帧」就是这条。
@@ -15,7 +14,7 @@
   context 被吞进 kwargs 袋子里静默失效。
 
 改法是分发器内一张显式表，键由**调用点**提供。不能用「函数对象 → 分类」：
-19 个调用点的 import 都在 runner 函数体内，测试 monkeypatch 后拿到的是假对象，
+各调用点的 import 都在 runner 函数体内，测试 monkeypatch 后拿到的是假对象，
 模块级建的对象表必然查不中；`leaf.__name__` 同理。
 
 未列入表的 leaf 在组织上下文下**照旧抛**——默认仍 fail-closed（OI-47 护栏 a，
@@ -41,8 +40,8 @@ from novelvideo.ports.model_credentials import CredentialReference
 from novelvideo.project_context import ProjectContext
 from novelvideo.task_backend.envelope import InvalidTaskEnvelope
 
-# `egress-inventory.md:54` EG-20a `service/local`——ffmpeg/subprocess，无凭证。
-# 与 EE `feature_billing.py:389-399` 的计费豁免集逐条对应（同一批本地任务）。
+# `run_freezone_video_upscale` 已升级为网关模型流水线，因而从本地表迁到 NETWORK；
+# 它仍保留 task 级计费豁免，因为两个模型调用分别走模型额度，避免重复计费。
 AUDITED_LOCAL_LEAVES = frozenset(
     {
         "run_freezone_audio_separate",
@@ -50,7 +49,6 @@ AUDITED_LOCAL_LEAVES = frozenset(
         "run_freezone_extract_frames",
         "run_freezone_video_compose",
         "run_freezone_video_erase",
-        "run_freezone_video_upscale",
     }
 )
 DA3_LOCAL_LEAVES = frozenset({"run_freezone_depth_motion_capture"})
@@ -363,9 +361,9 @@ async def test_analyze_shots_leaf_receives_the_organization_egress_context(
 
 
 def test_local_table_is_audited_leaves_plus_explicit_local_workers() -> None:
-    """本地表严格限于原 5 条、DA3 和拉片的本地处理进程（护栏 b）。
+    """本地表严格限于当前 5 条、DA3 和拉片的本地处理进程（护栏 b）。
 
-    原 5 条与 EE 计费豁免集同源；DA3 不下载权重、仅加载本地路径；拉片三条
+    当前 5 条与 EE 计费豁免集同源；DA3 不下载权重、仅加载本地路径；拉片三条
     分别只跑 ffmpeg 或显式配置的本地 demucs 解释器。
     """
 

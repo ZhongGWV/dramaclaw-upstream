@@ -2241,6 +2241,8 @@ class NewApiVideoGenerator(VideoGeneratorBase):
             "allReference": "all_reference",
             "videoEdit": "video_edit",
             "videoExtend": "video_extend",
+            "videoUpscale": "video_upscale",
+            "videoFrameRate": "video_frame_rate",
         }.get(str(mode or "").strip(), str(mode or "").strip())
 
         if normalized_mode == "text_to_video":
@@ -2348,6 +2350,8 @@ class NewApiVideoGenerator(VideoGeneratorBase):
             "all_reference",
             "video_edit",
             "video_extend",
+            "video_upscale",
+            "video_frame_rate",
         }:
             if image_urls:
                 metadata["reference_images"] = image_urls
@@ -3009,6 +3013,15 @@ class NewApiVideoGenerator(VideoGeneratorBase):
             except Exception as exc:
                 log(f"记账失败({status}): {exc}")
 
+        requested_mode = str(kwargs.get("gen_mode") or "").strip()
+        normalized_requested_mode = {
+            "videoUpscale": "video_upscale",
+            "videoFrameRate": "video_frame_rate",
+        }.get(requested_mode, requested_mode)
+        is_processing_model = normalized_requested_mode in {
+            "video_upscale",
+            "video_frame_rate",
+        }
         is_seedance2_model = self._is_seedance2_model()
         seedance2_config = (
             _seedance2_config_mapping(kwargs.get("seedance2_config"))
@@ -3019,10 +3032,11 @@ class NewApiVideoGenerator(VideoGeneratorBase):
         original_duration = duration
         from novelvideo.video_duration import normalize_video_duration_for_backend
 
-        duration = normalize_video_duration_for_backend(
-            f"newapi_{self.model}",
-            duration,
-        )
+        if not is_processing_model:
+            duration = normalize_video_duration_for_backend(
+                f"newapi_{self.model}",
+                duration,
+            )
         if duration != original_duration:
             log(f"时长已调整: {original_duration:.1f}s -> {duration:.0f}s")
 
@@ -3035,14 +3049,15 @@ class NewApiVideoGenerator(VideoGeneratorBase):
             else "9:16"
         )
         image_path = str(image_path or "").strip()
-        requested_mode = str(kwargs.get("gen_mode") or "").strip()
-
         metadata: dict[str, object] = {
             "resolution": self.resolution,
             "ratio": ratio,
             "watermark": False,
             "generate_audio": bool(self.generate_audio),
         }
+        processing_metadata = kwargs.get("processing_metadata")
+        if isinstance(processing_metadata, dict):
+            metadata.update(processing_metadata)
         payload: dict[str, object] = {
             "model": self.model,
             "prompt": prompt,
@@ -3095,6 +3110,7 @@ class NewApiVideoGenerator(VideoGeneratorBase):
                 "seedance2_config": seedance2_config,
                 "model_params": self.model_params,
                 "request_schema": self.request_schema,
+                "processing_metadata": processing_metadata,
             }
             operation_port = get_egress_operation_port()
             try:
