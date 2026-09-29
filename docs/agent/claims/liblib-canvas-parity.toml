@@ -1,7 +1,32 @@
 version = 1
 slug = "liblib-canvas-parity"
 ledger = "docs/agent/tasks/liblib-canvas-parity.md"
-baseline = "4c9dee4"
+baseline = "af8fdc1"
+
+[[claims]]
+path = "src/novelvideo/freezone/browser_video.py"
+mode = "exclusive"
+reason = "Build cached H.264/AAC playback copies of imported HEVC videos without rewriting originals."
+
+[[claims]]
+path = "src/novelvideo/api/routes/files.py"
+mode = "exclusive"
+reason = "Serve explicit authenticated browser playback variants; sync-main-remotes only reads this path."
+
+[[claims]]
+path = "tests/test_browser_video_playback.py"
+mode = "exclusive"
+reason = "Codec, cache, safety and route regression coverage."
+
+[[claims]]
+path = "frontend/src/features/canvas/application/videoPlaybackUrl.ts"
+mode = "exclusive"
+reason = "Keep preview URL selection separate from persisted model input URL."
+
+[[claims]]
+path = "frontend/src/__tests__/features/canvas/video-playback-url.test.ts"
+mode = "exclusive"
+reason = "Imported video playback URL regression coverage."
 
 [[claims]]
 path = ".gitignore"

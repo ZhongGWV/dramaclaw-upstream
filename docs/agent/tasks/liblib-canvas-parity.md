@@ -1,9 +1,9 @@
 # LibTV 画布对齐：片段重拍 / 智能续写 / 导入器 / 工具条
 
 **状态**：待验收
-**最后更新**：2026-09-27
-**基线**：`4c9dee4`；`codex/sync-main-remotes`；本轮实现视频节点封面预览，早期提交和取证记录保留如下
-**认领者**：`codex/video-poster-20260927`
+**最后更新**：2026-09-29
+**基线**：`af8fdc1`；`codex/sync-main-remotes`；原封面工作基于 `4c9dee4`
+**认领者**：`codex/hevc-playback-20260929`
 **相关文档**：`docs/guides/canvas-architecture.md`（我方画布功能架构与扩展边界）、
 `docs/guides/liblib-canvas-parity.md`（真实界面、线上 chunk 与能力差距）
 **相关分支 / PR**：`main`；`28936905`、`8bc8d598`、`4959b1d9`、`09e2703a`
@@ -87,6 +87,22 @@ LibTV 画布导入不再丢节点语义，视频节点工具条按实测规格�
 - 回退按四个功能切片执行；未拆提交前不对共享文件做 restore。
 
 ## 进展记录
+
+### 2026-09-29 · 导入 HEVC 视频的浏览器播放兼容方案
+
+目标：用户指定导入画布的 HEVC 视频点击播放后能显示连续画面，进度与画面同步；原始文件及节点 `videoUrl` 保持原样，模型仍读取原片。非目标：批量改写画布、处理未本地化的远端视频、改变其他生成任务的编码。
+
+现状证据：目标画布中 74 个本地 MP4 有 61 个 HEVC；样本为 HEVC Main 10 + AAC、12.064 秒，OpenCV 可读 1920×1080 帧；浏览器播放器走完时长却报 `videoWidth=videoHeight=0`。上传入口已有前端转码，本地化导入只复制原媒体。当前 HEAD `af8fdc1`，本轮目标业务文件与本台账无脏差异；本地 `origin/main` 引用在 `files.py` 仅有 `media_read` 参数差异，在 `VideoNode.tsx` 有旧的多功能差异但无浏览器播放副本。当前分支 ahead 3/behind 6，不在脏工作区拉取或覆盖远端。guard 初始 `check` 通过、无活动锁。
+
+方案：在项目鉴权和路径校验之后，仅对本地 LibTV 导入 MP4 的显式播放请求提供服务端 H.264/AAC 缓存副本；首个请求用已配置 FFmpeg 探测编码并按需转码，缓存键含原片路径、大小和修改时间，临时文件原子替换、并发串行。普通静态地址仍返回原片。视频节点仅给播放器 URL 加兼容查询参数，封面、下载、模型输入和持久化地址均不改。针对既有画布预热 61 个 HEVC 副本，避免首次点击等待。失败时保留原片和封面，服务返回明确错误。本机 `FFMPEG_PATH` 未设置，已配置的便携 ComfyUI Python 含 FFmpeg；解析顺序补为显式配置、系统 PATH、该便携环境的附带可执行文件，不改受其他工作线保护的私有配置。
+
+精确写入：新增独占 `src/novelvideo/freezone/browser_video.py`、`tests/test_browser_video_playback.py`、`frontend/src/features/canvas/application/videoPlaybackUrl.ts`、`frontend/src/__tests__/features/canvas/video-playback-url.test.ts`；修改独占 `src/novelvideo/api/routes/files.py`（`sync-main-remotes` 对该文件只读）；串行共享 `frontend/src/features/canvas/nodes/VideoNode.tsx`。本台账、claim 和 STATE 仅协调更新。共享 VideoNode 当前干净，既有相关工作线已互认 `liblib-canvas-parity`；本轮只加播放器 URL 的纯函数调用，不触及其他线的 LOD、拉片、拆分逻辑。
+
+风险与回退：首次转码消耗 CPU/磁盘；限制输入大小、并发和墙钟时间，副本放项目缓存目录，原片不变。缺 FFmpeg 时请求失败但普通媒体服务不受影响。回退只移除本轮接口和播放器参数，缓存可保留且不参与画布数据。验证：纯函数与后端缓存/路由聚焦测试、类型检查、目标页面播放时 `videoWidth>0` 且画面随进度变化；不提交生成任务。
+
+实施前：更新本线 claim，取得 `liblib-canvas-parity` owner 锁，对上述精确路径 preflight；结束后记录测试和页面结果并 handoff/release。
+
+实施与验收：新增导入视频的浏览器播放副本服务和播放器 URL 选择，保持节点持久化地址与原始 MP4 不变。目标画布 74 个 MP4 中，61 个 HEVC 已预热为 H.264/AAC 副本，13 个 H.264 继续使用原片，全部成功。聚焦后端测试 4 项、前端测试 2 项、TypeScript 构建、Ruff、`git diff --check` 和 agent guard check 均通过。重启本地服务后，在指定画布实际点击节点 `v-n3N25b9Q3w`：修复前播放走到 12.064 秒时 `videoWidth=videoHeight=0`，修复后播放器使用 `st_video=h264` 地址、`videoWidth=1920`、`videoHeight=1080`，不同播放时刻截到不同画面。未启动视频生成任务。既有本线重拍/续写的 OSS relay 验收欠项仍在；本轮视频播放问题已验收。
 
 ### 2026-09-27 · 平移性能线串行协调
 

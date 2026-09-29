@@ -43,7 +43,7 @@
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
 | [asset-replacement-picker](tasks/asset-replacement-picker.md) | 画布素材替换：拖拽与点选双入口 | 待验收 | 独立实现与 5 项聚焦测试已通过；待真实画布手工走一遍点选替换 |
 | [freezone-entry-recovery](tasks/freezone-entry-recovery.md) | 项目画布入口恢复 | 待验收 | 30 项聚焦测试和生产构建通过；待跨项目、无效深链、首次个人画布浏览器验收 |
-| [liblib-canvas-parity](tasks/liblib-canvas-parity.md) | 画布架构与 LibTV 能力对齐 | 待验收 | 视频全档位封面预览、点击播放才挂播放器已实现；更换导入视频跳过旧封面；类型/静态检查通过，待交互验收 |
+| [liblib-canvas-parity](tasks/liblib-canvas-parity.md) | 画布架构与 LibTV 能力对齐 | 待验收 | 指定画布 61 个 HEVC 播放副本已预热，实测节点可显示 1920×1080 动态画面；原片不变，重拍/续写仍待 OSS relay 出片验收 |
 | [canvas-grouped-auto-layout](tasks/canvas-grouped-auto-layout.md) | 分组画布整理与本地布局恢复 | 待验收 | 代码与本机 rev47 已修复，项目 API 已确认；待浏览器视觉确认 |
 | [text-node-liblib-visual-parity](tasks/text-node-liblib-visual-parity.md) | 文本节点 LibLib 视觉、模型与引用素材 | 待验收 | 模型按钮/浮层按 Liblib 线上尺寸和色值实现，构建通过；待窗口视觉确认 |
 | [minimax-h3-liblib-parity](tasks/minimax-h3-liblib-parity.md) | MiniMax H3 视频节点与 LibLib 参数/模式对齐 | 已完成 | 已验收分支集成到 main；后续底部模式入口与 Mixed 顺序由 `minimax-h3-reference-order` 接手 |

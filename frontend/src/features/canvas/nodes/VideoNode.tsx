@@ -119,6 +119,7 @@ import {
   FALLBACK_VIDEO_RESOLUTION_OPTIONS,
 } from "@/features/canvas/domain/mediaModelOptions";
 import { ensureWebSafeVideo } from "@/features/canvas/application/videoTranscode";
+import { browserPlaybackUrl } from "@/features/canvas/application/videoPlaybackUrl";
 import { isVideoFile, VIDEO_FILE_ACCEPT } from "@/features/canvas/application/videoFileTypes";
 import { localizeNodeDisplayName } from "@/features/canvas/domain/nodeDisplay";
 import { toast } from "sonner";
@@ -1886,6 +1887,10 @@ export const VideoNode = memo(
       if (transientPreviewUrl) return transientPreviewUrl;
       return null;
     }, [data.videoUrl, transientPreviewUrl]);
+    const playbackSource = useMemo(
+      () => browserPlaybackUrl(videoSource, window.location.origin),
+      [videoSource],
+    );
 
     // 各缩放档共用静态封面；只有显式播放才创建节点播放器。封面优先：
     // 导入/生成时落库的封面（previewImageUrl，
@@ -3493,7 +3498,7 @@ export const VideoNode = memo(
                   key={videoSource}
                   ref={setVideoRef}
                   data-canvas-preview="true"
-                  src={videoSource}
+                  src={playbackSource ?? undefined}
                   poster={lodPoster ?? undefined}
                   className="h-full w-full object-contain"
                   playsInline
@@ -3501,7 +3506,16 @@ export const VideoNode = memo(
                   onPlay={() => setNodeMediaActive(id, true)}
                   onPause={() => setNodeMediaActive(id, false)}
                   onEnded={() => setNodeMediaActive(id, false)}
-                  onLoadedData={() => setDecodedVideoSource(videoSource)}
+                  onLoadedData={(event) => {
+                    if (event.currentTarget.videoWidth > 0 && event.currentTarget.videoHeight > 0) {
+                      setDecodedVideoSource(videoSource);
+                    } else {
+                      // AAC can advance time even when this browser cannot decode HEVC.
+                      event.currentTarget.pause();
+                      setVideoLoadError(true);
+                      setNodeMediaActive(id, false);
+                    }
+                  }}
                   onLoadedMetadata={(event) => {
                     const el = event.currentTarget;
                     setVideoLoadError(false);
