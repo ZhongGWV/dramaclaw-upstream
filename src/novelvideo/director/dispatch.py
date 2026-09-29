@@ -34,8 +34,13 @@ async def dispatch_writing(
         operation = repository.operation(db, work_id, run_id)
         work = repository.store._work(db, work_id)
         pending = db.execute(
-            "SELECT 1 FROM changes WHERE work_id=? AND status='pending'", (work_id,)
+            "SELECT 1 FROM changes WHERE work_id=? AND status='pending' AND id!=?",
+            (work_id, snapshot.get("outlineReviewTarget", {}).get("changeId", ""))
         ).fetchone()
+        from .outline_changes import review_current
+
+        target = snapshot.get("outlineReviewTarget")
+        stale_target = target and not review_current(db, work_id, target)
     try:
         capability_version = execution_capability()["version"]
     except Exception:
@@ -52,6 +57,7 @@ async def dispatch_writing(
         or work["revision"] != snapshot["workRevision"]
         or work["status"] == "completed"
         or pending
+        or stale_target
     )
     if invalid:
         return repository.complete(
@@ -78,14 +84,24 @@ async def dispatch_writing(
             "stream": bool(parameters.get("stream")),
         })
 
+        from .outline_stream import OutlinePreview
+
+        structured = parameters.get("response_format", {}).get("type") in {"json_object", "json_schema"}
+        preview = OutlinePreview(parameters.get("stage", "")) if structured else None
         async def on_delta(text: str) -> None:
-            repository.progress(work_id, run_id, token, "text.delta", {"text": text})
+            if preview is None:
+                repository.progress(work_id, run_id, token, "text.delta", {"text": text})
+            else:
+                events = preview.feed(text)
+                repository.retain_prefix(work_id, run_id, token, preview.raw)
+                for event in events:
+                    repository.progress(work_id, run_id, token, "outline.section.preview", event)
 
         call = model_call or (
             run_bounded_outline_review_model
-            if snapshot.get("purpose") == "review" and snapshot["docKey"] == "outline"
+            if snapshot.get("purpose") == "review" and snapshot["docKey"] == "outline" and not target
             else run_bounded_outline_model
-            if snapshot["parameters"].get("response_format") == {"type": "json_object"}
+            if snapshot["parameters"].get("response_format", {}).get("type") in {"json_object", "json_schema"}
             else run_bounded_planning_model
             if snapshot.get("purpose") == "planning"
             else run_bounded_review_model
@@ -95,7 +111,12 @@ async def dispatch_writing(
         async with asyncio.timeout(snapshot["limits"]["timeoutSeconds"]):
             args = (snapshot["prompt"], parameters["model_name"], snapshot["limits"]["maxOutputTokens"])
             if model_call is None and parameters.get("stream"):
-                output = await run_bounded_writing_model(*args, on_delta=on_delta)
+                if structured:
+                    output = await run_bounded_outline_model(*args, response_format=parameters["response_format"], on_delta=on_delta)
+                else:
+                    output = await run_bounded_writing_model(*args, on_delta=on_delta)
+            elif model_call is None and call is run_bounded_outline_model:
+                output = await call(*args, response_format=parameters.get("response_format"))
             else:
                 output = await call(*args)
     except asyncio.CancelledError:

@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from typing import Any, Callable, Iterator
 
 from .schemas.execution import ExecutionCommand, ExecutionFault
+from .output_validation import parse_model_json, validation_receipt
 from .store import DirectorStore
 
 
@@ -201,6 +202,7 @@ class ExecutionRepository:
             "requestHash": row["request_hash"],
             "docKey": snapshot["docKey"],
             "parameters": snapshot["parameters"],
+            "purpose": snapshot.get("purpose", "draft"),
             "limits": snapshot["limits"],
             "errorCode": row["error_code"],
             "changeId": row["change_id"],
@@ -274,7 +276,7 @@ class ExecutionRepository:
 
     def progress(self, work_id: str, run_id: str, token: str, event_type: str, payload: dict) -> int:
         """Append previews only; a delta never mutates a document or approves a draft."""
-        if event_type not in {"method.loaded", "model.started", "text.delta"}:
+        if event_type not in {"method.loaded", "model.started", "text.delta", "outline.section.preview"}:
             raise ValueError("INVALID_PROGRESS_EVENT")
         with self.transaction() as db:
             row = self.operation(db, work_id, run_id)
@@ -283,6 +285,17 @@ class ExecutionRepository:
             if row["status"] not in {"dispatching", "cancel_requested"}:
                 return 0
             return self.event(db, work_id, row["session_id"], event_type, payload, run_id)
+
+    def retain_prefix(self, work_id: str, run_id: str, token: str, prefix: str) -> None:
+        """A transport failure must not erase paid structured response bytes."""
+        if len(prefix) > 1024 * 1024:
+            raise ValueError("STREAM_OUTPUT_LIMIT")
+        with self.transaction() as db:
+            row = self.operation(db, work_id, run_id)
+            if row["lease_token"] != token:
+                raise ExecutionFault("INVALID_DISPATCH_LEASE")
+            if row["status"] in {"dispatching", "cancel_requested"}:
+                db.execute("UPDATE director_operations SET output_text=? WHERE id=?", (prefix, run_id))
 
     def claim(self, work_id: str, run_id: str) -> tuple[str, dict] | None:
         with self.transaction() as db:
@@ -388,6 +401,9 @@ class ExecutionRepository:
             snapshot = self.snapshot(db, run_id)
             change_id = None
             response = {}
+            if output is None and error_code and row["output_text"]:
+                output = row["output_text"]
+                response["partial"] = True
             if usage is not None:
                 response["usage"] = usage
             if output is not None:
@@ -427,7 +443,9 @@ class ExecutionRepository:
                 status, cost_status, error_code = (
                     "failed",
                     "settlement_pending",
-                    "INVALID_MODEL_OUTPUT",
+                    {"length": "MODEL_OUTPUT_TRUNCATED", "content_filter": "MODEL_OUTPUT_FILTERED"}.get(
+                        (usage or {}).get("finishReason"), "INVALID_MODEL_OUTPUT"
+                    ),
                 )
             else:
                 work = self.store._work(db, work_id)
@@ -437,8 +455,8 @@ class ExecutionRepository:
                     != snapshot["baseVersion"]
                 )
                 pending = db.execute(
-                    "SELECT 1 FROM changes WHERE work_id=? AND status='pending' LIMIT 1",
-                    (work_id,),
+                    "SELECT 1 FROM changes WHERE work_id=? AND status='pending' AND id!=? LIMIT 1",
+                    (work_id, snapshot.get("outlineReviewTarget", {}).get("changeId", "")),
                 ).fetchone()
                 if stale or pending or work["status"] == "completed":
                     status, cost_status, error_code = (
@@ -447,7 +465,8 @@ class ExecutionRepository:
                         "RESULT_STALE",
                     )
                 else:
-                    self.store._ensure_writable(db, work, snapshot["docKey"])
+                    self.store._ensure_writable(db, work, snapshot["docKey"],
+                        accepted_change_id=snapshot.get("outlineReviewTarget", {}).get("changeId"))
                     if snapshot.get("purpose") == "planning":
                         from .workflow import record_planning_output
 
@@ -456,8 +475,31 @@ class ExecutionRepository:
                                 db, work_id, run_id, snapshot, output
                             )
                             status, error_code = "succeeded", None
-                        except (ValueError, KeyError, TypeError):
+                        except (ValueError, KeyError, TypeError) as exc:
                             status, error_code = "failed", "PLANNING_OUTPUT_INVALID"
+                            response["validation"] = validation_receipt(exc)
+                        cost_status = "settlement_pending"
+                    elif snapshot.get("outlineReviewTarget"):
+                        from .outline_changes import record_review
+
+                        try:
+                            response["outlineCandidateReview"] = record_review(db, work_id, run_id,
+                                snapshot["outlineReviewTarget"], parse_model_json(output))
+                            status, error_code = "succeeded", None
+                        except (ValueError, KeyError, TypeError, ExecutionFault) as exc:
+                            status, error_code = "failed", "PLANNING_OUTPUT_INVALID"
+                            response["validation"] = validation_receipt(exc)
+                        cost_status = "settlement_pending"
+                    elif snapshot["parameters"].get("output_contract") == "outline-patch/1.0.0":
+                        from .outline_changes import record_patch
+
+                        try:
+                            change_id = record_patch(db, self.store, work_id, run_id, snapshot, parse_model_json(output))
+                            response["change_id"] = change_id
+                            status, error_code = "succeeded", None
+                        except (ValueError, KeyError, TypeError) as exc:
+                            status, error_code = "failed", "PLANNING_OUTPUT_INVALID"
+                            response["validation"] = validation_receipt(exc)
                         cost_status = "settlement_pending"
                     elif snapshot.get("purpose") == "review":
                         from .quality import save_review
@@ -509,7 +551,8 @@ class ExecutionRepository:
                                     "contract": "story-outline/2.2.0",
                                     "artifactHash": digest(artifact),
                                 }
-                            except (ValueError, KeyError, TypeError):
+                            except (ValueError, KeyError, TypeError) as exc:
+                                response["validation"] = validation_receipt(exc)
                                 candidate = None
                         elif (
                             snapshot["parameters"].get("output_contract")

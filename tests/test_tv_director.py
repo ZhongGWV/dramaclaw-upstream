@@ -23,6 +23,12 @@ from novelvideo.director.writing import METHOD_VERSION, compile_generation
 from novelvideo.director import writing
 
 
+@pytest.fixture(autouse=True)
+def isolated_gateway_contract(monkeypatch):
+    # Unit compilation must not consult the developer's live catalog/credentials.
+    monkeypatch.setattr(writing, "get_effective_newapi_gateway_config", lambda: SimpleNamespace(base_url="https://example.invalid/v1"))
+
+
 def _original(episodes: int = 2) -> CreateWork:
     return CreateWork(
         title="被删的邮件",
@@ -328,10 +334,17 @@ def test_generation_hash_changes_with_displayed_parameters(
     assert with_override["input_sha256"] != first["input_sha256"]
 
 
-def test_local_gateway_model_contract_is_exact_and_rejects_mismatch(
+def test_local_gateway_model_contract_uses_catalog_and_rejects_unknown(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    from novelvideo.local_model_catalog import LocalModelCatalog, secret_path
+
+    catalog = LocalModelCatalog(tmp_path / "router")
+    key_path = secret_path(catalog.root, "ark")
+    key_path.parent.mkdir(parents=True, exist_ok=True)
+    key_path.touch()
+    catalog.update([], {"text": "ark::doubao-seed-evolving"})
     monkeypatch.setattr(
         writing,
         "get_effective_newapi_gateway_config",
@@ -343,11 +356,15 @@ def test_local_gateway_model_contract_is_exact_and_rejects_mismatch(
         "novelvideo.local_gateway.router_config",
         lambda: SimpleNamespace(
             port=3001,
-            text_model="deepseek-ai/DeepSeek-V4-Flash",
+            root=catalog.root,
         ),
     )
     contract = writing.director_model_contract()
-    assert contract == {"model_name": "deepseek-ai/DeepSeek-V4-Flash", "locked": True}
+    assert contract["model_name"] == "ark::doubao-seed-evolving"
+    assert contract["locked"] is False
+    assert {option["id"] for option in contract["options"]} == {
+        "ark::doubao-seed-evolving", "ark::deepseek-v4.1-flash"
+    }
     assert writing.resolve_director_model("") == contract["model_name"]
     store = DirectorStore(tmp_path)
     work_id = store.create_work(
@@ -357,7 +374,7 @@ def test_local_gateway_model_contract_is_exact_and_rejects_mismatch(
             preset=DirectorPreset(mode="original", model_name="other-model"),
         )
     )["id"]
-    with pytest.raises(ValueError, match="differs from fixed local gateway"):
+    with pytest.raises(ValueError, match="not in the local catalog"):
         compile_generation(
             store, work_id, GenerateDraft(kind="outline", expected_version=0)
         )

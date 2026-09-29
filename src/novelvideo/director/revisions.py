@@ -169,7 +169,7 @@ class RevisionService:
                         )
                 if not fields:
                     raise ExecutionFault("NO_SETTINGS_CHANGE")
-                start = 1 if any(f["field"] != "title" for f in fields) else None
+                start = 1 if any(f["field"] not in {"title", "model_name"} for f in fields) else None
                 count = preset["episode_count"]
             else:
                 start = command.payload.episode_ordinal

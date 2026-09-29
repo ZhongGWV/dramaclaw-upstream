@@ -2,8 +2,8 @@
 
 **状态**：执行中
 **最后更新**：2026-09-29
-**基线**：`7ce6b78d`；本地同步分支已快进到私有同名远端最新提交，待合入main的`9741c622`。
-**认领者**：`codex/push-all-20260929`
+**基线**：`2f664127`；目标分支最新方案提交，以它为第一父合入私有main的`9741c622`。
+**认领者**：`codex/sync-director-20260929`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
@@ -20,7 +20,27 @@
 用户要求将刚完成的提交全部推送到私有 `ZhongGWV/dramaclaw` 同名分支。隔离 worktree 从本地 `af8fdc1` 建立；主检出目录已有 `liblib-canvas-parity` 的 HEVC 播放修复及有效锁，禁止修改或暂存其中的未提交文件。目标远端目前为 `e4877e4`，本地独有三个 DCO 提交 `391b249`、`a453fdf`、`af8fdc1`，远端独有六个提交。仅集成并推送这些已提交内容，不带入主目录的新增未提交工作。
 
 `git merge-tree --write-tree af8fdc1 origin/codex/sync-main-remotes` 只报告 `docs/agent/STATE.md` 一处文本冲突；`DESIGN.md` 与相关台账自动合并。方案是在本隔离 worktree 以本地三个提交为第一父、正常合并远端六个提交，在 STATE 中保留双方工作线进度并更新本次推送记录。合并后检查两端祖先关系、冲突标记、签名尾注、`git diff --check` 和 guard；用户只要求推送，本轮不运行测试套件。使用显式目标引用正常推送，不使用 force、rebase、stash，不碰 `main` 或公开 fork。推送前重新核对远端 SHA；若远端又前进，先重新合并，再推送。完成后记录结果并清理隔离 worktree，主检出目录的未提交工作原样保留。
-### 2026-09-27 · 保留目标分支新增功能并合入main最新TV Director
+
+### 2026-09-27最新授权：同步主目录main到最新分支
+
+用户在重启后明确确认“也同步主目录main”。应用已从945baa9f启动且原6项目可读，重启交接提交为3fbd16e6；该同步分支保留模型/H3/中文项目名和最新Director，集成794后端/276前端/build通过。主目录原5份未提交协调文件先按Director/同步线分别提交，业务和3份受保护资料不动、不stash/reset；此方案与本线旧交接同属同步线检查点。
+
+随后以main为第一父正常merge最新codex/sync-main-remotes，手工仅解决STATE/同步台账/claim的协调冲突，保留双方历史与当前授权；业务文件全部只接受目标既有提交，不重新实现或更改API/模型/配置。精确业务导入路径以两端git diff和目标已验证claim为准；若业务文本有冲突立即另做窄审计，不整文件覆盖。三语与全部非agent文件逐blob比对来源，代码必须与已运行/测试的同步分支一致；DCO/密钥/guard/diff和健康读检查后普通push私有main，不推公开origin、不改服务、不触发生成。非快进拒绝则重读远端，绝不force。保留全部旧进度，产品文学/像素验收不因Git同步变为通过。
+
+本轮手工范围仅本台账/同名claim/STATE（coordination）；Director既有记录已独立保存。风险为协调冲突和误丢本地资料；用双祖先和非agent树一致性验证，不以丢记录换快进。回退须另行授权revert，不改写历史。
+
+### 最新追加：只把已验证合并结果同步回本地主检出
+
+用户明确要求“把合并结果同步回主目录”。执行前主检出为 `main=f057a867`，无已跟踪脏文件、无锁；
+目标 `codex/sync-main-remotes=0298aefa` 为其后代，差异0/49。87个新增跟踪路径均不与现有本地文件冲突。
+本次只通过 `git merge --ff-only 0298aefa` 导入已有提交，不手工改业务代码、不拉取额外提交、不stash/reset，
+不推任何远端、不重启服务、不迁移项目数据。主检出里的本地配置、凭据、运行数据及3个受保护未跟踪文件保留。
+手工写入仅STATE、本台账和同名claim三个coordination文件，用于修正旧“主目录仍未同步”的交接事实。
+验收：主检出HEAD与合并分支一致，源代码无额外diff；3个受保护文件SHA256一致；guard、依赖约束、
+主目录生产构建及Director/H3聚焦回归通过。若快进条件不成立立即停止，不强制移动main。
+远端main仍保持此前提交；未来要发布main须用户另行授权。旧章节“不改main”限制仅对应上一轮分支交付。
+
+### 最新增量：保留目标分支新增功能并合入main最新TV Director
 
 用户要求更新并提交到 `codex/sync-main-remotes`。本轮只更新私有 `zhonggwv` 同名分支，不改本地/远端main、不推公开origin、不部署。开始目标检出干净且无锁；已fetch两个私有引用，正常快进目标从0298aefa到4c9dee4f。main=b5883b8f已推送；两边从0298aefa分叉1/5，目标已有模型供应商、H3引用和中文项目名功能，必须原样保留。
 
@@ -79,8 +99,8 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 
 ## 写入边界
 
-本轮手工业务改动仅三语 `translation.json` 的合并冲突；其他 main 路径只读导入。
-STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务可写项本轮不使用。
+当前主目录同步轮仅手工修改STATE、本台账和同名claim；全部业务与其他交接记录由既有提交导入，三语没有手工冲突。
+下表保留历史集成范围，当前轮不使用其中业务写权限；历史local-stack台账与scope协调也不另改。
 
 集成门禁补充（实测后登记）：`.env.example` 独占追加两个可选配置说明，并校正与已合并实现一致的回环代理默认说明。
 `test_real_ce_repo_env_ratchet_is_clean` 报 `DIRECTOR_TEXT_MODEL` 和 `H3_PROMPT_SKILL_DIR` 未登记；
@@ -143,9 +163,27 @@ STATE、local-stack台账与 scope互认属协调路径；旧表中其他业务�
 
 ## 进展记录
 
+### 2026-09-29 · 最新主线内容并入同名分支的集成验证
+
+目标分支先快进到私有远端`7ce6b78d`，方案单独提交为`2f664127`；以其为第一父正常合入main`9741c622`，仅本台账、STATE与同名claim出现文本冲突，逐段保留双方历史。画布/HEVC相关业务文件逐路径与`7ce6b78d`一致，Director代码、测试、技能与方案逐路径与`9741c622`一致；三语对双方所有叶键检查均无缺项。没有手改产品逻辑、调用收费模型或改动主目录资料。
+
+本轮实际验证：`PYTHONPATH=src .../.venv/bin/python -m pytest tests/director tests/test_tv_director.py tests/test_browser_video_playback.py -q`为812通过；`pnpm exec vitest run director canvas-preview canvas-edge-paint canvas-group-paint video-playback-url locales-json`为27文件/313项通过；`pnpm build`成功（有原有大块警告），`ruff check .`、前后端i18n、CE端口闭合、guard、合并索引diff格式与对暂存文件的pre-commit三门均通过。`npx --no-install @google/design.md lint DESIGN.md`在本机未产生输出、等待后人工中止，不计作通过；DESIGN仅由Git自动合并并已人工检查双方增量。下一步形成DCO合并提交、普通推送私有同名分支、核验远端SHA与两个父提交祖先；公开origin/main与私有main保持不变。
+
 ### 2026-09-29 · 画布提交与远端 Director 正常集成并推送
 
 隔离 worktree 中先提交本轮方案 `5109ae1`，再以它为第一父正常合并远端 `e4877e4`，生成带 DCO 的 `9d2e486`。文本冲突仅为本台账和 STATE；STATE 保留远端最新 Director/本地栈进度与本地画布工作线记录，claim 基线同步为 `af8fdc1`。画布源码相对本地 `af8fdc1` 没有变化，Director 源码相对远端 `e4877e4` 没有变化。合并索引无未解决项或冲突标记，`git diff --cached --check` 与 `agent_guard check` 通过，两端原头均为合并提交祖先。普通推送 `HEAD:refs/heads/codex/sync-main-remotes` 成功，随后 `ls-remote` 返回 `9d2e486`。本轮仅做集成静态检查，未运行测试套件；不触碰主检出目录正在进行的 HEVC 未提交工作，不推 main 或公开 fork。此后只补交接文档状态并正常推送。
+
+### 2026-09-27 · 主目录合并验证及交付
+
+将3fbd16e6正常合入main；只解决STATE/本台账/claim三个协调冲突，双方记录均保留。原5份未提交交接已分别保存为d1b73e14与522f50fe，受保护的3份未跟踪资料不动，没有stash、强制切换或手改业务。
+
+本轮实际执行：`git diff --exit-code 3fbd16e6 -- . ':!docs/agent/**'`通过，所有业务、测试、指南、配置、资产与已验证来源完全一致；`git diff --cached --check`通过、未解决冲突为空。`agent_guard.py check`为31线/1100claims；对82个精确暂存路径执行`pre-commit run --files ...`，密钥扫描、guard、禁词全部通过。四服务、前端API代理和项目列表只读请求均HTTP200，原6项目可读取。
+
+来源已有794后端、276前端与生产构建通过（命令见下节），本轮未重复运行这些测试、未调用付费模型或生成媒体。采用带DCO的正常合并提交并仅普通推送私有main，再核验双方祖先、DCO及远端SHA；最终提交/推送事实以Git为准。公开origin/PR、正在运行的同步worktree服务和原配置/数据保持不动；待验收仅保留历史公开同步/产品欠项，不代表需要重新实现本轮代码。
+
+### 2026-09-27 · 主目录最新同步检查点
+
+用户已明确授权当前main同步最新集成版本；本线先保存此前主目录快进的旧交接和本次计划，Director旧记录已分线提交。业务无未提交diff，原受保护资料不动；后续只在协调文件解决真实merge冲突。源代码直接保留同步分支已验证内容，主目录合并后必须与源非agent树一致，再推私有main并核验。
 
 ### 2026-09-27 · 最新Director已交付私有同步分支
 
@@ -195,6 +233,18 @@ merge-tree 确认 238 项远端增量，7 个冲突：STATE、H3/故事板/拆�
 完成 JSON/冲突标记/差异/guard 与密钥检查，验证双方祖先关系，推 origin 当前分支并核对远端 SHA。
 本次只执行用户指定 Git 同步，不新增或运行实现测试、不触发生成；无运行配置、密钥或本地工作流改动。
 若推送期间远端再前进，重新取证并合并，绝不覆盖。推送前失败可保留合并现场继续处理。
+
+### 2026-09-26 · 主目录快进及本地验证完成
+
+已执行 `git merge --ff-only 0298aefa4734c3d8e5a02362cbf068351833c343`，主目录main与合并分支相同，
+Git未生成新合并提交。导入后 `git diff --exit-code codex/sync-main-remotes` 与cached比对均通过；
+guard为29条工作线/940claims，通过。主检出相对私有远端main ahead49/behind0，没有执行push。
+3个未跟踪受保护文件前后SHA256相同；本地配置/凭据/项目目录没有跟踪路径变动。
+前端package/lock与主目录原版本相同，无须重新安装；现有sse-starlette 3.4.5满足上游>=3.3.0约束。
+主目录 `pnpm build` 在Node22下通过（5533模块，仅大chunk警告）；
+`.venv/bin/python -m pytest tests/director tests/test_tv_director.py tests/test_newapi_text_gateway.py tests/test_h3_prompt_optimizer.py tests/test_h3_stream.py tests/test_local_gateway.py tests/test_image_generation_selection.py -q`
+为545通过/10条依赖弃用警告。所有业务代码仍与0298aefa一致，三个交接文件是本轮唯一跟踪diff，保留为本地文档更新。
+本轮没有创建新提交、推远端或重启服务；历史功能/文学质量欠项未因此被标成完成。
 
 ### 2026-09-26 · 本轮私有分支同步完成
 
@@ -325,6 +375,7 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 - [x] 完成 claim 与共享互认后 acquire/preflight。
 - [x] 执行合并、解决文本与语义冲突并完成全量验证。
 - [x] 用户本轮要求的 TV Director 四个 main 提交已合并、验证并推送私有 `codex/sync-main-remotes`。
+- [x] 后续请求：本地主目录main已快进到合并版本0298aefa；没有更新任何远端。
 - [ ] 历史上游维护者审核 PR #717；合入后重新审计双方 main 与当前私有集成分支，另行取得同步授权。
 
 ## 阻塞
@@ -334,10 +385,10 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ## 交接摘要
 
-- **最后完成到**：合并fb80eafb已推送并核验，保留目标4c9dee4f及来源b5883b8f；794后端/276前端/build通过，85/42条独有路径和三语7325键完整。main未动，最终交接记录提交号以Git为准。
-- **下一步唯一动作**：本次同步无剩余操作；若用户要求合回主目录或双main同步，先核验最新分支和主目录未提交交接，不按旧指针覆盖。历史公开PR与产品欠项仍独立待办。
+- **最后完成到**：最新同步分支3fbd16e6已在主目录正常合并，非agent树完全一致；原交接分线保存，82路径提交检查和健康复核通过。应用已就绪、原6项目可读取；最终DCO提交与私有main推送结果以Git核对。
+- **下一步唯一动作**：恢复时先核对main与私有远端SHA及3fbd16e6祖先关系；若一致，本轮同步已交付，不重复合并。历史公开同步必须重新获授权，不改正在运行的服务。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
-- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork，不改main，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
+- **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork或origin/main；仅本轮获准普通推私有main。不重启既有服务，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 
 ### 2026-09-26 · 故事板共享协调
 

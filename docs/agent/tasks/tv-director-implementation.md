@@ -1,9 +1,9 @@
 # 全新 TV Director 剧本工作台实现
 
 **状态**：执行中
-**最后更新**：2026-09-27
-**基线**：`0298aefa4734c3d8e5a02362cbf068351833c343`（合并结果已同步本地主目录；私有同步分支已推，私有main未推）；历史实现起点e7b1fbce。保留同步线未提交交接和受保护资料。
-**认领者**：`codex/tv-director-commit-20260927`
+**最后更新**：2026-09-28
+**基线**：`0d7b609f`（main；两笔Director提交已推送至私有`zhonggwv/main`，待本轮交接状态提交）；历史实现起点e7b1fbce。保留受保护未跟踪资料。
+**认领者**：`codex/director-s1-20260928`
 **相关文档**：`docs/guides/liblib-tv-director-analysis.md`、`docs/guides/liblib-tv-director-development.md`、`docs/guides/tv-director-skill-fusion.md`、`docs/guides/tv-director/character-parity.md`、`docs/guides/tv-director/scene-parity.md`、`docs/guides/tv-director/prop-parity.md`
 **相关分支 / PR**：无
 **本轮详细证据**：`docs/guides/tv-director/batch-facts-pixels.md`；前轮编辑/媒体见`interaction-closure.md`，分集见`episode-parity.md`
@@ -12,11 +12,11 @@
 
 在 DramaClaw 中新增独立 TV Director 工作台，不以现有“虾本” UI 为基线。用户可在画布式页面创建原创/改编作品、设定题材/集数/结构、关联来源、通过配置的文本模型生成可审草稿、保存版本、修改与人工定稿、恢复历史；浮窗/设定器/剧本文档/编辑器操作按现有 LibTV 按钮级报告逐项对照。后续补齐完整 Skill/导演/媒体/多设备等能力前，页面不得谎称已经等价。
 
-首个可验收切片已建立作品/来源/版本/待审变更/事件存储和部分UI。后续完整终点与实施顺序以 `docs/guides/tv-director-skill-fusion.md` v2及其五份专项合同为准；方案v2.1已收口；本轮按WP00/WP01开始实际实现，范围见最新实施方案。
+首个可验收切片已建立作品/来源/版本/待审变更/事件存储和部分UI。当前完整边界/实施顺序以`docs/guides/tv-director/full-replication-plan.md`审核r1与其权威导航为准，验收数值与依赖统一到acceptance-policy.json；融合v2与P/WP记录保留历史来源，不能覆盖新S切片。业务是否完成仍以实际代码和有效测试为准。
 
 ## 非目标
 
-- 不改用户已有 LibTV 项目、原剧本、研究样例或现有 story/freezone 业务行为；不调用 LibTV 付费生成。
+- 不改用户已有 LibTV 项目、原剧本或现有 story/freezone 业务行为；本轮用户授权在隔离比较项目执行有价值的文本生成，禁止自动购买媒体或重放未知请求。
 - 不声称取得 LibTV 服务端私有 Skill 或能生成逐字相同的文本。
 - 本切片不自动触发 H3 视频或扣费媒体任务；后续独立接入有报价/审批的生成路径。
 
@@ -34,9 +34,9 @@
 | `docs/agent/STATE.md` | 共享 | 登记本线；保留研究线原有未提交内容 |
 | `docs/agent/tasks/tv-director-implementation.md`、`docs/agent/claims/tv-director-implementation.toml` | 独占 | 本线方案和机器范围 |
 | `docs/guides/tv-director-skill-fusion.md` | 独占 | short-drama 与可观察 TV Director 工作流的融合设计、阶段合同及验收矩阵 |
-| `docs/guides/tv-director/feature-contracts.md`、`skill-contracts.md`、`workflow-contracts.md`、`document-semantics.md` | 独占 | 四份细化合同；scope 使用每份完整精确路径 |
-| `docs/guides/tv-director/acceptance-contracts.md` | 共享 | discovery仅串行更新源站十项证据状态；实现验收规则归本线 |
-| `docs/guides/tv-director/implementation-map.json`、`source-inventory.json`、`verify-spec.mjs`、`implementation-closure.md` | 独占 | v2.1机器追踪矩阵、方法来源指纹、只读规格校验器、按代码拆分的最终交付与差异处置 |
+| `docs/guides/tv-director/feature-contracts.md`、`workflow-contracts.md`、`document-semantics.md`、`acceptance-contracts.md`、`seed-outline-parity-implementation.md`、`implementation-map.json`、`verify-spec.mjs` | 共享 | 用户批准discovery串行执行审核修订，释放后本线集成；scope逐文件对称认领 |
+| `docs/guides/tv-director/skill-contracts.md`、`implementation-closure.md` | 共享 | discovery唯一持锁串行清除旧上限/自动扩大交付冲突；完成后本线集成 |
+| `docs/guides/tv-director/source-inventory.json` | 独占 | 冻结来源指纹；研究线只读核实 |
 | `docs/guides/liblib-tv-director-development.md` | 共享 | 与 discovery 双向认领；本线持锁修正旧设计，研究事实不变 |
 | discovery 的台账与 scope | 协调 | 仅记录上述共享顺序与交接 |
 | `src/novelvideo/director/**` | 独占 | 新工作流、存储、质量门、方法包 |
@@ -55,6 +55,8 @@
 
 ## 协调与冲突
 
+- 2026-09-27审核修订：用户批准六项建议；discovery唯一持锁串行修订feature/workflow/document/acceptance、Seed大纲细案、implementation-map及verify-spec七文件，scope双方共享。实现线在其释放后集成；其余业务、测试、旧失败记录不变。当前完整范围/切片以full-replication-plan为导航，验收数值以acceptance-policy.json为唯一配置，历史P/WP不作为新执行顺序。
+
 - 2026-09-26 分支集成：本线已有提交在前，`sync-main-remotes` 持唯一锁串行合入 main 的 TV Director。
   三语只保留并合入各线键值；DESIGN按画布和Director各自章节并存。相关claim已互认共享，
   最终冲突集成归同步线，原功能所有权、验收欠项和待办不变；不改技能或收费生成逻辑。
@@ -69,6 +71,167 @@
 - **共享文件顺序**：当前无别的持锁者；本线持锁串行修改。复查发现 story-writer 对 `routeTree.gen.ts` 和项目导航均已有 wildcard 共享，无需改对方台账；新增路由源后由工具生成。API 注册/三语也已有 wildcard 共享，合并时由本线对本轮键负责。
 
 ## 实施方案
+
+### 2026-09-28 · 已有首功能代码与测试分线提交
+
+目标是把本线已有的TV Director来源→五节大纲→局改/审阅/流式及首次原创三页问卷的代码、方法包、测试、视觉/三语和进展方案本地提交；不扩大业务实现，不调用模型，不推送。复核发现前一研究提交`0a1d4fac`仅改方案与台账，当前业务diff仍完全归本线；已按精确文件与claim对账，其他受保护未跟踪资料冻结。执行顺序：更新基线→preflight全部当前精确路径→运行后端/前端聚焦测试、构建、ruff、i18n、差异/密钥检查→显式暂存本线文件→带DCO提交→记录实际结果与未过门项→handoff/release。风险是把隔离运行误称常驻部署、把格式测试误称文学通过、把过期plan-closure源码映射误称有效；均在交接中如实标明。回退只通过后续修正提交，不清理原工作树或用户数据。
+
+### 2026-09-28 · 首次原创三页问卷与冻结参数同源（方案就绪→执行中）
+
+目标：把已取证的原站首次原创 `ask_human` 三页（方向、确认集数、确认单集秒数；最后提交才继续）接到当前真实Seed方向关口。页面选中的两个数必须与作品持久设定、集身份、后续M07/M08/M09冻结请求完全一致；刷新与重复提交不新增模型调用。源站原始请求在本机忽略的`two-episode-serial-evidence.json`，分析§6.2记录`q_0/q_1/q_2`同一`toolCallId`。本轮重新按仓库规定加载忽略的登录态后原站显示登录弹窗，故不冒充新的在线复验；使用既有原始请求和独立本地运行来核对。现有本地真实原创返回4方向+6模型追问形成7页，是可确认偏差；设定值目前在建作时冻结，直接改前端数字会造成实际下游仍用旧值。
+
+取舍：原创方向后的篇幅问卷由宿主从已保存preset构造，不让M03模型决定集数/时长，也不把随机创意追问强制变成六页；原始M03回包和其建议问题照旧留在不可变artifact用于审计。应用内M03方法对原创要求`specQuestions=[]`、改编仍允许真正缺失的来源事实问题；宿主面对旧/不守约回包也只把原问题保留为建议，不提升为原创必答。用户可选“按已有值”或输入有效自定义值；在同一`planning.decide`事务里更新作品preset、稳定集身份和workflow root，随后下一阶段重新按新值报价/冻结，不在客户端做两个可断开的提交。旧检查点/旧客户端明确拒绝缺少两项确认，新已答命令仅幂等回放。模式为改编的现有追问合同不改。来源事实与原故事不因选择讲法自动批准新增剧情。
+
+精确路径：`src/novelvideo/director/{workflow.py,schemas/planning.py}`、应用内`skills/builtin/direction-options/{method.md,manifest.json,provenance.json}`及`skills/{pinned.py,runtime.py}`；`frontend/src/features/director/components/PlanningWorkflow.tsx`、`frontend/src/api/director-execution.ts`、同域`director.css`；`tests/director/{test_workflow.py,test_skill_runtime.py}`、`frontend/src/__tests__/director-execution.test.tsx`、三语`frontend/public/locales/{zh,en,vi}/translation.json`、`DESIGN.md`本节与本台账/claim/STATE。若发现必须扩大到其他路径，先补方案和scope再preflight。非目标：改编问卷重构、第二功能、模型文学质量声称通过、旧作品自动迁移、媒体与新的收费调用。风险：更改作品revision后下一组自动授权仍用旧revision、已生成M03 artifact与新root混读、扩大集数时稳定ID错乱；分别用投影返回当前workRevision、事务中只改未来根且保留M03原证据、复用`allocate_documents`并覆盖增减与刷新回归。回退关闭新UI/命令分支但保留已答决策和账本，不删除用户作品或旧回包。
+
+实施中发现并记录分叉：当前`compile_planning`的M07原创输入只含brief/episodes/已选方向，没有向模型显式提供preset集数与单集时长。宿主最终会拒绝不符，但无法弥补模型在生成时不知道规格。新增本线已独占的精确`src/novelvideo/director/planning.py`：把确认后的preset安全投影到M03与下游prompt（不以页面字段替代服务端root），只读现有模型输入，不变更供应商参数/收费范围；新增实请求冻结快照断言。写入前重新preflight该路径。
+
+定向测试发现的第二处接线分叉：本线既有实模型验证脚本`tests/director/live_execution.py`在方向选择时仍只提交旧的`specQuestions`答案，新增两项确认后被服务端正确拒绝；将该脚本精确加入本轮写入边界，按checkpoint中的`confirmedPreset`显式提交两项默认确认，不让测试脚本绕过真实合同。先核对该路径旧diff与claims，再重新preflight。前端自动推进另有作品revision在quote→grant之间丢失的风险，沿已认领PlanningWorkflow传递服务端最新workRevision并测试。
+
+真实Seed首轮分叉：本机工具沙箱无法连接127.0.0.1网关，隔离尝试0.5秒返回UNKNOWN，未重派；只读提权连通检查网关可达，另建隔离作品。新作品M03/M07/M08三笔成功，M09返回合法JSON但给已确认closed单集的最后一集填写了非空`hook`，宿主正确拒绝并保留原回包，不能称全流程通过。根因是M09仅提示词约束、未启用该已验证Seed路由的结构化解码，而通用schema允许hook为字符串或null。沿已认领`planning.py`为M09开启同schema严格格式；仅在单集且closed时将发给解码器的hook收窄为JSON null（宿主原输出合同与检查不放宽），版本指纹更新；在`test_workflow.py`覆盖冻结schema和一集闭合/多集不误收窄。已付成功M03/M07/M08不可重买，沿已认领实测脚本新增显式`--resume-planning <保存目录>`只对M09失败且前序产物已保存的本轮隔离作品重新报价一笔；保留历史失败回包、未知结果不自动重派。新路径仍为本线既有范围，修改前重新preflight。
+
+Git/冲突：main `213854b5`，本线既有业务/UI/方法/测试脏文件均在本台账已归属；逐路径`git diff -- <path>`已核对，新增hunk只叠加，不整文件覆盖。`origin/main`缓存中无同域新实现（Director路径仅本线新增）；不在脏工作树pull/rebase。guard 31线1130claims、无活动锁；本轮同一持锁会话串行修改三语和DESIGN。验证先原始取证三题/本地4方向对照，后端正负/幂等/并发/重开/下游实际请求，前端逐页按钮和状态、构建/i18n/ruff/设计lint/guard；最后在隔离作品以真实Seed从一次发送到三页提交+下一阶段执行一次，记录真实提交参数和返回，不覆盖旧失败、不调用DeepSeek或媒体。费用金额未知不记0；未知供应商状态不重派发。若原站仍未登录，像素同屏在线复验标未验证，不能称100%一致。
+
+### 2026-09-28 · 首次发送无回复的接线修复（执行中）
+
+用户纠偏：个人自用的导演流程不需要逐阶段费用弹窗。前述“创建后仅弹报价、仍需勾选”是与明确体验目标冲突的中间实现，不能算验收。现在首轮发送必须在同一用户动作内完成服务器有界报价→批准该阶段→启动Seed流；方向/修改问卷的提交在进入下一阶段时同样衔接，但一次动作最多推进一个新阶段。服务端报价冻结范围和幂等命令仍保留，`unknownCostConsent`由本次明确发送/提交意图授权；没有新的用户动作、刷新/重开、未知结果或连接中断均不得重派发/自动重试。UI不显示费用确认卡，故障时显示原请求的恢复动作。沿已认领的Studio/PlanningWorkflow/ConversationScroll、现有execution测试及三语窄改；不改后端收费记录或放宽模型调用上限。验证在专用smoke作品最多真实1笔Seed方向阶段，保留请求/回包与执行状态，不自动购买下一阶段。风险是方向选择被误当作多阶段授权；由一次动作只触发一个预算组和负向测试约束。
+
+真实Smoke第一笔分叉：M03实际`model.started.stream=false`，故页面只有“执行中”而没有流式方向；回包JSON完整且`finishReason=stop`、1次模型请求、4个候选，但第4项缺必填`obstacle`，宿主正确拒绝，不可伪造或直接采纳。发送快照含`json_schema.strict=true`与required字段，但这一实际路由未达到严格约束保证。先改`planning.py`启用M03结构化流，`outline_stream.py`仅投影方向/问题白名单可读字段，前端`useExecutionStream.ts`/`DirectorConversation.tsx`显示增量候选，不泄露原JSON或把临时字段当已通过。补`tests/director/test_outline_stream.py`、`frontend/src/__tests__/director-streaming.test.tsx`和三语。旧失败回包留存，通过既有`validationRecovery`把准确缺失路径送入下一次用户主动发起的M03，不自动重试；一笔受限复验后停，验收流式可见、4候选最终校验通过或如实失败。新文件均归本线已认领路径，旧diff归属核对完；不改网关密钥、全局模型适配或其他阶段流协议。
+
+验收目标：在空作品输入创意并按一次发送后，创建作品随即启动有界方向阶段，并在同一聊天浮层展示真实执行进度、流式内容及可回答的方向问卷；不需要第二次发送或费用确认。状态不再把仅创建的作品误写为“创作中”。已有作品刷新、重开不自动重报或重派发。非目标：改写模型/Skill质量、扩大到人物等第二功能、取消后端用量边界或未知状态保护。
+
+现状证据：用户曹操样例的作品为`created`，仅`work.created`事件；对应workflow、quote、operation、execution记录均为0。`DirectorStudio.createWork`只建档并清空输入，`PlanningWorkflow`只在第二次发送时接收到`planning.quote`；原站已存证据表明首次发送即在同一会话流式进入方向分析、四方向和人工问卷。当前本地流式实现存在，但须在显式审批后的模型执行中验证，不把报价冒称为流式回复。
+
+写入边界：仅已认领`frontend/src/features/director/{DirectorStudio.tsx,components/PlanningWorkflow.tsx,components/DirectorConversation.tsx}`、`frontend/src/__tests__/director-execution.test.tsx`、三语`frontend/public/locales/{zh,en,vi}/translation.json`及本台账；不改后端API、用户实际作品或第三方作品。追加ConversationScroll的原因是现有滚动只听执行流revision，新阶段卡插入后可能仍在可视区下方，造成“无回复”假象。步骤：新建作品后由同一PlanningWorkflow一次性报价并批准；阶段进度/失败有可见状态并跟随显示，防重入且仅本次创建生效；方向提交仅推进下一预算组；修正`created`文案；加首次发送、刷新不重发、断线保留原意图和真实执行回归；前端定向测试/build/i18n，隔离smoke与原站已保存样例核对。回退仅撤本段接线及文案，保留现有作品、报价历史与原有改动。已核对这几条路径的现有diff均归本线，claims覆盖Director域、测试和三语；guard无活动锁，缓存`origin/main`无本接线实现；不在脏树pull或覆盖其他线。
+
+### 2026-09-28 · 接通第一功能并逐步与原站核对（执行中）
+
+局改实测追加：M14把来源“愿望之后入画”改成愿望触发白雾的确定机制，M12未发现；同一批还有原文不变的伪修改。人工拒绝该批，不以模型复审通过替代人工验收。沿现有outline-patch/outline-audit方法包补匿名先后→因果反例、最小改动约束；宿主拒绝无变化hunk，不丢弃原回包。保留替换块中未改变的原有格式范围，避免采纳使字段粗体丢失。同步补revalidate方向/依赖指纹与末阶段checkpoint收束；测试、方法哈希、三语和进展记录仍在已认领边界。修复后以相同概要/修改指令重测Seed；不切第二功能。
+
+流式接线追加：新outline_stream.py与test_outline_stream.py，使用已锁定pydantic-core的增量JSON解析能力而非自造正则提取器；只投影M07/M14白名单正文字符串，未闭合内容标临时预览，最终重复键/合同仍严格拒绝。dispatch保持response_format与流同通道；存原始prefix供断流恢复，preview不写正文。已有execution_repository、writing、outline_compiler、outline_changes、frontend useExecutionStream/DirectorConversation/ExecutionHistory/API与测试精确修改；新增只读purpose投影区分父规划与独立局改，修复后者被stage字段误隐藏停止按钮。前台不显示JSON、内部审查推理和假打字，不把传输恢复等同重新派发。
+
+M12第二个实测漏报已定位：把新增跨空间听觉当interpretation。增加宿主叙事/说明角色：由原始段落位置与稳定lineage派生，不信模型自标nature；局改保留角色和原引用索引。动作叙事单元不允许interpretation绕过事实核对，schema前置限制、宿主最终阻断；报告绑定validatorVersion，旧已通过报告不可授权新规则下采纳。修改现有schemas/outline_delivery、outline_patch、outline_candidate_review、compiler、workflow与已认领测试；不替模型写supported，不修改原回包。
+
+手编后真实UI报价发现上下文超预算（收费前422、未派发）：原因是patchContext的完整AST/段落索引与targets重复入prompt，新增保真引用使重复更大。修复compile_patch的模型视图：完整原快照仍入库并绑定hash，模型一次读取所有当前块（含保护标识、原type/attrs/marks、目标hash），不再重复读AST内部索引。保留全部源文/主张/当前稿，不提高上限掩盖冗余，不裁文。增加最新手编版本/参数指纹和预算回归。
+
+最后一轮浏览器暴露审批弹窗直接铺满内部AST/schema，且M14标题缺翻译：沿已认领DirectorStudio/ExecutionHistory及三语、execution测试，把复杂对象收进技术明细（原参数不删不变），常用设定保留可见，补M14标签。测试脚本seed_outline_parity增加只读export动作，导出浏览器生产路径的请求/回包/流事件，不额外买调用、不覆盖已有原始记录。
+
+末轮M12又新增findings_note并对narrative使用interpretation，严格门拒绝；不剥字段伪装成功。沿outline-audit方法包窄升3.0.3，明确逐层允许字段及宿主evidenceRole约束，保留既有适用short-drama参考。同步manifest/hash/runtime白名单与test_outline_pipeline反例；新批准单次Seed复验，已失败回包不改写。
+
+3.0.3实测仍有JSON缺分隔符，原3.0.2还只核对28/48段。改模型线协议为可逆短编号1.2，宿主canonical仍1.0并兼容历史1.1；枚举完整路径、绑定准确条目数，最终仍验唯一/完整覆盖。M12只发送全部源文/当前候选/确认要求，不再重复发送作者M04图和DeliveryContext，避免独立核对被作者主张主导。沿outline_candidate_review/outline_compiler及pipeline测试，方法包3.0.4与hash同步；不是截断、补标点或删错误字段。若下一次仍不合格，保留真实失败并继续定位，不能放宽采纳门。
+
+短协议实测48/48覆盖但一个证据对象代替数组，4处仍违规interpretation。将独立组合审稿接入明确失败反馈：只读同work/同candidateHash/同changeRevision已知完整failed回包，下一次用户批准时冻结原输出hash和全部schema错误到请求；UNKNOWN/截断/别候选不复用。不自动派发，不把invalid解释改写成supported；仍可返回uncertain并阻断。改现有outline_changes/outline_compiler与changes回归，修复“重跑拿不到具体失败原因”的编排缺口。
+
+浏览器验收临时入口仅frontend/director-preview.local.html和.tsx两文件，串行独占，真实组件+隔离API/库，收工前删除入口，不作为产品路由发布。私有证据和API启动器放忽略output目录；不改用户常驻项目。新增文件曾误认为旧忽略规则覆盖，已发现并精确认领，不扩大目录。
+
+本轮实测补充：M04把来源的未决边界与剧情事件分别分类，但宿主错误地要求未决边界也进入因果链。只修requiredEventIds筛选，保留全部来源主张、未决覆盖和稳定ID词典；新增反例。追加显式planning.revalidate命令，仅重校同根已知失败且完整的保留回包，不改原失败记录、不发模型请求、不绕过M12。新审计事件绑定原回包hash和当前校验版本；成功后下一份报价只列剩余阶段。原有域内schema/workflow、前端PlanningWorkflow/API/三语及已认领pipeline/harness测试承载，无新公共路由或迁移。
+
+M12实测容量分叉：首次16384 tokens在钩子核对中明确length终止，完整收费回包保留，不认作审查完成。完整逐段证据需要比文学正文更大传输预算；只提升M12自动档至32768并在报价展示，传输超时600秒，用户仍可取消。其他阶段自动档不变；输入/输出估计超预算仍前置分段，不截文、不更改创作时长。对应output_budget/schema/capability与现有test_output_budget精确回归，下一次仅重跑M12。
+
+审查实测分叉：完整M12发现真实时序倒置/新增心理，并有4处省略号伪逐字引用。新M12线协议1.1只选择宿主已编号来源单元；宿主以整段原文生成精确引用和位置，语义判断仍由独立审查承担，不再让模型重复抄写证据。旧1.0回包按旧合同保留/校验，不修改它来过门。另补WAIT_OUTLINE→revise→WAIT_COST：明确修改指令与旧候选/报告冻结在direction修订上下文，旧checkpoint/操作历史留存，仅新M07/M12付费、无需重抽来源；无未经确认的自动重写。涉及已有schema/compiler/workflow/方法包/前端问卷和测试边界。
+
+用户要求处理完并边测试边与LibTV核对；本轮目标为S1改编大纲完整路径，不进入人物等第二功能。沿已批准Seed大纲细案继续B02–B08和B11：来源冻结/抽取/独立核对→方向问答→五节生成/候选核对→局部修改/持久审阅→手编和刷新恢复。新能力先由宿主开关在隔离项目启用；默认不迁移历史11节稿，不改常驻栈或原站用户作品。模型仅Seed；原站复用已存同源649字概要和215字指令、既有实测证据，在独立研究作品核对当前可见交互。每次付费调用完整留存到忽略output，无隐藏修复调用；已知失败先定位修复再新意图复测，UNKNOWN只查询。
+
+恢复证据：main/213854b5，guard31线1121claims，无活动锁；B01及之前Director dirty均为本线，研究线与受保护资料不动。已核对拟接线文件diff；缓存origin/main无同域替代实现，同步分支保留不pull。代码仍实际走v2，B01纯函数通过不代表运行路径通过。
+
+首批精确路径：新增域内`schemas/outline_source.py`、`outline_source.py`、`outline_compiler.py`、`outline_candidate_review.py`，新方法包`skills/builtin/source-events/`、`source-audit/`、`adaptation-outline/`、`outline-audit/`各文件；改`planning.py`、`workflow.py`、`schemas/planning.py`、`skills/runtime.py`、`skills/pinned.py`、`writing.py`、`dispatch.py`、`execution_repository.py`、`execution.py`、`output_budget.py`。新增测试`tests/director/test_outline_source.py`、`test_outline_pipeline.py`、真实opt-in`seed_outline_parity.py`，匿名fixture`tests/fixtures/director/outline-v3/source.json`；既有workflow/skill/runtime/streaming测试按需窄改。前端本批仅`components/PlanningWorkflow.tsx`、`api/director-execution.ts`及三语新增真实阶段/核对状态；后续patch/API/样式精确路径在动笔前追加并preflight。原skill参考只读，应用包版本/哈希/白名单同时更新；新的独立核对调用在父费用计划列出，不能藏在M07中。
+
+接线增量：按细案§8.5追加`repository.py::write_verified_ast`与`store.py::_put_document`可选宿主AST，初稿采纳保留被核对的块ID和hash，不在落库时重新解析随机ID。仍沿原事务写兼容Markdown/版本/失效/事件；无新表、不迁移旧稿。追加pipeline测试断言重开数据库后的AST与候选相同。原站编辑器已复核五节目录、顶部和每节接受/撤回；全文与差异文字不可混读。
+
+局改增量精确路径：新增`schemas/outline_changes.py`、`outline_patch.py`（稳定块连续范围、hash、保护字段、依赖组、确定性候选），随后`outline_changes.py`和`migrations/outline_v3.py`按已批准§8实现事务；新`tests/director/test_outline_patch.py`、`test_outline_changes.py`。本次先零费用正反例，模型运行中的方法包不修改以免使后续子任务能力指纹失效。第一轮Seed已完成M04/M05，继续M03；旧失败在报价前、未产生供应商操作。隔离测试模型网关复用现有配置，未重启或修改用户项目。
+
+实测恢复增量：Seed M03在strict json_schema已传入的请求仍新增未知字段；原始回包和schema失败收据完整保留。新增正式的显式重修上下文：下一次planning.quote仅列未成功阶段，并冻结同作品/同根快照最后一次已知格式失败的operationId、输出hash、原输出与校验路径；grant后按同一冻结上下文执行。不得从UNKNOWN构造重试，不删字段、不隐藏额外调用、不重抽已通过M04/M05。写入仍为workflow.py/planning.py及上述pipeline/harness测试；上下文过大收费前拒绝。新的恢复机制本身需匿名失败→人工新批准→单阶段重修回归，再调用Seed验证，不能把碰巧重试成功称为供应商strict得到保证。
+
+来源采用宿主完整分段与Unicode范围/摘要hash；模型给出段内准确引文，宿主定位为不可变证据，事件和主张ID由宿主内容身份派生，不使用响应数组下标。M05另一次上下文从来源列观察再对照M04；读完与语义支持分开，未决可保留说法归属，不能自动批准新增事实。先短稿单块闭环，长篇按已批准B09另门，超范围收费前明示。阶段产物沿现有workflow artifact和operation账本保存，暂不新增第二正文存储。M07五节候选通过完整审查后仍等待人采纳，不能自动定稿。
+
+验证按零费用匿名反例→完整生产quote/grant/dispatch/checkpoint事务回归→隔离Seed实际运行→LibTV同状态截图/请求核对；真实失败独立保存。风险为阶段多一次调用但未冻结费用、审核与候选hash不一致、旧稿静默升级、取消重发，均补负例。回退关闭新请求开关，保留新产物/原回包和旧读路径；不删数据。未完成的步骤如实记录，不改验收门宣称通过。
+
+末轮浏览器增量：`DirectorConversation.tsx`、streaming测试与三语按真实流类型区分大纲/分集标签。`OutlinePatchReview.tsx`、`api/director.ts`与patch测试读取服务端已返回的审稿units，展开显示阻断原句、原因和证据；不新增后台调用、不修改审核结论。只对匹配当前版本且标记阻断的段落提示问题，旧格式报告兼容；模型文本纯文本呈现。`DirectorStudio.tsx`给审阅态接入与编辑态相同的五类文档导航，切换仅查看、待审建议不隐式接受/撤回；新增交互负例并浏览器核对。发现精确替换导致上下文重复时，人工退回继续定向修稿，不能只看0事实错误。
+
+### 2026-09-28 · 按功能块串行：先 B00/B01 五节交付
+
+补充前一节本轮S1写入边界：局改接线沿B04–B08，`outline_changes.py`加两张加法表（本模块initialize统一安装）；`schemas/documents.py`加outline.decideGroups，`schemas/execution.py`加受限reviewTarget。报价/派发/落回包只对同一待审变更开放独立候选审查，不绕过其他pending或UNKNOWN。M14应用包`skills/builtin/outline-patch/`及runtime/pinned同步，沿short-drama保真和事件覆盖，不改全局技能。前端新增`components/OutlinePatchReview.tsx`，改`DirectorStudio.tsx`、两api文件、director.css、DESIGN、三语；新`frontend/src/__tests__/director-outline-patch.test.tsx`。逐节/逐组/全部操作，依赖组不可拆；组合审查的独立费用提示是明确的本地安全策略，不冒称源站同款。旧bool拒绝v3，CAS/幂等沿DocumentRepository。
+
+本轮M07反馈：证据长ID重复导致截断，改可逆短别名后5619tokens完整；跨字段规则缺于decoder schema，补anyOf/枚举与负例，不裁剪模型输出伪造合格。旧失败和费用未知全部保留，M04/M05复用。
+
+用户已批准按方案开发，并追加“第一个功能通过后再做第二个”。本轮严格限定 B00/B01：建立改编五节的严格模型输出合同、宿主来源/授权展示上下文、确定性校验、三语安全 AST 投影和旧 v2 分派兼容。先冻结匿名反例并实际跑出失败，再实现并重跑；不同时开发 B02 来源抽取、B04 patch、后续文档或媒体。此块是五节交付基础，不把它描述为已打通 S1 模型/UI闭环。B03 未接之前不将缺来源核对的新合同静默用于收费生成。
+
+基线 main/213854b5；guard 31线1116claims、无锁。现存 outline.py 的单字退化门和本线其余 dirty 保留；新增路径不存在。缓存 origin/main 无新增同类模块，outline.py 有本线历史差异；同步分支同路径与HEAD一致；未在脏工作区 pull/rebase。已有台账/claims/STATE diff 已对账，本轮只改本线段落。研究线冻结的 plan-closure 当前源码指纹不改写为新验收证据。
+
+精确写入：新增 `src/novelvideo/director/schemas/outline_delivery.py`、`src/novelvideo/director/outline_delivery.py`、`tests/director/test_outline_delivery.py`、`tests/fixtures/director/outline-v3/delivery.json`、`docs/guides/tv-director/outline-delivery-progress.md`；窄改 `src/novelvideo/director/outline.py` 仅按宿主冻结合同显式分派。测试、fixture与报告逐文件claim；源码使用本线既有Director独占认领，本轮preflight仍逐文件列出。其余业务、全局技能、原始证据、用户资料只读。source/event/decision 展示输入由宿主提供，不接模型自报 approved/audited；语义支持关系仍待B02/B06，结构成功不得标为事实或文学通过。
+
+步骤：匿名正反 fixture/旧11节保留 → 必填/未知字段/引用/集数/结局/适用性校验 → 五节安全投影与稳定段落索引绑定AST内容hash → 宿主合同分派与旧v2回归 → 全Director回归、ruff/i18n/泄露/guard检查 → 记录本块结果和下一块入口。模型、来源解析器与UI像素门不在本块假验收；源码未接生产前不购买无价值模型测试。
+
+本块验证补充精确路径：`tests/fixtures/director/outline-v3/projections.json`（匿名三语编译结果，由Python测试校验不漂移），`frontend/src/__tests__/director-outline-delivery.test.tsx`（用现有真实富文本组件读取相同结果，验证五节、目录、安全文本及打开不触发保存）。只加验证、不改前端业务/样式，不把jsdom当像素验收；`已接受/定稿`状态不固化进可编辑正文，留给后续receipt与界面，避免接受后正文仍永久显示待审。
+
+收口审计追加：规格校验正确检测到 `outline.py` 当前字节不同于r2；本线在共享 `implementation-map.json` 中仅重新审计该分派增量、更新对应baseline hash并记录前一hash/本块报告，追加本块新文件hash。研究线已释放且本线唯一持锁；不改其 `plan-closure.json`、旧来源证据、157项产品not_run或验收门，不通过削弱校验器隐藏陈旧快照。先preflight该精确文件再改。
+
+回退：移除新增合同分派即可保持旧v2行为；不迁移数据库、不修改已保存文档或回包。主要风险为混淆解释/授权、markdown标题注入、索引和AST漂移；分别用额外字段拒绝、宿主授权区分、转义/多行/emoji及hash失效用例验证。命令：`.venv/bin/python -m pytest tests/director/test_outline_delivery.py tests/director/test_outline.py -q`，再全 `tests/director tests/test_tv_director.py`；定向ruff、前后i18n、diff-check、gitleaks、agent guard。无提交/push/部署。
+
+### 2026-09-27 · Seed 大纲对齐代码级方案（本轮仅文档）
+
+用户要求将下一步方案细化到代码块并输出独立MD。本轮可验收交付为`docs/guides/tv-director/seed-outline-parity-implementation.md`：以agent-plan-outline §9真实双站证据和当前代码为基线，细化五节交付、short-drama条件融合、来源事实/独立核验、初稿/局部patch共用编译器、单一AST权威、持久分组审阅、流式/聊天/自动保存、迁移和真实Seed/像素验收。所有新增符号明确planned，不能把骨架当已实现。
+
+本轮写入仅该指南、本台账/同名claim及STATE本线索引；所有业务、测试、旧证据指南和全局技能只读。main仍213854b5，无活动锁；旧业务/协调diff归本线保留，未跟踪用户资料不动。已检查三个协调文件diff；新指南不存在且diff为空；本地origin/main无同名文档或替代Director台账（D表示对方不存在，不是删除指令），同步分支引用保留，不fetch/pull/rebase。使用short-drama与skill-creator的已读方法作分层设计，进化查询无匹配，不改原始参考。
+
+步骤：恢复协议/读源码和既有语义合同→列新旧接口与增量选择→写类型/算法/SQL/API/TS骨架及逐文件批次→审查重复权威/费用/版本/下游失效与失败恢复→检查文档链接、代码块语法、编号/范围、敏感数据和guard→交接。风险为文档建议被误当已部署、模型语义保证或完整产品完成，须明确现状/计划/验收三列；回退仅本次文档增量。涉及新增持久结构/接口的推荐选择完整写入方案，业务实施前确认本方案并更新精确scope，不在本轮偷偷实现。无收费模型调用、无浏览器外部写入、无提交推送/部署。
+
+### 2026-09-27 · Agent Plan 与《入画》大纲对照（执行中）
+
+同源打磨新增证据：本地Seed结构成功但把修改说明塞进synopsis，钩子新增独坐、阻力字段仍暗示环境有意诱捕；原站问卷fill未进入富文本状态，随后普通Enter提前提交，均只触发追问未改文；Shift+Enter正确换行后实测自填截至300字。操作失败完整留证，不充当有效配对。下一次把全部要求压为相同的300字内指令，两边从初稿各改一次；本地保留/忽略上一份待审失败候选、不冒充定稿。沿story-plan/method.md、manifest.json、pinned.py、test_skill_runtime.py、test_outline.py窄升M07到2.3.2：故事字段不混入对用户的修改报告；非人格化阻力不强填意图；钩子也须逐项核实动作与在场状态。short-drama三个原参考不改。先回归与包哈希检查，再重载本任务隔离API，仅Seed真实复测；不更改原常驻服务或追购媒体。完整五节投影合同与语义门另列，不以此窄修声称已完成。
+
+**最新范围覆盖此前双模型实验：** 用户要求只用本地Seed对比LibTV的Seed，并允许先提炼概要。停止新增DeepSeek调用；此前source-authority-v1两笔已结束（Seed196.64秒、Flash64.12秒，均仅结构通过），全部保留，不再扩展横向模型矩阵。下一轮固定同一份从用户原稿人工提炼的概要、同一实验规格/回答，两个独立作品从首轮提问同步推进到大纲，再做同一条窄范围修改与保存恢复；按步骤记录请求/响应/时长/结构/人工内容检查，不将“调用成功”等同质量通过。每阶段先看两边差异再决定下一步，先完成首问和大纲这一个闭环，不自动跳到人物或分集，不买媒体。记录沿本线指南，原始概要与回包仅存忽略output；必要根因修复继续先列精确路径并preflight。当前用户只变更实验路线，不要求删除系统DeepSeek可选能力、不要求Git提交或重启其常驻栈。
+
+同步概要首轮发现M03真实返回stakes_alt/stakes_note额外字段导致问卷不可用；旧严格输出只覆盖M07，M03仍文本通道。修复范围仅planning.py及test_workflow.py：M03也从同一宿主schema冻结json_schema协议，未知模型兼容json_object；保持原校验、不丢多余字段冒充成功、不改故事。planning版本升2.3.3使旧报价失效。先聚焦/Director回归，再重载本任务18780隔离API并用新意图重测Seed M03；LibTV停在方向确认不额外购买。收费失败和旧进程技能指纹错误均保留，不修改历史记录。
+
+M03第二笔Seed严格请求仍多stakes_note，证明该路由不能只依赖provider strict；宿主拒绝正确但用户仍不可用。按skill-creator与short-drama作窄方法修正：direction-options/method.md升2.3.1，给出确切输出字段集合、补充放现有字段不新造键；区分真正未决问题与用户已经规定的处理政策，允许零补充问题，禁止以补问重新开放锁定顺序。更新manifest method哈希与pinned.py，追加test_skill_runtime.py包加载检查；原始short-drama引用不改、不删、进化库只读。第三笔仅Seed M03真实验证，成功后再与原站同一自定义讲法进入M07，不将失败文本删字段后强行采纳。
+
+同源Seed轮M03第3笔和M07已结构通过，进入真实UI复核发现WAIT_OUTLINE仍显示原创“采纳全部筹备资料”，而checkpoint仅含outline。窄修PlanningWorkflow.tsx及三语键，按实际checkpoint文档集合显示大纲单独采纳/等待提示，避免只根据当前模式推测授权范围；改编阶段标题同步更正，原创完整筹备合同不变。补director-execution.test.tsx的outline-only文案/载荷回归，前端测试/build通过后在隔离浏览器采纳为可编辑草稿（非定稿），用同一窄修改指令同时测试本地Seed和原站Seed，保留修改前后回包，不发后续设计。另发现模型prompt重复序列化responseSchema/response_format，先记录尺寸与实际费用证据；本次不混入大范围编译器重构影响对照。
+
+实际打磨预览在付费前422，原因为完整JSON schema同时放responseSchema和response_format，后者又被当创作参数全文注入，649字源概要的初稿prompt已60692字符，加入现稿后越过旧单文档60000门。不能让用户删故事或仅抬门槛。将此阻断转为窄根因修复：context.py只在发给模型的可读参数中将重复的response_format.json_schema.schema替换为其hash，保留宿主responseSchema完整一份和真实参数/传输strict原样；hash参与prompt确保不同解码合同仍有不同inputHash。context版本升级，tests/director/test_context.py验证不改调用者参数、正文末尾不丢、schema只注入一次及hash绑定，追加真实单文档outline编译回归。原Paid请求不变，新报价必须按新编译结果重新授权；先667后端全量再重启隔离API，仍只买Seed打磨一笔。不是通用长稿分块实现。
+
+离线重编译进一步确认：去重schema后仍61904字符，其中已禁用规则完整审计元数据占4008字符。同一窄修将prompt里的disabled仅保留id/reason，完整receipt仍存manifest；selected规则、short-drama参考、源稿、现稿均不删。配套disabled审计完整与prompt紧凑回归，不扩大60k门，也不改变模型wire参数。execution capability加入context编译版本使旧预览失效，后续按原意图只读查询不受影响。
+
+用户随后明确采用合理的后台预算方案：不再把token选择作为创作参数。替代上面的临时12288 UI默认方案：普通/高级设置均移除token输入及旧浏览器偏好读取；quote API的maxOutputTokens改为可省略，后台按阶段/集数/时长/来源与现稿规模计算并冻结预算，兼容旧客户端显式预算但不静默放大。新output_budget.py以本轮已实测预算为保守运行档位，不伪称已知供应商最大能力；未知模型不制造能力值。原稿与时长绝不被预算反向修改。确认卡展示自动处理和真实授权范围，技术数字仅审计详情可见。截断保留原响应，不提议/自动采纳半稿；跨段生成需要独立已授权的执行计划，不能把length误当网络重试或在一次许可下无限续写。先落地自动预算与无token UI，再按证据验证长篇分段边界，不宣称通用长篇链已完成。
+
+新精确路径：src/novelvideo/director/output_budget.py、tests/director/test_output_budget.py；既有execution.py、workflow.py、schemas/{execution,planning}.py、api/director-execution.ts、DirectorStudio.tsx、components/{PlanningWorkflow,DirectorSettingsDialog}.tsx、director-ui-state.ts和相关tests/三语/指南沿已有边界串行更新。仅读取目录，不写供应商配置或密钥。已完成实测不废弃；可另加最多2笔自动预算实际调用（每模型最多1笔、UNKNOWN不重试），先mock合同和浏览器无收费确认再执行。
+
+自动预算两笔实测后分叉：Flash并非正常故事过长，而是非法占位字段重复退化至length；Seed正常stop但缺2字段/多1字段。禁止以提高额度、放宽schema或补造内容掩盖失败。沿execution_repository.py与ExecutionHistory.tsx/API类型补安全校验摘要（只记录字段路径/错误类型，不含input/异常全文），区分截断与过滤并保留原回包，配套test_execution.py/test_streaming.py/test_workflow.py和director-execution.test.tsx；新增域内output_validation.py归原director独占。回放原回包离线诊断，不修改旧收费操作、不自动修复/重新购买；这轮2笔额度已用尽。长稿分段/续写仍需完整持久计划，当前仅预检拒绝明显超出单次范围，明确标记未交付，不能声称完成任意长度。
+
+用户随后明确要求修复后继续真实调用直到验证正确，否定只留失败不修复的收尾方式。新增授权按证据迭代，不把上一批2次测试预算当用户阻止继续的理由：先每模型1笔小型结构化协议探针，再修实际输出合同传输，各1笔完整M07；若失败先修根因再开下一批，未知请求不重放。官方Chat API与模型表已查询，两目标支持结构化输出但Agent Plan实际路由仍须实测。当前只用json_object，schema仅放提示词，没有解码期字段约束，这是漏字段/假字段的根因之一。拟加域内structured_output.py，从同一output_schema派生实际json_schema(strict)请求，限定已验证模型，宿主校验仍保留；不削弱StoryPlan字段、不以修补字符串冒充有效返回。writing.py/planning.py/dispatch.py及tests/director/{test_outline.py,test_streaming.py,test_workflow.py,test_execution.py}沿原边界，output_budget/执行能力版本同步令旧报价失效，改方法则版本/指纹同改。严格格式通过后继续同源事实人工核对和真实审稿，不能将结构合格写成文学合格。
+
+严格格式第1轮仍失败：Flash结构通过但大量正文退化为单字（非文学PASS），疑为宿主pattern=\\S的search语义被解码器按full-match处理；Seed仍多result_note字段，说明HTTP接受strict不是完全遵循保证。增加等价provider pattern转换[\\s\\S]*\\S[\\s\\S]*，保留宿主schema不变，补多行/纯空白等价与必填/禁多字段回归；新增outline.py的成片字段系统性单字退化门，不对创作时长或正常文段施加新长度目标。M07候选升2.3.1，强化字段清单/源动作与人物说法归属，保留short-drama方法与原始引用指纹；hash全部同步。继续下一组每模型1笔同源调用，逐笔检查，不将无正文结构通过当完成；此前小探针3笔（Flash另测nonthinking）、完整2笔全部留证。
+
+strict-v2两模型格式通过后，用户要求查看实际提交与耗时。已输出本机忽略目录actual-submission-readable.md，未暴露鉴权。核对输入发现真实权威链错误：M03未审核的stakes/obstacle等推断随整份option被封装进confirmedDirection，和后来人工回答直接冲突。改编M07只接收选择ID/讲法difference/tone及实际freeText/answers，候选的剧情断言不得冒充确认事实；完整option仍留workflow审计不删。原创选项作为创意种子保持旧合同。planning.py升2.3.2并补test_workflow.py强断言错误候选断言不入prompt、原稿和用户回答完整；tests/director/test_outline_benchmark.py仅更新SDK mock的response_format关键字签名（全回归当前唯一失败），新增源与修改理由不变。下一组每模型1笔验证此输入根因修复；先人工全字段检查，再按需要独立模型核验，不停在格式通过。
+
+用户提供完整《聊斋·入画》作为唯一比较底稿；两边冻结同一来源、集数/时长和约束，未确认设置明确标为实验设定，不当用户事实。先对齐大纲，不宣称整套Director已完成。short-drama、skill-creator、Playwright及plan/改编参考已读；保留现有方法根基，只根据失败证据窄改应用内技能。
+
+现状：main=213854b5、同步分支=3fbd16e6，业务树一致；拟改路径diff为空、仅受保护未跟踪资料、无活动锁，guard31线1100claims通过。通用本地网关已按目录透传模型，但Director仍锁定router.text_model；前端仅展示一个模型且高级框可自由输入。目录实际默认ark::doubao-seed-evolving，另一个ark::deepseek-v4.1-flash启用可用。origin/main无Director替代实现；不pull/rebase、不改通用网关、不写凭据。常驻栈从同步工作树运行；主目录改动先隔离测试，不能冒称已部署。
+
+1. 修Director模型合同：沿LocalModelCatalog解析、过滤可用文本模型，显示名称/渠道与canonical ID一一对应；默认Seed-Evolving、显式DeepSeek选择必须进入冻结参数和网关。禁用/不存在失败而非隐式回退。非本地兼容网关保留既有合同。模型只是下一次执行配置，单独切换不重开已定稿剧情；CAS、旧批准失效、在途请求不可换模型仍保留。
+2. 前端真实模型菜单和设定器共用合同、重新打开/刷新恢复选择；不能用虚构选项或裸ID冒充友好标签。补后端合同/修订与前端选择、禁用、请求一致回归。
+3. 隔离LibTV测试项目与本地数据，用同一用户来源对照：首次大纲、缺口提问、确认/改写、保存恢复与流式显示。最多12笔明确记录的真实文本请求（两模型基线+按证据修订复测），逐笔保存无鉴权的参数/响应/usage/失败；未知不重试、无媒体购买，费用未知如实标注。原稿含挽髻前置缺口和巡使触发口径差异，必须区分来源矛盾/提问/授权补写，不擅改来源。
+4. 对照M07保留因果、动机、代价、情绪与主题的文学质量，不把JSON通过当质量通过；改技能时同步包版本、指纹与fixture，失败实验不自动晋级。界面按相同视口逐状态实测、记录整页原始差异与内容不可比因素，不使用局部截图声称像素级完成。
+
+精确本轮路径：writing.py、revisions.py（director域）；frontend/src/api/{director.ts,director-execution.ts}；features/director/{DirectorStudio.tsx,DirectorPresetDialog.tsx,director.css}；tests/test_tv_director.py、tests/director/{test_revisions.py,live_outline.py}；frontend/src/__tests__/director-ui.test.tsx；三语translation.json；既有story-plan方法包、skills/{runtime.py,pinned.py}按证据再preflight；DESIGN.md；新增tests/director/test_model_catalog.py、frontend/src/__tests__/director-models.test.tsx、docs/guides/tv-director/agent-plan-outline.md。新测试/指南逐文件认领，其余沿既有独占/共享串行边界。忽略output/playwright保存私有原稿和实测，不提交用户故事全文、账号信息或原站素材。
+
+实测分叉：两模型首次经生产执行均HTTP400/UNKNOWN（回包保留、不重放）；64token小探针取得明确InvalidParameter：max_tokens和max_completion_tokens不可同时设置。追加tests/director/test_outline.py精确回归；仅对ark命名空间通过SDK extra_body发送max_tokens，其他既有供应商合同不改，编译器版本升级使旧报价失效。成功后创建新基线意图，不修改未知旧回执。实际计费仍未知，不以HTTP400断言免费。
+
+模型切换与审稿依赖分离：追加quality.py、outline_review.py和tests/director/test_quality.py。费用/生成快照继续完整绑定模型；审稿新增只排除model_name的内容指纹，切换下一次模型不废弃未变的原稿、报告、定稿。旧报告优先原inputHash匹配，仅能从原执行快照验证时兼容内容匹配，否则保持需重审，不能宽松跳过来源/方法/正文变化。无DB迁移。单独选模型明确表达用户操作，可直接提交零模型调用的CAS修订，不要求再填改剧情理由；混合故事参数修改仍走影响预览。
+
+M07证据驱动候选2.3.0：首次Seed结构通过但把巡使口径统一成客观规则、挽髻未设前置缺口；DeepSeek原始输出因中文技术ID结构失败并增补脱险必要条件。新增story-plan/references/source-grounding.md，归纳已读short-drama adaptation-core/event-coverage且注明改编；只在adaptation加载，不给原创增加源码保真约束。明确ASCII ID示例和人物原名一致、回述不等于已安排前置事件。同步SKILL/method/manifest/provenance、runtime条件与pinned；新增合成输入的引用选择回归于test_skill_runtime.py。候选须两模型复测后再决定晋级，不把LibTV服务端方法冒称已获取。浏览器临时入口frontend/director-preview.local.html与忽略output下隔离API用于同内容比较，不作为正式业务路由。
+
+原站实测后的流程补齐：新改编上传后先读来源、四方向及分页提问，再写大纲；本地旧入口直接M07，存在真实操作差距。本轮添加有界“改编方向→人工回答→只写大纲→人工采纳”，沿既有工作流表/幂等/报价，不新增隐式调用或改旧四阶段原创链。planning.quote增加可选targetScope=outline（旧客户端默认preparation不变），冻结完整sourceText及hash；改编仅允许outline范围，禁止冒称M04/M05全文审计已实施。M03适用改编并只调整讲法、不替换原事件；问题支持可选建议答案，用户可自由输入，已设集数/时长仍以设定器为权威，不把问答文本偷改参数。M07独立停止，不连带购买M08/M09；采纳不定稿。新增精确路径schemas/planning.py、planning.py、workflow.py、skills/builtin/direction-options/{method.md,manifest.json,schemas/input.json,schemas/output.json,provenance.json}、frontend/components/PlanningWorkflow.tsx（director域）、tests/director/test_workflow.py及既有director-execution.test.tsx；其他runtime/pinned/Studio/API/三语沿本轮边界。新增M03参考source-grounding.md使用本轮M07同源规则并登记指纹。新的问题合同与输入模式需要包版本/指纹更新。验证改编空来源拒绝、source冻结、M03/M07且仅两笔、问题未答/忽略不前进、刷新恢复、无人物场景道具覆盖、旧原创四阶段全部保留。M07两笔复测结构均过但事实仍有扩写，不以此晋级为文学合格；后续先验证提问能把关键缺口交给用户，再购买新大纲。
+
+补充回归边界：tests/director/outline_benchmark.py按实际mode选择方法引用，避免原创消融实验误带新改编规则；test_streaming.py同时验证两Ark模型流式线协议没有重复token上限。问卷继续/提交分离、建议答案后自动翻页且最后一题不自动提交；同内容编辑器首块与段距按实站修正，DESIGN同步。纯展示差异与模型内容质量分别验收，不伪造五节改编正文或已审计来源字段。
+
+真实输出上限修正：六笔完整大纲输出超过4096 tokens，旧默认值会造成正常入口截断。execution.py能力默认与director-ui-state.ts无历史偏好的初始值统一为本轮实测使用的12288；设置菜单补同值，不覆盖用户已选的1024/2048/4096/8192/16384。费用确认仍显式显示、冻结上限，不能静默补购。回归精确增加test_execution.py和director-richtext.test.tsx；没有改变实际已授权操作或后端请求必填上限，不增加自动重试。
+
+验证从模型/修订单测→Director全回归→前端测试/build→真实两模型→LibTV/本地浏览器与像素→ruff/i18n/设计/密钥/guard。回退仅本轮代码/方法版本，不删正文、费用或回包。无数据库迁移、无自动提交/push；部署需精确检查服务所有权并验证原项目数据。全部证据和未达项写入新指南。
+
+### 2026-09-27 · 推送已提交代码
+
+用户在提交后明确要求push。本轮只将本地main的b5883b8f正常快进推送到既有tracking远端zhonggwv/main，不force、不pull/rebase、不推origin或其他分支、不部署。远端只读核验为私有仓库、main=f057a867；本地领先50个提交，包含此前已审计合并历史。远端同步分支已有新头4c9dee4f，本轮不合入也不更新。业务代码不改、不重跑收费模型；沿上一轮620后端/225前端/build与pre-commit结果。写入仅本台账/同名claim/STATE的推送交接，保留同步线旧diff及全部本地资料；提交目标固定为核验过的b5883b8f。普通push若因非快进拒绝即停止，成功后ls-remote比对目标SHA并handoff/release；回退必须另行授权，不自动回退远端。
 
 ### 2026-09-27 · 按用户授权提交当前实现
 
@@ -384,6 +547,8 @@ V4-Flash 联机验收分叉（2026-09-25）：定位到此前的 502 是本机 H
 
 ## 风险与回退
 
+- 本轮方法2.3.2离线回归揭示runtime Manifest仍是固定版本白名单；追加原有runtime.py精确边界，只纳入2.3.2，保持未知版本拒绝，不泛化为任意版本；全部测试通过再发真实模型。
+
 - **风险**：新 API/SQLite 状态、长模型任务、自动生成路由和三语文件与既有工作线共享；模型可能输出质量不足。服务端事务/版本与质量状态禁止误定稿；浏览器对照只读，不改第三方作品。
 - **回退**：新模块/路由可逐提交回退，先停止新入口；旧 story/freezone 不受影响。SQLite 新数据单独位于项目 state_dir/director，不删除用户数据。
 
@@ -396,6 +561,110 @@ V4-Flash 联机验收分叉（2026-09-25）：定位到此前的 502 是本机 H
 - [x] 本轮道具`agent_guard.py check`为29线949claims，handoff通过（41归属脏路径）；收尾release再次强制检查。最终ruff、双端i18n、diff、gitleaks增量/相关目录复验通过。两个浏览器会话及三个自建临时服务已关闭，3001/18780/15173无监听；临时preview已删、证据保留。
 
 ## 进展记录
+
+### 2026-09-28 · 私有main拉取核对与推送交接
+
+用户要求pull并push。开工核对本地主检出仅有受保护未跟踪`_to_delete/`和`曹操.md`，无已跟踪diff，guard31线1130claims、无活动锁。`git fetch zhonggwv main`所得远端`213854b5`是本地`0d7b609f`祖先，分叉2/0，因此没有待并入变更，也不在有受保护资料的工作区运行多余的pull/merge/stash/rebase。随后普通`git push zhonggwv HEAD:refs/heads/main`成功；只读`ls-remote`核验私有远端main=`0d7b609fce930c1fba19f54d50b13e9f695f1b7f`，与本地相同。公开origin/PR不动，无强推、无模型/媒体费用或部署。本条仅修正Git交接事实，不改变业务及前述质量欠项；受保护资料仍不提交。最终交接状态提交后再次核验远端SHA，以Git为准。
+
+
+### 2026-09-28 · 首功能代码、技能包、测试与方案本地提交
+
+做了什么：用户要求提交所有代码及方案。本轮先将研究线方案/规格独立保存为`0a1d4fac`，确认其没有改业务文件，再将本线现有 TV Director 大纲链、首次原创问卷、方法包、三语/UI、测试和实现进度显式暂存为第二笔本地提交；不包含`_to_delete/`、`曹操.md`、Cookie、运行数据或原始付费回包。不推送、不重启或更改用户项目。新的Git基线仅研究文档变动，已在claim和方案同步，148条精确业务/测试/文档路径preflight通过。
+
+本轮验证：`.venv/bin/python -m pytest tests/director tests/test_tv_director.py -q --tb=short` **808 passed**（18条既有依赖弃用警告）；6份前端定向测试 **77 passed**；`pnpm build`通过（既有>500kB chunk告警）；定向ruff、前后端i18n、guard、`git diff --check`及Director源码/界面gitleaks通过。`npx --offline @google/design.md lint DESIGN.md`因包不在本机缓存、联网受限未执行成功，不能写成通过。研究线规格检查因后续代码变化报告plan-closure源码hash/行号及测试定义过期，保留FAIL，不能只刷新hash或冒称产品通过。未重复调用Seed/LibTV模型，也未复测实际浏览器。
+
+下一步可直接执行：先用当前提交的代码逐项重审`plan-closure.json`与`implementation-map.json`中过期映射，核实符号/行为/测试定义后复跑`verify-spec.mjs --self-test --local-evidence`；再按本台账S1清单在隔离项目做原创三页问卷浏览器自定义值/刷新与同视口原站对比（登录态若失效先恢复），补五节改编旧快照、常规入口、全页像素及文学反例。不进入第二功能、不把808/77格式回归当文学质量或完整TV Director验收。
+
+
+### 2026-09-28 · 首次原创三页问卷及 Seed 冻结输入收口
+
+做了什么：原站已存原始`ask_human`证据是方向、集数、单集时长三题，同一工具调用内逐页作答后才提交。当前原创M03建议问题不再冒充必答页，原回包仍不可变留存；宿主在checkpoint显示三页，用户确认或自填的两项在同一`planning.decide`事务写入作品preset、集身份与workflow root。后续M07编译显式收到确认preset。自动衔接quote→grant沿用服务端返回的最新workRevision，避免改数值后卡在版本冲突。旧实测脚本同步提交真实必填字段。没有移除服务端有界报价、幂等和未知结果保护，只去掉个人自用模式的二次费用点击。
+
+真实Seed与修因：第一笔隔离实验在工具沙箱内无法连本机网关，0.5秒UNKNOWN，未重放。授权连通检查确认网关可达后另建隔离作品；M03/M07/M08分别成功一笔，M09因closed单集生成非空续集钩子而被宿主正确拒绝。方法包原已要求`hook=null`，但M09缺解码约束；仅将closed单集的M09冻结输出schema收窄为JSON null并启用Seed已验证的结构化格式，通用host validator不放宽。显式恢复只重报/执行M09一笔，回包`hook=null`且成功，最终phase=`WAIT_OUTLINE`、四阶段artifact齐全；M03/M07/M08未重买。完整请求、原始失败及成功回包保留在本机忽略的`output/playwright/director-questionnaire-20260928-connected/`，台账不复制正文或凭据，费用金额未知。未对原站用户项目做新收费提交：仓库保存的网页登录态本轮显示登录弹窗，在线像素比较未复验。
+
+验证：`pytest tests/director tests/test_tv_director.py` 808 passed；前端相关两文件51 passed；`pnpm build`通过、定向ruff/前后i18n/`git diff --check`/agent guard通过。本地栈受控重启，API 8781、前端5173、网关3001健康。`npx @google/design.md lint DESIGN.md`因npm镜像DNS不可达未验证，不写作通过。新三页有组件交互测试和真实服务端问答/冻结回包，尚缺当前原站同视口截图与本地真实浏览器逐页像素复验；自定义3集45秒有服务端事务/提示词和前端测试，未为其另买四阶段模型调用。下一步先在本地浏览器建立隔离作品走方向→改集数→改时长→提交并截图/刷新，核对原站登录恢复后的同状态视觉与按钮；再清S1旧快照/closure，不开启第二功能。
+
+### 2026-09-28 · 首次发送自动启动与方向流式显示闭环
+
+做了什么：按用户明确的个人自用授权，首轮“发送”和后续问卷提交由同一次动作自动完成服务端有界报价与当前阶段授权，不再让用户勾选费用确认；刷新、重开和不确定结果均不会自动重派发。M03开启结构化流，只投影四方向与追问中的可读字段；原始JSON、ID和未校验内容不冒充正式结果。修正旧“重新预览授权”错误文案，界面区分方向流和大纲流。首次Seed回包缺第4方向的`obstacle`，虽然请求含strict schema仍被宿主拒绝并保留；没有补造字段。用户明确点击一次“继续”后，带原失败上下文的单次修正调用成功，先前失败记录未覆盖。
+
+怎么验证：后端`tests/director` 780 passed，前端两份定向测试50 passed，`pnpm build`、定向ruff、前端i18n、`git diff --check`和agent guard均通过。重启原本地栈后，在隔离测试项目用真实Seed观察到修正调用`model.started.stream=true`、154条临时预览覆盖方向/问题、最终4方向和6追问；随后新建作品，从“新对话→填曹操创意→发送”一个操作直接产生1笔成功调用和300条预览，生成中浏览器确见“方向1·梗概/目标/阻力…”逐项出现，结束后出现4个方向，无费用确认卡或第二阶段自动调用；刷新仍是同一方向关口，操作数保持1。模型回包和请求仍在本机忽略的SQLite，台账仅记状态与计数，不写正文/凭据。浏览器控制台3条错误为账户头像404及更新视频CDN连接关闭，与这条流程无关。
+
+边界与下一步：这次只证明首次原创方向的发送、Seed结构化流、失败保留/一次显式修正和方向问卷可用；不是完整TV Director或文学/像素同等验收。原站已取证的原创问卷约3页（方向、集数、时长），本地这次为方向加6个模型追问共7页；差异仍需在下一轮逐题对照，不因本轮成功擅自删题或把固定参数问卷改成模型猜测。旧失败继续保留，用户原项目不自动重派发，刷新后可主动点击“继续当前阶段”。
+
+### 2026-09-28 · 末轮真实 Seed 审稿通过并采纳、双站刷新核对
+
+做了什么：显式失败反馈最终用同一候选完成48/48段核对，0 violated/uncertain；人工发现的重复段落已经定向改正，不以格式成功代替文学检查。浏览器接受最终6处/5组，正式v4、待审0，刷新后先前手編及新修改均保留。原站独立研究作品采纳剩余三节，刷新重开五节、0差异，顺叙和禁闪前结果保留。大纲/分集流标签分开；审阅阻断显示原句/原因/证据；五类导航切换不误呈现旧稿，也不隐式采纳或撤回。
+
+怎么验证：最终803后端、116前端/11文件、build通过；末轮build曾发现3处测试参数类型错误，修复后重跑通过。ruff、前端i18n0、后端i18n474未增、CE11端口、diff、业务/测试/agent目录gitleaks通过。真实实验共29次Seed（16阶段成功/13失败），请求、完整回包、用量、流、截图与final-acceptance.json均保存在忽略的实验目录；费用金额未知。两站最终1920截图人工查看，不能按不同内容声明像素一致。
+
+边界与下一步：第一功能核心短概要链通过，S1整体仍未验收；源码未部署，旧v2不静默迁移。下一会话先读`outline-delivery-progress.md`，再用最终原站截图核对五节编译的概要字段顺序/列表/多余H1与审阅格式工具栏，补同内容状态快照；之后逐条重审24份基线及closure定位，再验常规入口及旧稿显式转换，最后才考虑第二功能。不能重复购买已通过的同一候选审稿，不覆盖v4或旧失败证据。
+
+收工清理：本轮新增的两份临时前端bootstrap已删除（非产品路由）；隔离API、验收Vite和本轮模型网关均正常停止，没有运行中模型请求。实验SQLite/完整回包/截图保留在忽略目录，可据harness恢复；未停止或变更原用户栈。正式源码/测试/文档仍未提交，未清理任何既有dirty或研究线内容。随后执行guard handoff/release，不将未全项验收任务归档。
+
+### 2026-09-28 · 首功能接通真实来源、模型、分组审阅与保存恢复
+
+做了什么：按本节方案接M04/M05/M03/M07/M12、宿主来源区间/主张/版本、五节候选、显式重校/重修、M14最小patch与依赖组、组合审查报告及原子采纳/撤回、真实正文流和保留断流前缀。手编后的局改只读当前AST，去掉重复快照的模型视图，完整宿主参数仍存储；两张加法表不改旧稿。沿short-drama方法包完善来源保真、最小改动、叙事/评论区分和严格wire字段，原始参考不变。M12模型线1.2短编号可逆，绑定全部48段，独立审查不重复读取作者图作为事实权威。
+
+为什么：真实Seed曾截断、新增字段、漏审评论、把时间先后写成因果、把新听觉行为当润色；代码/方法分别修其原因，原错误回包保留，格式或引文ID存在不充当语义通过。M12的interpretation不能用于叙事；旧validator报告不再授权新采纳。没有用删字段/裁正文/补标点/静默重试制造PASS。代码默认保留旧入口行为，隔离DIRECTOR_OUTLINE_V3=1验证新链，不部署用户常驻项目。
+
+怎么验证：当前802后端/18依赖警告、113前端/11文件、build通过；ruff/i18n/CE11端口/导入/禁词/包名/diff与目录gitleaks通过。DESIGN lint0错误20警告。真实Seed初稿经修订和独立核对后人工采纳v1，局改第二批部分接受v2/撤回余组，手编自动保存v3且刷新保持；后续单处M14只加指定两字，1hunk、4个真实正文preview事件，输入仍含手编最新值。LibTV1920同状态复核五节、部分决定持久化、44px高14px圆角悬停按钮；本地正文680px/x620、全局栏y64/h44、悬停h44实测一致。详情与末轮审稿结论见`outline-delivery-progress.md`最新增量。
+
+未通过项：正文标题/项目符号/顺序、完整目录/工具栏与全状态像素未齐；长稿分块、多样本文学、物理Windows未跑；新链未成为常规默认。verify-spec正确报告24旧源码快照及closure行号过期，本轮不修改研究线旧closure、不批量刷新hash伪造规格通过。没有进入第二功能；没有提交、push或媒体生成。旧diff、源稿、Cookie、研究线内容保留。最终模型回包导出、临时入口/服务清理、guard交接在下方补记。
+
+### 2026-09-28 · 首功能内部 B00/B01：五节合同与展示基础通过
+
+做了什么：新增严格 adaptation-outline/3.0.0、宿主DeliveryContext、动态ID schema、确定性校验、安全三语投影和绑定AST/source/context/spec的五节段落索引；原outline入口仅增加显式宿主合同分派。旧v2及已有单字退化门保留，原始模型回包/用户稿没有改动。新增匿名fixture、与实际Python编译逐字绑定的三语golden、74项后端回归和4项现有富文本组件验证。没有修改short-drama方法包或其来源；本块只落实内部技法与五节交付分层，不冒充技能或文学验收。
+
+为什么：11节内部规划不能仅换五个标题；集数/时长/授权不能交给模型自报。模型提案与真实授权分离，非人格化阻力允许N/A；索引保护宿主块，逐段覆盖与hash防止后续局改错位。状态不固化进正文，避免将候选提示保存为永久“未接受”。来源ID存在不证明语义支持，专门保留倒序反例结构可过、无质量PASS字段的测试。
+
+怎么验证：首次5失败/9通过→14通过；扩展67项抓到删空段落索引仍放行，补完整覆盖后修复。最终 `.venv/bin/python -m pytest tests/director tests/test_tv_director.py -q --tb=short` **745 passed/18既有警告**；`pnpm exec vitest run src/__tests__/director` **10文件108 passed**；`pnpm build`通过（首次新测试API的exact属性TS错误已修，现有大chunk警告保留）。全仓ruff、双端i18n、CE11端口/import、禁词/包名、diff-check通过。12个本轮源码/测试/fixture/文档/台账精确文件gitleaks红化扫描均无泄露。guard最终31线1121claims；最初重复声明已有目录内源码claim被拒绝，已在acquire前修正，未绕过锁。
+
+规格检查先正确报告outline旧指纹过期；本线只重审分派和新增文件，在共享implementation-map保留前一hash与独立增量报告，旧157项产品状态不变。`verify-spec.mjs --self-test --local-evidence`再次通过，52负例及24来源归档hash有效；不是S1产品通过。详情见 `docs/guides/tv-director/outline-delivery-progress.md`。所有新旧diff已归属；未动未知资料或研究线独占文件。
+
+边界：B00仅本块反例已建，完整patch/组合核对反例随后续批次补；B01确定性基础通过。生成器仍选择v2，未接B02真实来源/独立核对或B03新合同，不宣称页面生成已变五节；jsdom并非像素、没有真实模型/LibTV/媒体调用、没有迁移/部署/重启/提交推送。按用户逐块要求不进入人物场景道具分集；下一步仍在第一个大纲功能内做B02来源核对，取得新路径preflight后实施，再接Seed链验收。不把实现欠项当外部阻塞；收尾执行本owner handoff/release。
+
+### 2026-09-27 · 方案r2当前源码审计与源站续创补证交接
+
+discovery唯一持锁完成157项当前代码/来源/支持测试定义绑定（plan-closure.json，22审计组/24来源归档），原not_implemented不冒充零实现；全部测试仍not_run。S1/S2的16流程、五类35格、24视觉状态明确路径与断言；52个规格反向测试通过，不是产品通过。源站新增203HTTP/312WS/21UI，32证据断言通过，历史29/32/62再次校验。
+
+重要纠错：顶部E08全能创作不是attach-only，而是新omni会话自动发送续创，读取五类文档并规划/创建preview，再请媒体批准。15图片预览合计225积分已取消，未批准生成；源站错误音视频工具调用保留负例。工作流§1.2与machine command同时更新；原openMedia接线需改。刷新CL16切回关联会话但输入为空，不应声称chip恢复。旧100集永久上限及M01/M02全链误触发已经从共享方案清除；业务代码/现有失败未动。
+
+接手唯一动作：按Seed细案B00及S1十条先做可执行失败用例，再B01–B08；当前源码/测试hash由verify-spec检查，变化时只审影响组。后续S6才实现新续创链；不得在S1擅自扩为媒体。九份共享合同由研究线释放锁后本线串行集成。全产品文学、像素、跨设备/安全发布门仍需真实业务验证，不重做本轮研究、不重新发明整体方案；本轮无代码提交/推送/部署。
+
+### 2026-09-27 · 审核r1文档协调交接（discovery串行修订）
+
+用户批准六项审核建议，研究线持唯一锁修订总案与七份共享设计/索引/校验文件，新增acceptance-policy.json作为唯一验收配置。S1必须通过十条改编大纲闭环用例，S2六条原创独立用例；四模式目标判定、独立文档版本/35格生命周期、Seed阶段与完整质量分层已落地到合同。WT06/WT08限制实际交付范围，不将方向确认当成全筹备调用批准；机器表同步。新157项执行追踪采用当前HEAD+dirty指纹，原P阶段/历史结果不删，待审计状态不冒充未实现或已通过。
+
+本轮不改本线业务、测试或技能包、不部署/付费/提交推送。规格检查40负例通过、14文件gitleaks/文档检查通过；不是产品测试。下一步按总案§12及验收§10绑定S0/S1真实case与B00反例，再做短稿完整闭环，S5仅扩展跨文档，不后置部分采纳和保存恢复。原文学/像素/第二设备失败仍保留。共享文件在研究线释放后才写，不并行覆盖。
+
+### 2026-09-27 · Seed 大纲对齐代码级实施方案交付（仅文档）
+
+做了什么：新增 `docs/guides/tv-director/seed-outline-parity-implementation.md`，18 节、B00–B11 共 12 个实施工作包、T01–T33 共 33 条验收用例、V01–V10 共 10 个页面状态。按当前代码列出旧接点和拟改路径，包含来源主张/歧义决策、五节 Pydantic 合同、short-drama 条件融合、同一编译器、局部 AST patch、SQL 增量表、CAS/幂等/部分接受、候选付费审查、真实流式聊天、自动保存、长文任务、旧稿迁移和下游最新 AST 消费的关键代码块。新增方法是应用内适配设计，不冒称取得 LibTV 私有 Skill。
+
+为什么这样改：最新同 Seed 对照的主要缺口是内部规划外露、全文重写及组合后漏审，不是继续增加模型横测。源码复核进一步补齐两个边界：pending 中只允许绑定当前候选的只读审查，不能被现有全局 pending 门锁死；纯拒绝建议无需新语义报告、不得新增模型费用或正文版本。来源缺段是摄取失败，不让用户通过问卷回答掩盖未读完。
+
+怎么验证：对新指南执行只读结构检查，1252 行、25 个代码块围栏闭合，13 个 Python 块 ast.parse、2 个 JSON 块 json.loads、1 个 SQL 块内存 SQLite 建表及 4 个 TS/TSX 块 TypeScript transpileModule 语法检查通过；4 个相对文档链接有效，R/B/T/V 编号完整唯一，尾随空白与本机路径/凭据特征检查无错误。`gitleaks stdin --redact --no-banner` 扫描新指南 no leaks found；`git diff --check`、`python3 scripts/agent_guard.py check` 为 OK（31 workstreams/1105 claims）。代码块仅语法核验，辅助函数尚未实现，不是业务测试通过。
+
+范围与交接：本轮只写新指南、台账、claim、STATE；既有业务/测试/设计脏改动及两份未跟踪用户资料保留。不调用模型、不使用浏览器、不修改全局技能、不部署、不提交或推送；历史 671 后端/104 前端/build 与文学/全页像素失败仍为原轮证据。当前方案交付完成，整条 TV Director 工作线未完成、不归档。下一步确认新增 API/持久结构与保存语义后，按指南 §18.2 从 B00 匿名反例冻结进入 B01/B02，不重新采购已有失败实验；收尾按本轮 owner handoff/release。
+
+### 2026-09-27 · Agent Plan 接入与仅Seed的《入画》同源对照
+
+- 遵循用户最新路线，停止新增DeepSeek，保留历史21笔证据。新同源轮人工649字符概要；相同brief/自填讲法/单集600秒三幕闭合，两边从方向到大纲；最后215字符修改实际出站逐字一致，同秒提交。本地实际6笔均Seed，138838输入/27964输出tokens；原站5个用户提交含2次无效富文本操作，不藏失败或宣称免费。详情见`docs/guides/tv-director/agent-plan-outline.md`§9，原参数/回包/截图仅忽略output。
+- 本轮累积实现真实目录模型选择、Ark预算参数冲突修复、后台自动预算与无token创作UI、严格decoder/宿主双校验、安全失败回执、M03→改编大纲单独采纳、来源权威去污染、正文排版窄修。最新M03 2.3.1、M07 2.3.2均保留short-drama原始参考，新增来源约束和正文/修改说明分离，不改全局技能和进化库。
+- 打磨前预检暴露prompt中schema与审计元数据重复。context/2.1.0仅精简提示词重复项，完整source/现稿/selected方法及wire严格schema不删；本地真实编辑成功，旧60k门未放宽。未实现通用长篇分块，不将此修复称为无限长度支持。
+- 最新M03成功后M07初稿/两轮修改均结构通过，文学与事实仍FAIL：本地最后残留第二钩子、引诱/生路和人名缩写；原站patch11处后仍有另一段归来/叩画倒序。原站实际五节/逐节diff，本地仍11节/全文重写，明确未对齐。浏览器1440×900截图已看；正文不同不计算虚假像素通过。既有同文首屏0.0933%/整页1.3748%仍整页FAIL。
+- 刷新复核：本地仅outline v1、同一个待审提案恢复，operation仍6笔；原站重新开编辑器恢复5节diff、用户提交数仍5。未采纳问题改稿、未定稿/续集/媒体购买。第5笔本地提案已显式忽略但原响应保留，第6笔保持待审。原站“已保存/无违规”不代替人工内容验收。
+- 验证：最新全Director671 passed/18依赖warning；前端9文件104 passed、pnpm build通过；全仓ruff、双端i18n、diff、guard31线1104claims、skill quick_validate通过。升2.3.2时曾被runtime版本白名单拒绝，未收费即修复并重跑全671通过，不隐藏中间失败。后续六项根因改造按指南§9.6另过方案门，不在当前记录冒充已实现。
+- 当前main仍213854b5；本轮尚未提交/push/部署。用户常驻栈未动，主目录验证全部隔离。收尾已确认无在途模型调用、关闭两隔离浏览器及本任务API/Vite，18780/15173无监听；删除仅本轮临时preview HTML，未删付费证据/数据库/用户资料。最新已跟踪及新增候选分别gitleaks通过，diff/guard通过。下一动作是指南§9.6的五节改编交付合同与段落patch方案，不再重复双模型横测；随后执行handoff/release。
+
+### 2026-09-27 · 主目录同步前保存既有推送交接
+
+用户已确认将最新同步分支也合回当前main。这里只提交本线前次保留的推送记录/claim与STATE中本线段落，避免在脏工作树merge时覆盖；同步线既有两文件和STATE历史同步段由其单独落提交。业务代码和方法包不改，已有失败保留。本线暂存文件的密钥/guard/禁词检查后生成DCO检查点，再交给同步线合并；不stash、reset或丢弃文档，不携带本机运行态。
+
+### 2026-09-27 · 私有main推送完成
+
+按用户后续push授权，先用 `git ls-remote --heads zhonggwv main codex/sync-main-remotes` 与仓库可见性检查确认私有目标；main为f057a867，同步分支已有4c9dee4f但本轮不更新。执行正常 `git push zhonggwv b5883b8fb0d3037bfdbe81b66de021b1a126a528:refs/heads/main` 成功，远端从f057a867快进到b5883b8f。再次ls-remote与本地HEAD、tracking ref三者SHA完全一致；50个待推送提交均已发布到私有main。未强推、未推公开origin、未修改其他分支、未部署或收费测试；上轮代码验证结果不变。STATE/本台账/claim只在本地记录本次推送，不创建额外提交，同步线旧改动与受保护资料保持不动。功能/文学/全页像素欠项不因推送变成已验收；收尾执行guard及handoff/release。
 
 ### 2026-09-27 · 提交检查点
 
@@ -726,6 +995,14 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 
 ## 待办
 
+- [x] 首次原创发送不再停在“创作中”或费用确认：隔离项目真实Seed新会话单动作启动、可读方向逐段显示、成功停在人工方向关口；已知格式失败保留并只在明确继续后单次修正。
+- [ ] 对照原站三页问卷，核定哪些信息由已确认设定直接读取、哪些必须问用户；本地六个动态追问是否必要逐题审核，再做同内容视觉/交互验收。本项不因流式接通而自动完成。
+- [x] 首功能内来源冻结/独立核对、新合同编译、局部patch/组合审阅事务、真实正文流和最新手编版本读取已接；短概要浏览器实际采纳/撤回/自动保存/刷新通过，不等同完整S1。
+- [ ] 先收束新链S1：末轮Seed独立核对的全部格式/覆盖通过，补正文排版/目录/工具栏同内容逐状态对照，重审陈旧规格引用，再验常规入口开关与历史v2显式转换；禁止先切第二功能或把隔离测试当已上线。
+
+- [x] 首功能内B00/B01匿名反例、五节严格合同/三语AST/显式分派/旧v2兼容与实际富文本展示：74新增后端、4新增组件通过，完整大纲S1未验收。
+- [x] 按最新仅 Seed 双站实测写代码级方案：五节交付、来源事实、局部 patch/部分审阅、组合核对、UI/流/预算/迁移；见 `seed-outline-parity-implementation.md`。仅文档交付，不代表新功能上线。
+- [ ] 确认新方案的 API/数据库/保存语义后，按 B00–B11 逐批实施并完成 T01–T33/V01–V10；先匿名失败夹具及五节合同，再真实 Seed ↔ Seed 闭环；不新增 DeepSeek 横测，不绕过未知费用/来源门。
 - [x] 自动保存/编辑聊天共存/离开前flush/冲突备份；三媒体菜单到真实目录/幂等意图/确认/任务结果；独立人物场景高风险来源门与4笔回包。598后端/219前端/build，见interaction-closure.md。
 - [x] 批量图片规划→明确审批→持久画布节点/结果/拖动恢复；独立M12全段事实清单、全部已写前集、逐字证据和人工核对，正反真实模型留证；整页像素计算与失败定位已接通。620后端/225前端/build，见batch-facts-pixels.md。
 - [ ] 本轮未通过的验收：完整页同内容/全状态像素（当前1920全页14.6060%差异）；长篇跨块事实审查、模型逐原子语义召回与物件状态图；场景同址跨集正常生成/M08筹备事实门、多会话媒体关联、实际图片质量。已有失败不得勾成完整目标，下一动作见batch-facts-pixels §7。
@@ -759,13 +1036,13 @@ discovery持唯一锁串行更新共享验收合同§6、开发指南§19，新�
 
 ## 阻塞
 
-当前没有阻止继续本线编码的外部阻塞。620后端/全部Director225前端/build通过，批量图片与M12全段审计已接通；真实正例9/9、负例FAIL6/9，不能称语义全面。全页像素实测FAIL，1920聊天局部改善不能覆盖账户壳/画布内容/动态效果差距；长篇上限外尚无分块审计。先前大纲文学/场景同址/24份真人评审欠项不冲销；旧UNKNOWN无结算不重发。未复验物理第二设备、全仓测试或付费图片供应商；素材再分发许可待核验，未部署用户常驻栈。实现和验收欠项不包装成外部阻塞。
+当前无外部阻塞；用户已批准方案并要求逐功能块实施。来源、新模型编译、分组审阅/独立核对/流已在隔离新链接通，802后端/113前端/build通过，但整页像素、常规入口发布/旧稿转换、多题材文学与长篇跨块仍未闭合。代码默认开关未发布，不得将隔离通过称为常驻项目已更新。旧文学FAIL、物理第二设备和素材发布许可欠项不变；UNKNOWN未结算不重发。规格源码指纹/行号陈旧需逐项重审，不能更新hash就宣称产品PASS。
 
 ## 交接摘要
 
-- **最后完成到**：批量图片计划/批准/画布持久节点、M12全文和所有前集事实审计/人工核对、全页像素失败门；620后端/225前端/build。模型正9/9、负FAIL6/9；聊天局部2.3273%，整页14.6060%FAIL。人物场景道具分集旧diff均保留，0298aefa主目录未提交部署，不归档。
-- **下一步唯一动作**：读batch-facts-pixels §5/7，对比已留的final-welcome整页差异图和源站DOM，先建立不覆盖用户稿的两站同内容基准与页面状态矩阵，再修画布外壳/动态题材球/编辑器全态，不遮罩过门。事实线先复用负例原回包离线定位三段引证与遗漏原子主张；长篇分块需先写总费用/跨块状态合同，不自动重购或重发UNKNOWN。
-- **先读这些文件**：本台账最新计划与进展、batch-facts-pixels.md、media_batch.py/episode_facts.py/quality.py、DirectorMediaPanel/DirectorMediaNodes/useDirectorMedia、pixel_compare.py及相应测试；自动保存沿interaction-closure、文学失败沿episode/scene/prop旧指南。6适配包不等于24完整方法，开销不等于内容改善。
+- **最后完成到**：main213854b5加本线新旧dirty；第一功能已接真实新链，隔离稿v1采纳/v2部分接受/v3手编刷新，末次单处patch正确。另已修复当前常驻栈的首次原创发送/方向流：真实Seed新会话一次发送直达4方向/6追问，失败留存后一次明确修正也通过。Director后端780、定向前端50及build通过。仍未签S1完整验收、未提交推送。
+- **下一步唯一动作**：先按本轮最新进展核对原站三页方向问卷与本地七页的逐题语义，再读outline-delivery-progress最新模型收尾结果及私有run-02 manifest，不从零重抽来源。继承现有候选/版本完成S1；零费用改`outline_delivery.py`投影与审阅目录/工具栏，冻结同内容像素样本再实测，保留历史AST不静默替换。源码新鲜度/常规默认/历史转换门通过前保持隔离开关，不进入第二功能；本地只用Seed对原站Seed。
+- **先读这些文件**：本台账最新进展、`full-replication-plan.md`§16和`plan-closure.json`对应审计组、Seed代码级指南B00与§2源码。S0–S10/policy为当前权威，旧WP为历史分解；人物场景道具分集、自动保存、批量媒体和M12历史失败仍保留，不能因大纲新方案而删除。
 - **不要动这些文件 / 决策**：现有 story/freezone/canvas 业务代码、用户源稿、研究 Cookie。
 
 ### 2026-09-28 · 连线配色串行协调

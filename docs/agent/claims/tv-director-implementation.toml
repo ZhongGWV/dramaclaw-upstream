@@ -1,7 +1,98 @@
 version = 1
 slug = "tv-director-implementation"
 ledger = "docs/agent/tasks/tv-director-implementation.md"
-baseline = "0298aefa4734c3d8e5a02362cbf068351833c343"
+baseline = "0d7b609f"
+
+[[claims]]
+path = "tests/director/test_outline_stream.py"
+mode = "exclusive"
+reason = "Structured stream previews, truncation, unicode, duplicate keys and durable replay safety."
+
+[[claims]]
+path = "frontend/src/__tests__/director-outline-patch.test.tsx"
+mode = "exclusive"
+reason = "S1 partial outline review UI contract and interactions"
+
+[[claims]]
+path = "tests/director/test_outline_patch.py"
+mode = "exclusive"
+reason = "Stable-block outline patches, host dependency groups and unchanged content."
+
+[[claims]]
+path = "tests/director/test_outline_changes.py"
+mode = "exclusive"
+reason = "Durable partial acceptance, idempotence and version conflict regression."
+
+[[claims]]
+path = "tests/director/test_outline_source.py"
+mode = "exclusive"
+reason = "Immutable source evidence and independent extraction audit regressions."
+
+[[claims]]
+path = "tests/director/test_outline_pipeline.py"
+mode = "exclusive"
+reason = "Real production workflow integration for gated five-section adaptation outlines."
+
+[[claims]]
+path = "tests/director/seed_outline_parity.py"
+mode = "exclusive"
+reason = "Opt-in Seed production-path evidence capture without credentials."
+
+[[claims]]
+path = "tests/fixtures/director/outline-v3/source.json"
+mode = "exclusive"
+reason = "Anonymous source extraction and independent audit fixture."
+
+[[claims]]
+path = "tests/fixtures/director/outline-v3/projections.json"
+mode = "exclusive"
+reason = "Host-produced multilingual golden text shared with real rich-text component tests."
+
+[[claims]]
+path = "frontend/src/__tests__/director-outline-delivery.test.tsx"
+mode = "exclusive"
+reason = "B01 five-section rich-text rendering and safe text without automatic saving."
+
+[[claims]]
+path = "tests/director/test_outline_delivery.py"
+mode = "exclusive"
+reason = "B00/B01 anonymous delivery failures, references, projections and legacy compatibility."
+
+[[claims]]
+path = "tests/fixtures/director/outline-v3/delivery.json"
+mode = "exclusive"
+reason = "Synthetic source and valid delivery; no private story or account data."
+
+[[claims]]
+path = "docs/guides/tv-director/outline-delivery-progress.md"
+mode = "exclusive"
+reason = "B01 actual implementation and test evidence, separate from frozen plan audit."
+
+[[claims]]
+path = "docs/guides/tv-director/seed-outline-parity-implementation.md"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
+reason = "Code-level outline delivery, source fidelity, patch review and Seed parity implementation plan."
+
+[[claims]]
+path = "tests/director/test_output_budget.py"
+mode = "exclusive"
+reason = "Automatic stage budgets, legacy explicit limits and no source truncation."
+
+[[claims]]
+path = "tests/director/test_model_catalog.py"
+mode = "exclusive"
+reason = "Director model selection resolves the shared catalog without fallback or secret exposure."
+
+[[claims]]
+path = "frontend/src/__tests__/director-models.test.tsx"
+mode = "exclusive"
+reason = "Catalog model labels, choice, restoration and wire identity."
+
+[[claims]]
+path = "docs/guides/tv-director/agent-plan-outline.md"
+mode = "exclusive"
+reason = "Bounded paired outline quality and UI evidence with Agent Plan models."
 
 [[claims]]
 path = "tests/director/test_media_batch.py"
@@ -340,6 +431,11 @@ mode = "exclusive"
 reason = "Temporary component browser harness; remove after verification."
 
 [[claims]]
+path = "frontend/director-preview.local.tsx"
+mode = "exclusive"
+reason = "Temporary isolated component entry; remove after verification."
+
+[[claims]]
 path = "tests/director/test_execution.py"
 mode = "exclusive"
 reason = "Durable execution, cost consent, idempotency, failure injection and authenticated API."
@@ -426,12 +522,14 @@ reason = "Detailed fusion contract for short-drama methods and observed TV Direc
 
 [[claims]]
 path = "docs/guides/tv-director/feature-contracts.md"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Complete button and capability traceability specification."
 
 [[claims]]
 path = "docs/guides/tv-director/implementation-map.json"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Machine-readable complete design traceability, not runtime completion."
 
 [[claims]]
@@ -441,34 +539,39 @@ reason = "Relative source identities, hashes and stage mappings; no local absolu
 
 [[claims]]
 path = "docs/guides/tv-director/verify-spec.mjs"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Read-only specification consistency checks and mutation self-tests."
 
 [[claims]]
 path = "docs/guides/tv-director/implementation-closure.md"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Resolved evidence limits, code work packages and API migration handoff."
 
 [[claims]]
 path = "docs/guides/tv-director/skill-contracts.md"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Individual method package inputs, outputs, rules and failure contracts."
 
 [[claims]]
 path = "docs/guides/tv-director/workflow-contracts.md"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Authoritative state, approval, cost and recovery specification."
 
 [[claims]]
 path = "docs/guides/tv-director/document-semantics.md"
-mode = "exclusive"
+mode = "shared"
+shared_with = ["liblib-tv-director-discovery"]
 reason = "Document authority, source semantics, dependent revisions and duration contracts."
 
 [[claims]]
 path = "docs/guides/tv-director/acceptance-contracts.md"
 mode = "shared"
 shared_with = ["liblib-tv-director-discovery"]
-reason = "Implementation owns acceptance policy; discovery serially updates N01-N10 evidence status."
+reason = "User-approved review fixes shared serially with discovery; implementation resumes after its handoff."
 
 [[claims]]
 path = "docs/guides/liblib-tv-director-development.md"

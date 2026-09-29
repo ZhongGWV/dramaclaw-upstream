@@ -2,6 +2,8 @@
 
 设计 v2.1，2026-09-25；实现状态更新于2026-09-26。本文是[主方案](../tv-director-skill-fusion.md)的开发接手入口，不是另一套业务规则。**方案收口与产品完成分别验收。** 实际实现见下方§0；本文列出的目标代码、接口、482个计划用例均未因此自动实现或执行。
 
+2026-09-27 r2说明：当前实施顺序与验收以[全产品总案](full-replication-plan.md)S0–S10及[当前157项审计](plan-closure.json)为准。本文件P/WP是历史分解，不另开第二套阶段。旧固定100集上限已去掉；E08一键续创自动发送的补证及安全边界见工作流§1.2，不再按attach-only实现。
+
 ## 0. 当前还差多少（2026-09-26，按完整退出条件）
 
 **22个工作包都仍有未满足的退出条件，不等于22包都没写代码。** 不能以365项局部后端测试或39项前端测试换算产品完成率。实际可加载的方法适配包为6/24：M03、M07、M08、M09、M11、M12；另外18个完整方法包尚未落齐，已有M22/M23宿主算法也不等于其完整包交付。33类gold目前只有9个文件；149动作/8能力没有完成逐项业务验收。
@@ -80,7 +82,7 @@ machine schemas.shape是49份输入输出**字段词典**，不是已生成OpenA
 
 | 类型 | 必需字段/约束 |
 |---|---|
-| Mode / SpecDraft / ConfirmedSpec | mode四选；genres主/融合互斥；audienceIds最多2；characterSetup/era/highlights含ids/customText/provenance；narrativeTone与visualStyle分开；structureId八枚举；episodeCountDraft可auto，totalEpisodes确认后1–100；defaultDurationSeconds>0、episodeDurations按稳定ID；endingType/outputLanguage/market；lockedFacts；adaptation策略/保真/允许新增；revision |
+| Mode / SpecDraft / ConfirmedSpec | mode四选；genres主/融合互斥；audienceIds最多2；characterSetup/era/highlights含ids/customText/provenance；narrativeTone与visualStyle分开；structureId八枚举；episodeCountDraft可auto，totalEpisodes确认后为用户指定正整数，按分页/预算处理大规模、不设永久100上限；defaultDurationSeconds>0、episodeDurations按稳定ID；endingType/outputLanguage/market；lockedFacts；adaptation策略/保真/允许新增；revision |
 | VersionRef / VersionMap | {kind,id,version,hash}；版本整数>=1，hash为SHA-256；VersionMap按稳定对象ID，全部基线一起CAS，不能只检查当前打开文档 |
 | ReferenceEntry | {refId,kind,nodeId?,assetId?,assetVersion?,textVersion?,displayIndex,providerIndex,role,sourceHash}；文本独立序列，媒体按统一manifest顺序；providerIndex由纯编译器生成，客户端不能指定串位值 |
 | ModelBinding / ModelCapability | provider、requestedModel、actualRoute、capabilityVersion、参数枚举/范围/可空性、成本信息与可用原因；运行路由不一致拒绝，视频白名单仅H3；音/图不可用明确unsupported |
@@ -158,7 +160,7 @@ narrativeTone须从用户输入/问卷确认并记provenance，不能用visualSt
 | WP11 / P4 修订与失效 | D/revisions.py、semantic_graph.py、episode_order.py；T/test_revisions.py | 本地/关联/海外；影响闭包SCC、全CAS事务、修改Spec/集顺序、派生失效 | F10–F14/F21；多文档半提交0；范围外变化0；已定稿重审可恢复 |
 | WP12 / P5 编辑器/文档节点 | F/components/ScriptDocumentNode.tsx、ScreenplayEditor.tsx、DiffReview.tsx；F/state/document-store.ts | 稳定block/anchor、五目录、选区、快捷键、undo/redo、diff逐组、冲突、自动保存 | E01–E32、X05 UI正负；同DV投影一致；中文/emoji/表格往返 |
 | WP13 / P5 Shell/Composer | F/components/DirectorShell.tsx、Composer.tsx、SessionHeader.tsx及matrix A组路径 | 画布动作条、右浮窗/停靠/resize、会话历史/输入附件引用、进度、通知、恢复 | A01–A26；双桌面和375宽可达；关闭不cancel、IME不Send、草稿恢复 |
-| WP14 / P5 预设/决策 | F/preset/compile-preset.ts及O/D/Q/S/X表组件 | Top8、两题材圆、六卡、8结构、1–100/auto、风格/时长/语言、问卷/费用、明确最终参数预览 | 所有字段UI→Spec→snapshot一致；取消回滚；旧CP服务器拒绝；三语键与DESIGN同步 |
+| WP14 / P5 预设/决策 | F/preset/compile-preset.ts及O/D/Q/S/X表组件 | Top8、两题材圆、六卡、8结构、正整数/auto集数、风格/时长/语言、问卷/费用、明确最终参数预览；容量不足明确分批、不截断意图 | 所有字段UI→Spec→snapshot一致；取消回滚；旧CP服务器拒绝；三语键与DESIGN同步 |
 | WP15 / P6 Skill全生命周期 | D/skills/{catalog,lifecycle,evaluator,runtime}.py、M18/M19包；F/components/Skill*.tsx | 五intake、沙箱导入、不可变revision、真正test receipt、fork/rollback、私有/公开分离 | K/R创建相关/X10、F09/F22/F27/F32；删除/归档/撤回不混；每入口真实范围可见 |
 | WP16 / P6 全能与导演 | D/canvas.py、planner.py、M16/M17包；F/components/{OmniTaskPlan,ShotPlanReview,BatchResultReview}.tsx | 受限CV→DAG工具计划→审批→候选；输入顺序与Missing槽；采纳才画布写入 | C01–C03/R01–R18/X09/F26；真删ID、乱序完成、失败项恢复；无工具不假完成 |
 | WP17 / P7 H3与媒体 | D/media.py、capabilities.py；ports内实际媒体适配；F/components/MediaTaskPanel.tsx | capability纯编译→预览hash→授权→唯一次派发→poll→probe→资产；只H3视频 | F23每种媒体至少3项、重排删换；F29/F30；文本独立编号、请求/实测差异分栏 |
@@ -211,7 +213,7 @@ P2中M10/M12先实现必要容量/硬质量门，不等P4才防错；P4深化图
 | U10 / N10：物理第二台设备未由用户完成 | 同服务端CAS；本地包导入重映射/重绑定凭据，两种模式分别验证 | P7 migration：真实Windows安装/导入/生成前预览+双设备冲突记录；未做阻断跨设备可用声明 |
 | U11 / N05,N10：创建响应丢失/供应商批量部分失败未实测 | 无已验证幂等时UNKNOWN停止重发；已受理poll；失败项单独新授权 | P1 provider/runtime：离线故障注入先通过，再精确预算真实供应商边界；不承诺远端exactly-once |
 | U12 / N05：源站参数漂移/无工具却表述完成 | capability约束+manifest纯编译+实际provider receipt；requested/echo/observed分开 | P7 media：实际H3单链及媒体探测；不支持工具返回unsupported，无占位成功 |
-| U13 / N02,N07：单集表单/末集自动完成/首次设置取消续发与安全目标冲突 | 统一单集1–100；每集人工定稿；首次设置取消保留D且不发；硬预算代替提醒 | P1 workflow/frontend：源站差异公开；负例不得自动定稿/调用；无需按源缺陷实现 |
+| U13 / N02,N07：单集表单/末集自动完成/首次设置取消续发与安全目标冲突 | 集数由用户指定正整数含1，不设永久100上限；每集人工定稿；首次设置取消保留D且不发；硬预算代替提醒 | P1 workflow/frontend：源站差异公开；负例不得自动定稿/调用；无需按源缺陷实现 |
 
 没有安排“继续无限研究直到拿到隐藏源代码”。U01本质不可由输出唯一识别；U06/U07/U13采取明确安全差异；U02/U04/U05/U08/U09/U10/U11/U12由规定的本方验证关闭。物理Windows、真实自然供应商故障、完整配对质量还没执行，必须继续显示未验收，不能以当前浏览器、多标签或mock冒充。
 

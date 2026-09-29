@@ -7,7 +7,7 @@ import { DirectorRichText, requiresSourceEditor, richTextExtensions } from '@/fe
 import { DirectorSettingsDialog } from '@/features/director/components/DirectorSettingsDialog';
 import { DirectorHistoryPopover } from '@/features/director/components/DirectorHistoryPopover';
 import type { DirectorWork } from '@/api/director';
-import { directorTokenLimit, readDirectorPreference } from '@/features/director/director-ui-state';
+import { readDirectorPreference } from '@/features/director/director-ui-state';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 const historyApi = vi.hoisted(() => ({ listDirectorWorks: vi.fn(), updateDirectorHistory: vi.fn() }));
@@ -152,25 +152,26 @@ describe('rich editor and Markdown save boundary', () => {
 });
 
 describe('truthful local settings', () => {
-  it('never exposes automatic spending; cancel does not persist token changes', () => {
-    const save = vi.fn(), close = vi.fn();
-    render(<DirectorSettingsDialog maxOutputTokens={4096} onSave={save} onClose={close} onMethods={vi.fn()} />);
+  it('does not expose technical token settings or grant automatic spending', () => {
+    const close = vi.fn();
+    localStorage.setItem('director:ui:outputTokens', '1024');
+    render(<DirectorSettingsDialog onClose={close} onMethods={vi.fn()} />);
     expect(screen.getByRole('switch', { name: 'director.surface.autoGenerate' })).toBeDisabled();
     expect(screen.getByRole('switch', { name: 'director.surface.budget' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'director.ui.advanced' }));
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: '8192' } });
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.getByText('director.execution.automaticBudgetHint')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'director.close' }));
-    expect(close).toHaveBeenCalledOnce(); expect(save).not.toHaveBeenCalled();
-    expect(directorTokenLimit()).toBe(4096);
+    expect(close).toHaveBeenCalledOnce();
+    expect(localStorage.getItem('director:ui:outputTokens')).toBe('1024');
   });
-  it('saves the real token limit only on explicit confirmation', () => {
-    const save = vi.fn();
-    render(<DirectorSettingsDialog maxOutputTokens={4096} onSave={save} onClose={vi.fn()} onMethods={vi.fn()} />);
+  it('saves notification preferences without writing obsolete token settings', () => {
+    const close = vi.fn();
+    render(<DirectorSettingsDialog onClose={close} onMethods={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'director.ui.advanced' }));
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: '8192' } });
     fireEvent.click(screen.getByRole('button', { name: 'director.ui.done' }));
-    expect(save).toHaveBeenCalledWith(8192); expect(directorTokenLimit()).toBe(8192);
-    localStorage.setItem('director:ui:outputTokens', '99999'); expect(directorTokenLimit()).toBe(4096);
+    expect(close).toHaveBeenCalledOnce();
+    expect(localStorage.getItem('director:ui:outputTokens')).toBeNull();
     localStorage.setItem('director:ui:composer', '{}'); expect(readDirectorPreference('composer', '')).toBe('');
   });
 });

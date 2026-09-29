@@ -128,6 +128,41 @@ export interface DirectorChange {
   status: 'pending' | 'accepted' | 'rejected';
   created_at: number;
   decided_at: number | null;
+  outlinePatch?: OutlinePatch;
+}
+
+export interface OutlineBlock {
+  id: string; type: string; text: string; attrs: { level: number | null; lineBreak: boolean };
+  marks?: Array<{ type: string; start: number; end: number; href?: string | null }>;
+}
+export interface OutlinePatch {
+  contract: 'outline-patch/1.0.0'; revision: number; headVersion: number;
+  baseAst: { blocks: OutlineBlock[] };
+  groups: Array<{ id: string; hunkIds: string[]; sectionKeys: string[]; requiresGroupIds: string[] }>;
+  hunks: Array<{ id: string; sectionKey: string; targetBlockIds: string[]; reason: string;
+    renderedBlocks?: OutlineBlock[];
+    afterBlocks: Array<{ type: string; text: string; level: number | null; lineBreak: boolean }> }>;
+  decisions: Record<string, 'pending' | 'accepted' | 'rejected'>; acceptedGroupIds: string[];
+  changeSummary: Array<{ text: string; hunkIds: string[] }>; unresolvedRequests: string[];
+  reviews: Array<{ id: string; changeRevision: number; acceptGroupIds: string[]; status: 'reviewed' | 'blocked';
+    currentValidator?: boolean;
+    units?: Array<{ path: string; findings: Array<{ candidateQuote: string; assertion: string; reason: string;
+      verdict: 'supported' | 'violated' | 'uncertain' | 'interpretation';
+      sourceEvidence: Array<{ unitId: string; quote: string }> }> }>;
+    violatedPaths: string[]; uncertainPaths: string[]; literaryNotes: string[] }>;
+}
+
+export function outlineDecisionCommand(work: DirectorWork, document: DirectorDocument, change: DirectorChange,
+  groupIds: string[], decision: 'accept' | 'reject', reportId: string | null = null) {
+  const intent = crypto.randomUUID();
+  return { schemaVersion: 2 as const, commandId: intent, clientRequestId: intent, sessionId: `work-${work.id}`,
+    workId: work.id, expected: { workRevision: work.revision, documentVersions: { [document.document_id!]: document.version } },
+    payload: { type: 'outline.decideGroups' as const, documentId: document.document_id!, changeId: change.id,
+      changeRevision: change.outlinePatch!.revision, groupIds, decision, reportId } };
+}
+
+export async function decideOutlineGroups(project: string, command: ReturnType<typeof outlineDecisionCommand>): Promise<unknown> {
+  return apiCall(`projects/${encodeURIComponent(project)}/director/v2/documents/commands`, { method: 'POST', json: command });
 }
 
 export interface DirectorRun {
@@ -144,9 +179,18 @@ export interface DirectorRun {
   response: { output_sha256?: string; output_chars?: number; change_id?: string };
 }
 
+export interface DirectorModelOption {
+  id: string;
+  label: string;
+  providerLabel: string;
+  upstreamModel: string;
+}
+
 export interface DirectorModelContract {
   model_name: string;
   locked: boolean;
+  source?: 'local_catalog';
+  options?: DirectorModelOption[];
 }
 
 export interface DirectorWorkDetail {

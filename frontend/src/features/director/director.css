@@ -401,8 +401,12 @@
 .dc-planning-option p, .dc-planning-option dl { font-size: 12px; color: #aaa; }
 .dc-planning-options > label:not(.dc-planning-option) { display: grid; gap: 8px; font-size: 13px; }
 .dc-planning-options textarea { min-height: 72px; width: 100%; padding: 10px; border: .5px solid #ffffff29; background: #212121; border-radius: 10px; }
+.dc-planning-options input[type='number'] { min-height: 40px; width: 100%; padding: 8px 10px; border: .5px solid #ffffff29; background: #212121; border-radius: 10px; color: #f7f7f7; }
 .dc-planning-options .dc-card-actions { margin-top: 8px; flex-wrap: wrap; }
 .dc-question-pages { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 12px; color: #999; }
+.dc-question-header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.dc-question-header h4 { margin: 0; font-size: 14px; line-height: 24px; font-weight: 600; }
+.dc-question-header .dc-question-pages { flex-shrink: 0; gap: 4px; }
 .dc-question-pages button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; }
 .dc-question-pages button:first-child svg { transform: rotate(90deg); }
 .dc-question-pages button:last-child svg { transform: rotate(-90deg); }
@@ -548,11 +552,13 @@
 .dc-rich-scroll { position: absolute; inset: 52px 0 60px; overflow: auto; scrollbar-gutter: stable both-edges; }
 .dc-rich-paper { width: 680px; max-width: calc(100% - 48px); margin: 60px auto 100px; }
 .dc-rich-paper > h2 { font-size: 20px; line-height: 30px; font-weight: 600; margin-bottom: 36px; }
-.dc-rich-body { color: #a8a8a8; outline: none; font-size: 15px; line-height: 1.8667; min-height: 340px; overflow-wrap: anywhere; }
-.dc-rich-body p { margin: 0 0 14px; }
+.dc-rich-body { color: #a8a8a8; outline: none; font-size: 15px; line-height: 1.8667; letter-spacing: .01em; min-height: 340px; overflow-wrap: anywhere; }
+.dc-rich-body p { margin: 0; }
 .dc-rich-body h1 { font-size: 23.25px; line-height: 1.35; margin: 0 0 11.625px; color: #f7f7f7; font-weight: 600; }
 .dc-rich-body h2 { font-size: 19.5px; line-height: 1.4; margin: 37.05px 0 9.75px; color: #f7f7f7; font-weight: 600; }
 .dc-rich-body h3 { font-size: 17px; margin: 24px 0 10px; color: #f7f7f7; font-weight: 600; }
+.dc-rich-body :is(h1, h2, h3) { letter-spacing: -.01em; }
+.dc-rich-body > :first-child { margin-top: 0; }
 .dc-rich-body strong { color: #f7f7f7; font-weight: 600; }
 .dc-rich-body ul, .dc-rich-body ol { padding-left: 21px; margin: 0; }
 .dc-rich-body li + li { margin-top: 5.25px; }
@@ -566,6 +572,27 @@
 .dc-rich-body td, .dc-rich-body th { border: 1px solid #444; padding: 8px; text-align: left; min-width: 40px; }
 .dc-rich-body pre { white-space: pre-wrap; padding: 12px; background: #191919; border-radius: 8px; }
 .dc-rich-body a { color: inherit; text-decoration: underline; pointer-events: none; }
+.dc-patch-actions { display: inline-flex; align-items: center; gap: 4px; padding: 4px; border-radius: 14px; background: #242424; font-size: 13px; color: #f7f7f7; }
+.dc-patch-actions > span { padding: 0 4px 0 8px; color: #919191; white-space: nowrap; }
+.dc-patch-actions > button { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; height: 36px; border-radius: 10px; white-space: nowrap; }
+.dc-patch-actions button:hover { background: #ffffff14; }
+.dc-patch-section { scroll-margin-top: 16px; }
+.dc-patch-section:has(.dc-patch-actions) { margin-bottom: 8px; }
+.dc-patch-section + h2 { margin-top: 0; }
+.dc-patch-removed { color: rgba(251,115,115,.65); text-decoration: line-through; }
+.dc-patch-added { color: #04caf6; }
+.dc-patch-hunk { position: relative; }
+.dc-patch-hunk-actions { position: absolute; z-index: 3; right: 0; bottom: -44px; display: flex; align-items: center; gap: 4px; font-size: 13px; padding: 4px; border-radius: 14px; background: #242424; color: #f7f7f7; opacity: 0; pointer-events: none; }
+.dc-patch-hunk:is(:hover, :focus-within) .dc-patch-hunk-actions { opacity: 1; pointer-events: auto; }
+.dc-patch-hunk-actions > span { display: none; }
+.dc-patch-hunk-actions button { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 8px; border-radius: 10px; white-space: nowrap; }
+.dc-patch-global { position: absolute; z-index: 4; top: 64px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 4px; height: 44px; background: #242424; border-radius: 14px; font-size: 13px; }
+.dc-patch-global > span { color: #919191; }
+.dc-patch-global .dc-patch-actions { background: transparent; padding: 0; }
+.dc-patch-global .dc-patch-actions > span { display: none; }
+.dc-patch-up { transform: rotate(180deg); }
+.dc-patch-list { padding-left: 21px; }
+.dc-patch-list::before { content: '•'; margin-left: -16px; padding-right: 8px; }
 .dc-rich-outline { position: fixed; width: 168px; max-height: calc(100dvh - 160px); overflow: auto; left: calc(50% - 532px); top: 50%; transform: translateY(-50%); padding: 12px; border-radius: 12px; background: #161616; font-size: 12px; z-index: 1; }
 .dc-rich-outline > div > button, .dc-rich-outline > strong { display: block; padding: 8px; margin: 0 0 8px; text-align: left; width: 100%; }
 .dc-rich-outline button[aria-current='page'] { color: #5ddcff; }

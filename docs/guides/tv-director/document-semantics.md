@@ -33,6 +33,36 @@ Block attrs中entityId/sceneId属于结构标识，不是模型猜测的人物�
 
 不可变SourceVersion是原稿证据权威；ConfirmedSpec是用户选定约束权威。二者与正文分工，不是相互覆盖：正文违背来源/规格时形成差异冲突；不能为了使新文稿“通过”倒改原稿或已锁约束。用户批准艺术加工建立显式FactDecision记录，不涂改SourceVersion。
 
+### 1.0 五类文档独立版本与七步生命周期
+
+2026-09-27审核澄清：“同DV”仅指**同一份文档在节点、聊天卡、编辑器、导出中读取相同documentId/version/hash**，绝不是大纲、人物、场景、道具和分集共享一个版本号。一个作品快照保存各文档当前版本引用集合；历史run保留当时集合，禁止读取时偷偷替换成最新。
+
+```ts
+type WorkDocumentSnapshot = {
+  workId: string; workRevision: number;
+  outline: VersionRef; characters?: VersionRef;
+  locations?: VersionRef; props?: VersionRef;
+  episodes: { episodeId: string; document: VersionRef }[];
+};
+// VersionRef至少携带documentId、version、contentHash；每次发送由服务端验证依赖完整性。
+```
+
+每种文档分别绑定`LC-<kind>-<operation>`用例，kind/operation/最小格数见[验收配置](acceptance-policy.json)。下面所有格都必须有独立证据，不用同一保存测试名包办五类；关联E01–E05/E06/E22/E28–E32、F10–F13/F18–F21。
+
+| kind / 最早阶段 | generate | view | chat_revise | diff_review | edit_save | refresh_restore | downstream_read |
+|---|---|---|---|---|---|---|---|
+| outline / S1 | 选定profile候选 | 栏目/节点/编辑器同稿 | 目标节/选区 | 独立部分采纳与依赖组 | 草稿与正式稿区分 | head/剩余CS/光标可恢复 | 下一次修改先验；S3筹备实际读新版 |
+| characters / S3 | 名单/小传/条件字段 | 稳定entityId定位 | 指定人物/字段 | 改名依赖不能半套接受 | 未确认年龄/称呼不补写 | 人物顺序与版本恢复 | 场景/分集/角色图计划读取新版 |
+| locations / S3 | 空间/时段/使用边界 | 同名异址独立ID | 指定空间或字段 | 内外/动线联动范围可见 | 手改地点不默合并 | 地点锚点/待审状态恢复 | 分集/场景图计划读取新版 |
+| props / S3 | 归属/作用/边界 | 同类异物独立ID | 指定物件/流转 | 归属变动关联组 | 手改不丢物件标识 | 物件状态与历史恢复 | 分集/道具图计划读取新版 |
+| episode / S4 | 当前集计划→正文 | 按episodeId/场次切换 | 局部对白/动作 | 局改/依赖/全部拒绝 | 已定稿修改需重审 | 稿/审阅/定稿状态不混 | 下一集/导演计划读取有效新版 |
+
+每格证据记录入口、前置版本、操作、请求/事件（纯读/本地操作明确无写请求）、前后hash、持久化复读、失败恢复、代码落点和截图。编辑/采纳测试覆盖409/断网、范围外不变和异步晚到；明确不适用的负例写理由，不留空格当通过。
+
+修改传播由显式依赖边计算：大纲→人物/场景/道具/分集；人物/场景/道具→引用它们的文档、镜头及媒体计划；分集→后集边界/镜头。仅标记真正受影响对象stale/needs_review并给可定位原因，不自动覆写下游手工稿或发起付费重生成。读新版不是“最新时间戳赢”，而是满足各自结构/语义门的当前选定版本；未保存/未核验应阻断并给恢复路径。
+
+已生成图片/画布节点保留`sourceDocumentRef + entityId + planId + generationInputHash`及原媒体历史；上游变更只提示过期，可预览重生成/重新绑定，不悄悄替换图片。批量采用是画布事务，生成是独立收费任务。跨文档版本集合提交按依赖闭包CAS；失败全回滚，不能让其中一页升级其余未升级。S3–S4验证实际下游请求中的版本集合；不能用前端显示更新冒充。
+
 ### 1.1 手工改正文的完整顺序
 
 1. 编辑器变动写UserDraft（带baseVersion/clientDraftId）；自动保存可以保存未完成/语法不规范文本，避免丢字，但不会作为可生成输入。

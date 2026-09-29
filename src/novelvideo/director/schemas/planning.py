@@ -30,6 +30,7 @@ class Direction(ContractModel):
 class SpecQuestion(ContractModel):
     id: Identifier
     question: Text
+    choices: list[Text] = Field(default_factory=list, max_length=6)
 
 
 class DirectionSet(ContractModel):
@@ -322,6 +323,13 @@ class OutlineMethodContext(PlanningMethodContext):
     mode: Literal["original", "adaptation"]
 
 
+class DirectionMethodContext(PlanningMethodContext):
+    """Adaptation directions change the telling, not the supplied story facts."""
+
+    stage: Literal["M03"]
+    mode: Literal["original", "adaptation"]
+
+
 class CharacterMethodContext(PlanningMethodContext):
     """The same character craft serves preparation and source-grounded edits."""
 
@@ -340,7 +348,9 @@ class WorkflowExpected(WireContract):
 
 class PlanningQuote(WireContract):
     type: Literal["planning.quote"]
-    max_output_tokens: int = Field(ge=256, le=16384)
+    max_output_tokens: int | None = Field(default=None, ge=256, le=32768)
+    target_scope: Literal["outline", "preparation"] = "preparation"
+    source_kind: Literal["full_text", "curated_summary"] = "full_text"
 
 
 class PlanningGrant(WireContract):
@@ -355,14 +365,16 @@ class PlanningDecision(WireContract):
     checkpoint_id: Identifier
     resume_token: Identifier
     payload_hash: Sha256
-    decision: Literal["select", "adopt", "skip", "return"]
+    decision: Literal["select", "adopt", "skip", "return", "revise"]
     option_id: Identifier | None = None
     free_text: str = Field(default="", max_length=10000)
     answers: dict[Identifier, Text] = Field(default_factory=dict)
+    episode_count: int | None = Field(default=None, ge=1, le=100, strict=True)
+    duration_seconds: int | None = Field(default=None, ge=1, strict=True)
 
 
 class PlanningControl(WireContract):
-    type: Literal["planning.cancel", "planning.resume"]
+    type: Literal["planning.cancel", "planning.resume", "planning.revalidate"]
 
 
 class WorkflowCommand(WireContract):

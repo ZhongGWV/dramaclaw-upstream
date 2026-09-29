@@ -321,6 +321,7 @@ def probe_request(action: str, case_id: str, root: dict, spine: str = "") -> dic
         base["references"] = [
             {"sha256": ref.sha256, "text": package["files"][ref.path]}
             for ref in package["manifest"].required_references
+            if ref.when in ("always", spec["work"]["preset"]["mode"])
         ]
         system = (
             "你是短剧编剧。本次仅写连贯故事大纲，不是剧本正文、策划说明书或JSON。"

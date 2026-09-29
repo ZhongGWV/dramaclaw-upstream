@@ -2,12 +2,12 @@
 // Copyright (c) 2026 ClaymoreLab
 /** A command identifies one user intent; transport retries must reuse this object. */
 import { apiCall } from './client';
-import type { DirectorDocumentKind } from './director';
+import type { DirectorDocumentKind, DirectorModelContract } from './director';
 
 export interface ExecutionCapability {
   schemaVersion: 2;
   version: string;
-  model: { model_name: string; locked: boolean };
+  model: DirectorModelContract;
   methodVersion: string;
   maxAttempts: 1;
   outputTokens: { minimum: number; maximum: number; default: number };
@@ -39,6 +39,7 @@ export interface ExecutionQuote {
 }
 
 export interface ExecutionRun {
+  purpose?: 'draft' | 'review' | 'planning';
   id: string;
   workId: string;
   sessionId: string;
@@ -51,6 +52,7 @@ export interface ExecutionRun {
   errorCode: string | null;
   changeId: string | null;
   response: { output_sha256?: string; output_chars?: number; change_id?: string;
+    validation?: { kind: 'schema' | 'json' | 'contract'; issueCount: number; issues: { path: string; code: string }[] };
     episodeFormat?: { contract: string; missing: string[]; sceneCount: number; qualityVerified: false };
     review?: { id: string; status: 'PASS' | 'FAIL' | 'UNAVAILABLE' | 'UNKNOWN' | 'REVIEWED' };
     usage?: { inputTokens: number; outputTokens: number; requests: number; finishReason: string | null; reportedModel?: string } };
@@ -64,7 +66,7 @@ export interface ExecutionRun {
 }
 
 export type ExecutionPayload =
-  | { type: 'cost.quote'; kind: DirectorDocumentKind; episodeOrdinal?: number; instruction: string; maxOutputTokens: number; purpose?: 'draft' | 'review' }
+  | { type: 'cost.quote'; kind: DirectorDocumentKind; episodeOrdinal?: number; instruction: string; maxOutputTokens?: number; purpose?: 'draft' | 'review'; reviewTarget?: { changeId: string; changeRevision: number; acceptGroupIds: string[] } }
   | { type: 'approval.grant'; quoteId: string; requestHash: string; unknownCostConsent: boolean }
   | { type: 'run.cancel' | 'run.resume'; runId: string };
 
@@ -101,7 +103,8 @@ export const listExecutionRuns = (project: string, workId: string) =>
 
 export interface ExecutionEvent {
   seq: number; eventId: string; type: string; sessionId: string; runId: string | null;
-  payload: { text?: string; key?: string; version?: string; revision?: string; model?: string; stream?: boolean; references?: string[] };
+  payload: { text?: string; key?: string; version?: string; revision?: string; model?: string; stream?: boolean; references?: string[];
+    blockKey?: string; sectionKey?: string; provisional?: boolean };
   createdAt: number;
 }
 export interface ExecutionEvents { schemaVersion: 2; events: ExecutionEvent[]; nextSeq: number }
@@ -135,16 +138,18 @@ export interface PlanningDirection {
   tone: string; difference: string; productionRisks: string[];
 }
 export interface PlanningState {
-  workId: string; revision: number;
+  workId: string; workRevision?: number; revision: number;
   phase: 'NOT_STARTED' | 'WAIT_COST' | 'EXEC' | 'WAIT_DIRECTION' | 'WAIT_OUTLINE' | 'WAIT_INPUT' | 'CANCELLED' | 'FAILED_RECOVERABLE' | 'UNKNOWN' | 'READY';
   errorCode: string | null;
   checkpoint: null | { id: string; kind: string; status: string; resumeToken: string; payloadHash: string;
-    payload: { options?: PlanningDirection[]; specQuestions?: { id: string; question: string }[]; documents?: Record<string, string> } };
+    payload: { options?: PlanningDirection[]; specQuestions?: { id: string; question: string; choices?: string[] }[];
+      confirmedPreset?: { episodeCount: number; durationSeconds: number }; documents?: Record<string, string>;
+      quality?: { status: 'reviewed' | 'blocked'; violatedPaths: string[]; uncertainPaths: string[]; literaryNotes: string[] } } };
   artifacts: Record<string, unknown>;
   budgets: { id: string; callsReserved: number; outputTokensReserved: number; status: string; plan: PlanningPlan; expiresAt: number }[];
 }
 export interface PlanningPlan {
-  group: 'direction' | 'preparation'; stages: string[]; model: string;
+  group: 'direction' | 'outline' | 'preparation' | 'adaptation_direction' | 'adaptation_outline'; stages: string[]; model: string;
   limits: { maxCalls: number; maxOutputTokensPerCall: number; maxTotalOutputTokens: number; maxAttemptsPerStage: number; automaticRevisions: number };
 }
 export interface PlanningQuote {
@@ -152,11 +157,12 @@ export interface PlanningQuote {
   estimateMinor: null; currency: null;
 }
 export type PlanningPayload =
-  | { type: 'planning.quote'; maxOutputTokens: number }
+  | { type: 'planning.quote'; maxOutputTokens?: number; targetScope?: 'outline' | 'preparation' }
   | { type: 'planning.grant'; quoteId: string; planHash: string; unknownCostConsent: boolean }
   | { type: 'planning.decide'; checkpointId: string; resumeToken: string; payloadHash: string;
-      decision: 'select' | 'adopt' | 'skip' | 'return'; optionId?: string | null; freeText?: string; answers?: Record<string, string> }
-  | { type: 'planning.cancel' | 'planning.resume' };
+    decision: 'select' | 'adopt' | 'skip' | 'return' | 'revise'; optionId?: string | null; freeText?: string; answers?: Record<string, string>;
+    episodeCount?: number; durationSeconds?: number }
+  | { type: 'planning.cancel' | 'planning.resume' | 'planning.revalidate' };
 export interface PlanningCommand {
   schemaVersion: 2; commandId: string; clientRequestId: string; sessionId: string; workId: string;
   expected: { workRevision: number; workflowRevision: number; capabilityVersion: string };

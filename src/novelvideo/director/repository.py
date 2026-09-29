@@ -190,16 +190,26 @@ def write_ast(
     *,
     legacy: bool = False,
 ) -> str:
+    previous = ast_version(db, work_id, key, version - 1) if version > 1 else None
+    ast = parse_markdown(
+        content, DocumentAST.from_wire(previous["ast"]) if previous else None
+    )
+    return write_verified_ast(db, work_id, key, version, ast, origin, legacy=legacy)
+
+
+def write_verified_ast(
+    db: sqlite3.Connection, work_id: str, key: str, version: int,
+    ast: DocumentAST, origin: str, *, legacy: bool = False,
+) -> str:
+    """Preserve reviewed block identities while sharing the sole version write path."""
+    # Revalidate the wire payload, including duplicate IDs and AST bounds.
+    ast = DocumentAST.from_wire(ast.model_dump(by_alias=True))
     identity = db.execute(
         "SELECT id FROM director_document_ids WHERE work_id=? AND doc_key=?",
         (work_id, key),
     ).fetchone()
     if identity is None:
         raise ExecutionFault("DOCUMENT_SCOPE_MISMATCH", status=422)
-    previous = ast_version(db, work_id, key, version - 1) if version > 1 else None
-    ast = parse_markdown(
-        content, DocumentAST.from_wire(previous["ast"]) if previous else None
-    )
     rendered = render_markdown(ast)
     status = "legacy_unverified" if legacy else "draft"
     db.execute(
@@ -371,6 +381,12 @@ class DocumentRepository:
                     raise ExecutionFault("VERSION_CONFLICT")
                 if payload.type == "document.saveDraft":
                     result = self._save_draft(db, actor, command, current)
+                elif payload.type == "outline.decideGroups":
+                    from .outline_changes import decide_groups
+
+                    if identity["doc_key"] != "outline" or command.expected.work_revision != work["revision"]:
+                        raise ExecutionFault("VERSION_CONFLICT")
+                    result = decide_groups(db, self.store, command.work_id, payload, current)
                 else:
                     if command.expected.work_revision != work["revision"]:
                         raise ExecutionFault("VERSION_CONFLICT")

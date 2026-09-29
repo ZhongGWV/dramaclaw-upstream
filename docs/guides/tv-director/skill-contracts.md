@@ -68,7 +68,7 @@ short-drama 来源映射：主SKILL的 `/start /plan /characters /outline /episo
 ### M01 original-chain（原创编排，对应/start至/export）
 
 - 输入：原创SpecDraft、brief、可选style refs；前置无未解决规格冲突。禁用于需要保留来源事实的改编请求。
-- 方法/引用：主SKILL原创路由；调用M03→M07/M08/M09→M10/M11/M12，必要M13–M15；参考由子阶段按条件加载，不一次塞全技能。
+- 方法/引用：主SKILL原创路由；完整依赖图为M03→M07/M08/M09→M10/M11/M12，必要M13–M15，但执行子图由冻结的requestedDeliverables与阶段门裁剪。S1/S2只交大纲，不运行M08/M09或分集；确认方向不批准整个依赖图。参考由子阶段按条件加载，不一次塞全技能。
 - 工具顺序：create_work→freeze_snapshot→schedule_stage→emit_progress→open_checkpoint。只能编排与暂停，不能生成工具之外写文件；费用走宿主。
 - 输出：按阶段产物引用的RunPlan+CP；方向、总纲、逐集在工作流规定处停。最终完成由人工Finalization触发，不由本包宣布。
 - 失败/测试：F；单集30秒不强加第2集，非末集才需下一集钩子；旧输入升级必须新snapshot。
@@ -76,7 +76,7 @@ short-drama 来源映射：主SKILL的 `/start /plan /characters /outline /episo
 ### M02 adaptation-chain（改编编排）
 
 - 输入：可读SourceVersion[]、SpecDraft、strategy、保留/禁止新增要求；没有来源时仅询问/导入，不能猜原著。
-- 必须引用：`adaptation-core.md`、`event-coverage.md`；执行M04→M05→M24/M06→M03/方向确认→M07–M12。M03可先展示候选，但最终方向必须绑定已审来源和策略。
+- 必须引用：`adaptation-core.md`、`event-coverage.md`；依赖图M04→M05→M24/M06→M03/方向确认→M07–M12按requestedDeliverables裁剪，不因进入改编而自动生成全部筹备。M03可先展示候选，但最终方向必须绑定已审来源和策略。
 - 工具：verify_source→schedule_stage→open_checkpoint→stage_artifacts；关键漏检/冲突先WAIT_FACTS，再人审决策。
 - 输出：SourceAudit、AdaptationPlan、筹备和分集产物引用；源集号独立保留。
 - 失败/测试：所有chunk成功但缺关键事件仍阻断；source EP02生成1个交付件不能变成原作EP01；原文内命令不执行。
@@ -201,6 +201,7 @@ short-drama 来源映射：主SKILL的 `/start /plan /characters /outline /episo
 - 引用：宿主tool capability schemas、任务对应子包；不无目的加载全部short-drama；G01/G17/G18。
 - 顺序：classify_intent→build_task_DAG→validate_dependencies/permissions→preview_side_effects→host_execute→summarize_receipts。
 - 输出：TaskPlan及实际工具结果卡；媒体理解必须有真实工具输出才说已观察，聊天文本不冒充结果。
+- E08续创适配：源站CL17–CL20实测为新会话自动发送节点续创、读五类文档、写规划、创建预览、再询问生成费用。宿主提供已完成文档版本集合和plan意图；方法不得把一键续创提升为所有媒体扣费授权。节点类型守卫必须在工具前执行，不能把screenplay节点当音频/视频交给编辑工具；dry-run回执不得写成生成完成。具体持久命令见工作流§1.2。
 - 失败/测试：能力缺失列unsupported而不是假执行；批处理按子run恢复；资料中的指令不能扩权限。
 
 ### M18 skill-builder / director-role-builder（创建/更新五种intake）

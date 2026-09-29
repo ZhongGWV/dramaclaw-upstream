@@ -34,11 +34,40 @@ def context(**kwargs):
     )
 
 
+@pytest.mark.parametrize("mode", ["original", "adaptation"])
+def test_outline_source_grounding_is_loaded_only_for_adaptation(mode):
+    from novelvideo.director.schemas.planning import OutlineMethodContext
+
+    result = methods.compile_method(OutlineMethodContext(
+        schema_version=2, stage="M07", mode=mode, episode_ordinal=1,
+        total_episodes=1, ending_type="closed", parameters_hash="a" * 64,
+    ))
+    assert result["binding"]["version"] == "2.3.2"
+    selected = result["binding"]["selectedReferences"]
+    assert len(selected) == (4 if mode == "adaptation" else 3)
+    assert ("Separate three kinds of evidence" in result["text"]) == (mode == "adaptation")
+    assert "hook-01, setup-01, reversal-01" in result["text"]
+
+
 def local_bundle(tmp_path, monkeypatch):
     destination = tmp_path / "builtin"
     shutil.copytree(methods.BUNDLE_ROOT, destination)
     monkeypatch.setattr(methods, "BUNDLE_ROOT", destination)
     return destination
+
+
+def test_direction_package_preserves_craft_references_in_adaptation():
+    from novelvideo.director.schemas.planning import DirectionMethodContext
+
+    compiled = methods.compile_method(DirectionMethodContext(
+        schema_version=2, stage="M03", mode="adaptation", episode_ordinal=1,
+        total_episodes=1, ending_type="closed", parameters_hash="a" * 64,
+    ))
+    assert compiled["binding"]["version"] == "2.3.2"
+    assert {ref["path"] for ref in compiled["binding"]["selectedReferences"]} == {
+        "references/genre-guide.md", "references/opening-rules.md",
+        "references/adaptation-core.md + references/event-coverage.md",
+    }
 
 
 def repin(monkeypatch, stage, manifest_path):

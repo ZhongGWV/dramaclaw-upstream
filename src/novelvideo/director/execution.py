@@ -33,16 +33,20 @@ from .outline_review import (
     OUTLINE_REVIEW_VERSION,
     compile_outline_review,
 )
+from .output_budget import OUTPUT_BUDGET_VERSION, output_budget
 
 
 def execution_capability() -> dict:
     from .planning import PLANNING_SYSTEM, PLANNING_VERSION
+    from .context import CONTEXT_VERSION
+    from .outline_compiler import enabled, PIPELINE_VERSION
 
     model = director_model_contract()
     value = {
         "schemaVersion": 2,
         "model": model,
         "methodVersion": METHOD_VERSION,
+        "contextCompilerVersion": CONTEXT_VERSION,
         "systemPromptHash": digest(SYSTEM_PROMPT),
         "reviewSystemPromptHash": digest(REVIEW_SYSTEM),
         "reviewMethodVersion": REVIEW_VERSION,
@@ -53,8 +57,11 @@ def execution_capability() -> dict:
         "methodPackageRegistryHash": package_registry_hash(),
         "planningVersion": PLANNING_VERSION,
         "planningSystemHash": digest(PLANNING_SYSTEM),
+        "outlineDeliveryV3": enabled(),
+        "outlinePipelineVersion": PIPELINE_VERSION,
         "maxAttempts": 1,
-        "outputTokens": {"minimum": 256, "maximum": 16384, "default": 4096},
+        "outputBudgetPolicy": OUTPUT_BUDGET_VERSION,
+        "outputTokens": {"minimum": 256, "maximum": 32768, "default": 12288},
         "cost": {
             "estimateMinor": None,
             "currency": None,
@@ -127,21 +134,37 @@ class ExecutionService:
         key = document_key(payload.kind, payload.episode_ordinal)
         if set(command.expected.document_versions) != {key}:
             raise ExecutionFault("DOCUMENT_VERSIONS_REQUIRED", status=422)
-        repo.store._ensure_writable(db, repo.store._work(db, command.work_id), key)
+        review_change = payload.review_target.change_id if payload.review_target else ""
+        repo.store._ensure_writable(db, repo.store._work(db, command.work_id), key,
+                                    accepted_change_id=review_change)
         if db.execute(
-            "SELECT 1 FROM changes WHERE work_id=? AND status='pending'",
-            (command.work_id,),
+            "SELECT 1 FROM changes WHERE work_id=? AND status='pending' AND id!=?",
+            (command.work_id, review_change),
         ).fetchone():
             raise ExecutionFault("PENDING_CHANGES")
         self._no_active(db, command.work_id)
+        work = repo.store.get_work(command.work_id, include_source=True)
+        document = repo.store.get_document(command.work_id, key)
+        budget = output_budget(
+            "M12" if payload.review_target else "review" if payload.purpose == "review" else payload.kind,
+            work["preset"], source_chars=len(work["source_text"]),
+            document_chars=len(document["content"]), explicit=payload.max_output_tokens,
+        )
+        if budget.get("requiresSectionPlan"):
+            # Do not buy a response we already expect to truncate. A section
+            # plan needs its own bounded quote; this is not permission to retry.
+            raise ExecutionFault("SECTION_PLAN_REQUIRED", status=422)
         generation = GenerateDraft(
             kind=payload.kind,
             episode_ordinal=payload.episode_ordinal,
             instruction=payload.instruction,
             expected_version=command.expected.document_versions[key],
         )
+        from .outline_changes import compile_candidate_review
+
         compiled = (
-            compile_outline_review(repo.store, command.work_id)
+            compile_candidate_review(db, repo.store, command.work_id, payload.review_target, budget["maxOutputTokens"])
+            if payload.review_target else compile_outline_review(repo.store, command.work_id)
             if payload.purpose == "review" and payload.kind == "outline"
             else compile_review(repo.store, command.work_id, payload.episode_ordinal)
             if payload.purpose == "review"
@@ -149,7 +172,7 @@ class ExecutionService:
                 repo.store,
                 command.work_id,
                 generation,
-                max_output_tokens=payload.max_output_tokens,
+                max_output_tokens=budget["maxOutputTokens"],
             )
         )
         snapshot = {
@@ -160,18 +183,20 @@ class ExecutionService:
             "docKey": key,
             "prompt": compiled["prompt"],
             "inputHash": compiled["input_sha256"],
-            "parameters": compiled["parameters"],
+            "parameters": {**compiled["parameters"], "outputBudget": budget},
             "contextManifest": compiled["context_manifest"],
             "capabilityVersion": capability["version"],
             "limits": {
                 "maxAttempts": 1,
-                "maxOutputTokens": payload.max_output_tokens,
+                "maxOutputTokens": budget["maxOutputTokens"],
                 "inputChars": len(compiled["prompt"]),
-                "timeoutSeconds": 300,
+                "timeoutSeconds": 600 if payload.review_target else 300,
             },
         }
         if payload.purpose == "review":
             snapshot["reviewInputs"] = compiled["review_inputs"]
+        if payload.review_target:
+            snapshot["outlineReviewTarget"] = compiled["outlineReviewTarget"]
         quote_id = identifier()
         now = repo.clock()
         request_hash = digest(snapshot)
@@ -252,12 +277,17 @@ class ExecutionService:
             != snapshot["baseVersion"]
         ):
             raise ExecutionFault("VERSION_CONFLICT")
-        repo.store._ensure_writable(
-            db, repo.store._work(db, command.work_id), snapshot["docKey"]
-        )
+        from .outline_changes import review_current
+
+        target = snapshot.get("outlineReviewTarget")
+        if target and not review_current(db, command.work_id, target):
+            raise ExecutionFault("OUTLINE_REVIEW_HEAD_CHANGED")
+        review_change = target["changeId"] if target else ""
+        repo.store._ensure_writable(db, repo.store._work(db, command.work_id), snapshot["docKey"],
+                                    accepted_change_id=review_change)
         if db.execute(
-            "SELECT 1 FROM changes WHERE work_id=? AND status='pending'",
-            (command.work_id,),
+            "SELECT 1 FROM changes WHERE work_id=? AND status='pending' AND id!=?",
+            (command.work_id, review_change),
         ).fetchone():
             raise ExecutionFault("PENDING_CHANGES")
         self._no_active(db, command.work_id)

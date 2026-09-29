@@ -33,7 +33,7 @@
 | A15 | 上传图/视频/音频/文档 | attachment.upload/verify → D.assetId+version+status | 上传中/失败不能Send；限制及校验来自capabilities |
 | A16 | @引用节点/资源/工作流 | reference.search/select → D稳定ID与版本 | 已删除/无权/版本过旧提示；不靠名称绑定 |
 | A17 | 点击/删除引用chip | focusNode或composer.removeReference → 同步D AST与manifest | 删除被正文引用对象须显示失效位置，不静默串号 |
-| A18 | 全能/原创/改编/导演模式 | composer.setMode → D.mode及对应参数区 | 活跃run不改其冻结模式；不丢未发文本 |
+| A18 | 全能/原创/改编/导演模式 | composer.setMode → D.mode及对应参数区；目标解析见工作流§1.1 | 活跃run不改冻结模式/目标；不丢输入或附件；不适用引用保留并解释，不能静默发送 |
 | A19 | 全能媒体模型 | capabilities.get/select → D.mediaModels | 视频仅H3；不可用给原因；不伪造图音频可用模型 |
 | A20 | 剧本文本模型 | capabilities.text/select → D.modelBinding | 显示实际路由ID；固定网关不可改成假值 |
 | A21 | Skill入口 | skill.catalog.open → 通用/收藏/我的 | 空列表不阻断基本写作；列表失败可重试 |
@@ -58,7 +58,7 @@
 | O09 | 时代背景卡 | preset.setEra → 配置项/自定义 | 与锁定事实冲突进入CP而非默改 |
 | O10 | 核心看点卡 | preset.setHighlights → 多选稳定顺序 | 清空允许与否按schema；不混成画风字段 |
 | O11 | 画风卡/自定义/参考图 | preset.setStyle → styleId/text/ref资产版本 | 图未就绪不可确认；叙事基调与视觉风格分开 |
-| O12 | 集数/自动 | preset.setEpisodeCount → 显式1–100或auto | auto发送后问卷解析为整数再规划；绝不默设20 |
+| O12 | 集数/自动 | preset.setEpisodeCount → 正整数或auto | 用户决定规模；auto确认后规划，不默设20或强限100；资源不足给分页/分批方案 |
 | O13 | 结构八选项 | preset.setStructure → 稳定枚举 | 所选非线性须显式时线；不强制三幕 |
 | O14 | 取消/关闭设定器 | 丢弃弹层副本，回D原值 | 有未存附件只解除草稿引用，不误删共享资产；原站预设取消回滚已实测 |
 | O15 | 确认设定器 | validate → D中preset chip | 不生成；错误定位字段；Send再冻结 |
@@ -75,7 +75,7 @@
 | D05 | 扩写 | D.strategy=expand；设允许新增范围 | 不拿新桥段当来源事实；M06-A2 |
 | D06 | 强化冲突 | D.strategy=conflict；目标/阻力/代价 | 禁改锁定身份/动机；M06-A3 |
 | D07 | 钩子 | D.strategy=hook；揭示/兑现要求 | 末集例外与虚假悬念检查；M06-A4 |
-| D08 | 集数 | 统一1–100/auto；同时显示sourceLabel/deliveryLabel | 有意修复原站表单最小2与问卷1不一致；N非假兼容 |
+| D08 | 集数 | 正整数/auto；同时显示sourceLabel/deliveryLabel | 用户决定规模；源站观察范围不是本产品永久上限；最小2/问卷1差异仍如实记录 |
 | D09 | 移除改编预设 | removePreset，保留source chip | 不把删除策略理解成删除原稿 |
 
 ### Q / S：问卷与费用设置（QuestionCard / ApprovalCard / SettingsDialog）
@@ -110,7 +110,7 @@
 | E05 | 分集/场次目录 | episode.list + document.get → 稳定episodeId选中 | 重排只改ordinal/标签，不换正文ID |
 | E06 | 打开编辑器 | document.open → 全屏+目录+DV | 草稿/正式明确；不复制第二份正文 |
 | E07 | 生成角色图下拉 | character.select → media.plan/quote | 只生成有权限选中角色，先审批；G |
-| E08 | 全能创作 | composer.attachDocument(DV)并选omni | 不自动发送，不丢来源版本 |
+| E08 | 全能创作 | 冻结已完成文档版本集合→新omni会话→attachDocument→message.send续创意图 | 源站CL17自动发送且dryRun；本地幂等只发一次，旧输入保留；规划/预览不等于媒体执行，费用另批 |
 | E09 | 下载 | export.preview/create → 指定版本manifest+文件 | 草稿/未验证水印元信息，失效素材提示；不假定正式 |
 | E10 | 撤销 | editor.undo → 编辑草稿 | 非跨版本删除；已提交需新变更 |
 | E11 | 重做 | editor.redo → 编辑草稿 | 新编辑清redo；失败不影响正式DV |
@@ -230,7 +230,7 @@ C04与视频节点的既有H3事实对照[请求合同](../minimax-h3-liblib-req
 | 人物/时代/核心看点 | characterSetup、era、highlights | 每项包含ids/customText/provenance，不交叉覆写 |
 | 画风/参考图 | visualStyle.id/text/referenceAssetVersion | style-only不能改变剧情事实；引用图与素材区同步 |
 | 剧本结构 | structureId | three_act/five_act/hero/parallel/cross/nonlinear/loop/unit |
-| 集数 | episodeCountDraft: auto或1–100；confirmedSpec.totalEpisodes: integer | auto必须解析确认后规划；末集由当前episode order推导 |
+| 集数 | episodeCountDraft: auto或正整数；confirmedSpec.totalEpisodes: positive integer | auto确认后规划；拒绝非有限/小数/非安全整数输入，超单次容量分批，不改用户集数；末集由episode order推导 |
 | 单集时长 | episodeDurations[episodeId]或defaultDurationSeconds | 明示单位秒；不把供应商片段时长当剧本时长 |
 | 叙事基调 | narrativeTone.id/customText/provenance | 由用户输入或X04问卷确认；不以visualStyle代填，不默改锁定基调 |
 | 结局/语言/市场 | endingType/outputLanguage/market | 影响规则选择；正文生成后改变走关联修订 |
@@ -242,7 +242,7 @@ Top8模板是带版本的字段patch，不包含Secret/调用权限；应用时�
 
 ## 6. 界面实现约束
 
-双视口1200×863与1920×1080：点阵画布、剧本节点左目录/右正文、浮动节点动作条、右侧400×640可调浮窗、设定器Top8左栏与题材大圆右栏、六张参数卡、问卷/报价卡、全屏编辑器与局部diff。这些视图不能合并成普通聊天textarea。
+视口集合按[验收配置](acceptance-policy.json)：点阵画布、剧本节点左目录/右正文、浮动节点动作条、右侧400×640可调浮窗、设定器Top8左栏与题材大圆右栏、六张参数卡、问卷/报价卡、全屏编辑器与局部diff。这些视图不能合并成普通聊天textarea。
 
 组件拆分对应上表组名；状态由hooks/服务端投影驱动，组件不直接拼模型prompt。视觉尺寸以观察基线和DESIGN token为准，具体容差见[验收合同](acceptance-contracts.md)；响应式、键盘、焦点、禁用原因、错误和加载态都计入验收。N分支样式先采用显式自有设计并标记待对照，不把想象截图当研究证据。
 
@@ -256,3 +256,13 @@ Top8模板是带版本的字段patch，不包含Secret/调用权限；应用时�
 6. 分享预览列实际公开字段与到期时间；撤销后匿名访问与缓存均失效，已下载副本无法回收须提前告知。Plugin显示实际scope、连接主体及有效期，断开停止新调用，不冒充站内模型配置。F31/F33。
 
 以上行为对应机器追踪表的149个UI动作及8项能力；每个动作的计划代码位置、命令、fixture和测试见[追踪表](implementation-map.json)。差异U编号的固定实现决定见[收口与分解](implementation-closure.md)；其状态不是源站实测T。
+
+## 8. 按钮级证据与当前实现的双轴追踪
+
+当前使用implementation-map.executionTracking；历史requirements中的P阶段、planned路径和旧status仅是原设计索引，不等于当前运行情况。每个ID可跨多个S阶段，拆子case不能改原149+8分母。五文档的共用E控件按kind分别验，UI状态按policy.visual.states细分，不能只验一个代表。
+
+`caseBindings[]`每项包含：caseId、entry、precondition、operation、uiChange、requestRefs、responseRefs、eventRefs、persistenceBeforeAfter、failureAndRecovery、implementationRefs、assertionRefs、visualRefs、sourceStatus、localStatus、baselineRef、policyId。字段未知写missing+reason，纯视图动作请求为none；没有实际归档不能填模拟requestId。原始数据仅受控目录，公开索引只留脱敏摘要/hash/相对位置。
+
+来源状态区分not_indexed/unknown/partial_observed/observed/observed_failure；实现审计区分not_audited/observed_partial/observed_missing/validated。`observed_missing`须实际看过接点，不能由旧not_implemented批量推断；`validated`须绑定有效的产品case，不因文档检查通过升级。历史报告链接不等于逐按钮请求证据。
+
+S0必须完成当前切片所需case绑定及全部ID的范围/缺口登记；后续切片开工前审其实际接口/代码版本，最终S10不允许not_indexed/not_audited直接算通过。已实测直接复用带版本证据，只有缺失子态才补测；未知先明确我方设计和源站待证，不凭图标猜功能。

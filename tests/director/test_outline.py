@@ -101,6 +101,28 @@ def test_adaptation_direct_edit_uses_same_skill_and_keeps_source(runtime):
     assert source in compiled["prompt"]
 
 
+def test_seed_outline_revision_does_not_overflow_from_duplicate_decoder_schema(runtime, monkeypatch):
+    from novelvideo.director.models import CreateWork
+
+    monkeypatch.setattr(writing, "resolve_director_model", lambda _: "ark::doubao-seed-evolving")
+    store = runtime[0]
+    source = "A red key opens the box; the letter inside changes the ending."
+    work = store.create_work(CreateWork(
+        title="Short source revision", brief="Preserve the story.", source_text=source,
+        preset=DirectorPreset(mode="adaptation", adapt_direction="condense", duration_seconds=600),
+    ))
+    current = "# Existing outline\n" + "A red key opens the box. " * 420 + "SOURCE-END"
+    store.put_document(work["id"], "outline", current, 0)
+    compiled = writing.compile_generation(store, work["id"], GenerateDraft(
+        kind="outline", expected_version=1, instruction="Keep the event order without new actions.",
+    ), max_output_tokens=16384)
+    assert "SOURCE-END" in compiled["prompt"]
+    assert source in compiled["prompt"]
+    assert compiled["parameters"]["response_format"]["json_schema"]["strict"] is True
+    assert '"schemaHash"' in compiled["prompt"]
+    assert len(compiled["prompt"]) < writing.MAX_MODEL_INPUT_CHARS
+
+
 @pytest.mark.parametrize("language,locale", [("zh-CN", 0), ("en", 1), ("vi", 2)])
 def test_projection_contains_all_elements_in_observed_order_without_internal_keys(
     language, locale
@@ -207,13 +229,18 @@ def test_duplicate_json_key_never_silently_overwrites_a_valid_answer():
         parse_outline(raw, root)
 
 
-async def test_json_mode_reaches_wire_and_raw_content_is_retained(monkeypatch):
+@pytest.mark.parametrize("model_name", ["test-model", "ark::doubao-seed-evolving", "ark::deepseek-v4.1-flash"])
+@pytest.mark.parametrize("strict", [False, True])
+async def test_json_mode_reaches_wire_and_raw_content_is_retained(monkeypatch, model_name, strict):
     import httpx
     from openai import AsyncOpenAI
     from pydantic_ai.models.openai import OpenAIChatModel
     from pydantic_ai.providers.openai import OpenAIProvider
 
     requests = []
+    from novelvideo.director.structured_output import response_format, decoder_schema
+    schema = StoryPlan.model_json_schema(by_alias=True)
+    wire_format = response_format(model_name, schema, name="director_m07") if strict else {"type": "json_object"}
     raw = '{"badField": null, "badField": true}'
 
     def respond(request):
@@ -254,14 +281,76 @@ async def test_json_mode_reaches_wire_and_raw_content_is_retained(monkeypatch):
             writing, "get_newapi_text_pydantic_model", lambda *_a, **_k: model
         )
         result = await writing.run_bounded_outline_model(
-            "Return JSON only.", "test-model", 512
+            "Return JSON only.", model_name, 512, response_format=wire_format
         )
     assert len(requests) == 1
-    assert requests[0]["response_format"] == {"type": "json_object"}
-    assert requests[0]["max_completion_tokens"] == 512
+    assert requests[0]["response_format"] == wire_format
+    if strict and model_name.startswith("ark::"):
+        assert wire_format["json_schema"]["strict"] is True
+        assert wire_format["json_schema"]["schema"] == decoder_schema(schema)
+    if model_name.startswith("ark::"):
+        assert "max_completion_tokens" not in requests[0]
+    else:
+        assert requests[0]["max_completion_tokens"] == 512
     assert requests[0]["max_tokens"] == 512
     assert result.text == raw  # No SDK repair, coercion or duplicate-key loss.
     assert result.requests == 1 and result.output_tokens == 5
+
+
+@pytest.mark.parametrize("name", ["ark::doubao-seed-evolving", "ark::deepseek-v4.1-flash"])
+def test_direct_outline_freezes_exact_host_schema_for_verified_routes(runtime, monkeypatch, name):
+    from novelvideo.director.structured_output import decoder_schema
+    monkeypatch.setattr(writing, "resolve_director_model", lambda _: name)
+    store, work, _, _, _ = runtime
+    params = writing.compile_generation(store, work["id"], GenerateDraft(kind="outline", expected_version=0))["parameters"]
+    assert params["response_format"]["type"] == "json_schema"
+    assert params["response_format"]["json_schema"]["schema"] == decoder_schema(params["responseSchema"])
+    assert "carryIn" in params["responseSchema"]["$defs"]["StorySegment"]["required"]
+    assert "stageGoal" in params["responseSchema"]["$defs"]["StorySegment"]["required"]
+    assert params["responseSchema"]["$defs"]["WatchReason"]["additionalProperties"] is False
+
+
+def test_validation_receipts_explain_fields_without_serializing_private_values():
+    from novelvideo.director.output_validation import validation_receipt
+    value, root = sample()
+    del value["segments"][0]["carryIn"]
+    del value["segments"][0]["stageGoal"]
+    value["whyWatch"][0]["reasonId"] = "private-user-value-never-in-error"
+    try:
+        validate_outline(value, root)
+    except ValueError as error:
+        receipt = validation_receipt(error)
+    assert receipt["issueCount"] == 3
+    assert receipt["issues"] == [
+        {"path": "segments.0.carryIn", "code": "missing"},
+        {"path": "segments.0.stageGoal", "code": "missing"},
+        {"path": "whyWatch.0.reasonId", "code": "extra_forbidden"},
+    ]
+    assert "private-user-value" not in json.dumps(receipt)
+
+
+@pytest.mark.parametrize("text", ["", " ", "\n\t", "朱", "一段完整的故事。", "\n A complete\nparagraph. \n"])
+def test_decoder_nonblank_pattern_preserves_multichar_and_multiline_semantics(text):
+    import re
+    from novelvideo.director.structured_output import decoder_schema
+    schema = StoryPlan.model_json_schema(by_alias=True)
+    before = copy.deepcopy(schema)
+    adapted = decoder_schema(schema)
+    host_pattern = schema["properties"]["synopsis"]["pattern"]
+    wire_pattern = adapted["properties"]["synopsis"]["pattern"]
+    assert bool(re.search(host_pattern, text)) == bool(re.fullmatch(wire_pattern, text))
+    assert schema == before
+    assert adapted["$defs"]["StoryHook"]["properties"]["id"] == schema["$defs"]["StoryHook"]["properties"]["id"]
+
+
+def test_systemically_collapsed_prose_is_not_an_adoptable_outline():
+    value, root = sample()
+    for field in ("logline", "synopsis", "ending"):
+        value[field] = "字"
+    for segment in value["segments"]:
+        segment.update(action="字", result="字")
+    with pytest.raises(ValueError, match="OUTLINE_NARRATIVE_COLLAPSED"):
+        validate_outline(value, root)
 
 
 def test_old_artifact_remains_readable_and_unmodified():
@@ -289,7 +378,7 @@ def test_reference_hashes_and_craft_reach_both_paths(runtime):
         store, work["id"], GenerateDraft(kind="outline", expected_version=0)
     )
     params = compiled["parameters"]
-    assert params["skill_version"] == "2.2.0"
+    assert params["skill_version"] == "2.3.2"
     assert params["skill_key"] == "studio/story-plan"
     package = load_package("M07")
     for ref in package["manifest"].required_references:

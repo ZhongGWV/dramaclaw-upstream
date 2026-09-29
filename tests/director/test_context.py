@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import pytest
+import copy
+import json
 
 from novelvideo.director.context import ContextItem, compile_context
 from novelvideo.director.documents import content_hash
@@ -103,3 +105,44 @@ def test_markup_closing_source_tag_remains_json_data_and_does_not_change_rules()
 def test_output_reserve_cannot_consume_input_budget():
     with pytest.raises(ExecutionFault, match="CONTEXT_BUDGET_INVALID"):
         compile([item()], output_reserve=30000)
+
+
+def test_decoder_schema_is_not_repeated_in_prompt_but_remains_frozen_on_wire():
+    schema = {"type": "object", "properties": {"uniqueNarrativeField": {"type": "string"}}}
+    parameters = {
+        "responseSchema": schema,
+        "response_format": {"type": "json_schema", "json_schema": {
+            "name": "outline", "strict": True, "schema": schema,
+        }},
+    }
+    original = copy.deepcopy(parameters)
+    result = compile([item()], parameters=parameters)
+    assert parameters == original
+    assert result["prompt"].count('"uniqueNarrativeField"') == 1
+    assert '"schemaHash"' in result["prompt"]
+    assert "transfers the key to B at the end" in result["prompt"]
+    assert result["manifest"]["tokenEstimate"] == len(result["prompt"].encode())
+    parameters["response_format"]["json_schema"]["schema"] = {"type": "object"}
+    assert result["inputHash"] != compile([item()], parameters=parameters)["inputHash"]
+
+
+def test_only_decoder_schema_remains_complete_when_no_host_schema_is_present():
+    parameters = {"response_format": {"type": "json_schema", "json_schema": {
+        "name": "only-contract", "strict": True, "schema": {"type": "object"},
+    }}}
+    result = compile([item()], parameters=parameters)
+    assert json.dumps(parameters, sort_keys=True) in result["prompt"]
+
+
+def test_disabled_rule_receipts_stay_complete_in_audit_but_compact_in_prompt():
+    from novelvideo.director.rules.resolver import resolve_rules
+
+    result = compile([item()])
+    disabled = result["manifest"]["disabledRules"]
+    assert disabled == resolve_rules(RuleContext(
+        stage="M04", mode="adaptation", total_episodes=1, has_source=True,
+    ))["disabled"]
+    assert disabled and all("sourceHash" in rule for rule in disabled)
+    for rule in disabled:
+        assert json.dumps(rule, sort_keys=True) not in result["prompt"]
+        assert json.dumps({"id": rule["id"], "reason": rule["reason"]}, sort_keys=True) in result["prompt"]

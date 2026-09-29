@@ -143,6 +143,16 @@ class ImportLegacy(WireContract):
     preview_hash: Sha256
 
 
+class DecideOutlineGroups(WireContract):
+    type: Literal["outline.decideGroups"]
+    document_id: Identifier
+    change_id: Identifier
+    change_revision: PositiveInt
+    group_ids: list[Identifier] = Field(min_length=1)
+    decision: Literal["accept", "reject"]
+    report_id: Identifier | None = None
+
+
 class DocumentCommand(WireContract):
     schema_version: Literal[2]
     command_id: Identifier
@@ -151,5 +161,5 @@ class DocumentCommand(WireContract):
     work_id: Identifier
     expected: DocumentExpected
     payload: Annotated[
-        SaveDraft | CommitManual | ImportLegacy, Field(discriminator="type")
+        SaveDraft | CommitManual | ImportLegacy | DecideOutlineGroups, Field(discriminator="type")
     ]

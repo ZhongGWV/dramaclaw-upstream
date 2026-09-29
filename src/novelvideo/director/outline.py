@@ -26,7 +26,23 @@ def parse_outline(raw: str, root: dict) -> dict:
 
 
 def validate_outline(value: dict, root: dict) -> dict:
+    contract = root.get("outlineContract", OUTLINE_CONTRACT)
+    if contract == "adaptation-outline/3.0.0":
+        from .outline_delivery import validate_delivery
+
+        if "outlineDeliveryContext" not in root:
+            raise ValueError("OUTLINE_DELIVERY_CONTEXT_REQUIRED")
+        return validate_delivery(value, root, root["outlineDeliveryContext"])
+    if contract != OUTLINE_CONTRACT:
+        raise ValueError("OUTLINE_CONTRACT_UNSUPPORTED")
     value = StoryPlan.from_wire(value).model_dump(mode="json", by_alias=True)
+    # A decoder can satisfy field presence while collapsing every sentence to
+    # one character. Reject systemic loss of prose, not concise titles/names.
+    narrative = [value["logline"], value["synopsis"], value["ending"]] + [
+        segment[key] for segment in value["segments"] for key in ("action", "result")
+    ]
+    if all(len(text.strip()) <= 1 for text in narrative):
+        raise ValueError("OUTLINE_NARRATIVE_COLLAPSED")
     spec, episodes = root["preset"], root["episodes"]
     ordered = [ep["id"] for ep in episodes]
     ranks = {identifier: i for i, identifier in enumerate(ordered)}
@@ -214,6 +230,15 @@ STRUCTURES = {
 
 def render_outline(story: dict, root: dict) -> str:
     """Render all required elements without generating new story facts."""
+    contract = root.get("outlineContract", OUTLINE_CONTRACT)
+    if contract == "adaptation-outline/3.0.0":
+        from .outline_delivery import render_delivery
+
+        if "outlineDeliveryContext" not in root:
+            raise ValueError("OUTLINE_DELIVERY_CONTEXT_REQUIRED")
+        return render_delivery(story, root, root["outlineDeliveryContext"])
+    if contract != OUTLINE_CONTRACT:
+        raise ValueError("OUTLINE_CONTRACT_UNSUPPORTED")
     language = root["preset"].get("output_language", "zh-CN").lower()
     locale = 1 if language.startswith("en") else 2 if language.startswith("vi") else 0
 

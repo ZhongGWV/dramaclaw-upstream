@@ -75,7 +75,8 @@ async def test_single_paid_intent_preserves_bad_output_and_cannot_reuse_director
 ):
     calls = []
 
-    async def model(*args):
+    async def model(*args, response_format=None):
+        assert response_format == {"type": "json_object"}
         calls.append(args)
         return writing.WritingResult(
             '{"bad":"incomplete"}', 10, 5, 1, "stop", "test-model"

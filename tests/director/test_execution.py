@@ -87,6 +87,12 @@ def quote(runtime, **kwargs):
     return request, service.execute("writer", request)["result"]
 
 
+def test_default_budget_fits_real_outlines_without_overriding_explicit_limits(runtime):
+    assert execution_capability()["outputTokens"]["default"] == 12288
+    _, quoted = quote(runtime)
+    assert quoted["limits"]["maxOutputTokens"] == 1024
+
+
 def outline_output(runtime):
     package = load_package("M07")
     value = json.loads(package["files"][package["manifest"].fixtures])[0]["value"]
@@ -147,7 +153,7 @@ def test_quote_is_persisted_and_no_operation_until_explicit_consent(runtime):
         ("maxOutputTokens", 0),
         ("maxOutputTokens", True),
         ("maxOutputTokens", "1024"),
-        ("maxOutputTokens", 16385),
+        ("maxOutputTokens", 32769),
         ("kind", "video"),
         ("episodeOrdinal", 1),
         ("actor", "admin"),

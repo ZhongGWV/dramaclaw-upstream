@@ -3,6 +3,19 @@
 import { useTranslation } from 'react-i18next';
 import type { ExecutionRun } from '@/api/director-execution';
 
+export function RequestParameters({ parameters }: { parameters: Record<string, unknown> }) {
+  const { t } = useTranslation();
+  const entries = Object.entries(parameters);
+  const nested = entries.filter(([, value]) => value !== null && typeof value === 'object');
+  return <>
+    <div className="dc-parameter-list">{entries.filter(([, value]) => value !== null && typeof value !== 'object' && value !== '').map(([key, value]) =>
+      <div key={key}><span>{key}</span><strong>{String(value)}</strong></div>)}</div>
+    {nested.length > 0 && <details><summary>{t('director.execution.requestDetails')}</summary>
+      {nested.map(([key, value]) => <details key={key}><summary>{key}</summary><pre>{JSON.stringify(value, null, 2)}</pre></details>)}
+    </details>}
+  </>;
+}
+
 export function ExecutionHistory({ runs, busy, onAction, onViewResult }: {
   runs: ExecutionRun[];
   busy: boolean;
@@ -21,10 +34,12 @@ export function ExecutionHistory({ runs, busy, onAction, onViewResult }: {
       ? t('director.execution.costUnknown')
       : t('director.execution.costAmount', { amount: run.cost.actualMinor, currency: run.cost.currency ?? '' })}</small>
     {run.errorCode && <p>{t(`director.execution.errors.${run.errorCode}`, { defaultValue: run.errorCode })}</p>}
+    {run.response.validation && <details><summary>{t('director.execution.validationDetails', { count: run.response.validation.issueCount })}</summary>
+      <ul>{run.response.validation.issues.map((issue, index) => <li key={index}><code>{issue.path}</code> · <code>{issue.code}</code></li>)}</ul>
+    </details>}
     {run.requiresReconciliation && <p className="dc-cost-warning">{t('director.execution.reconciliationHint')}</p>}
     {run.status === 'cancel_requested' && <p>{t('director.execution.cancelInFlightHint')}</p>}
-    <details><summary>{t('director.parameterReview')}</summary><div className="dc-parameter-list">
-      {Object.entries(run.parameters).map(([key, value]) => <div key={key}><span>{key}</span><strong>{value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value)}</strong></div>)}
+    <details><summary>{t('director.parameterReview')}</summary><RequestParameters parameters={run.parameters} /><div className="dc-parameter-list">
       <div><span>{t('director.execution.maxOutputTokens')}</span><strong>{run.limits.maxOutputTokens}</strong></div>
       <div><span>{t('director.execution.requestHash')}</span><code>{run.requestHash}</code></div>
       {run.response.usage && <>
@@ -36,8 +51,8 @@ export function ExecutionHistory({ runs, busy, onAction, onViewResult }: {
     </div></details>
     <div className="dc-card-actions">
       {run.response.output_sha256 && onViewResult && <button type="button" disabled={busy} onClick={() => onViewResult(run)}>{t('director.execution.viewResult')}</button>}
-      {run.canCancel && !run.parameters.stage && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.cancel')}>{t('director.execution.stop')}</button>}
-      {run.canResume && !run.parameters.stage && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.resume')}>{t('director.execution.resumeQueued')}</button>}
+      {run.canCancel && (run.purpose ? run.purpose !== 'planning' : !run.parameters.stage) && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.cancel')}>{t('director.execution.stop')}</button>}
+      {run.canResume && (run.purpose ? run.purpose !== 'planning' : !run.parameters.stage) && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.resume')}>{t('director.execution.resumeQueued')}</button>}
       {run.requiresReconciliation && run.status !== 'unknown' && <button type="button" disabled={busy} onClick={() => onAction(run, 'run.resume')}>{t('director.execution.markUnknown')}</button>}
     </div>
   </section>; })}</>;

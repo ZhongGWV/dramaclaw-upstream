@@ -369,12 +369,11 @@ def validate_outline_review(raw: str, frozen: dict, *, truncated: bool = False) 
 
 
 def outline_quality_report(store: "DirectorStore", work_id: str) -> dict:
+    from .quality import matching_review
+
     with store._connect() as db:
         frozen = freeze_outline_inputs(store, db, work_id)
-        row = db.execute(
-            "SELECT q.* FROM director_quality_reports q LEFT JOIN director_review_invalidations i ON i.report_id=q.id WHERE q.work_id=? AND q.doc_key='outline' AND q.input_hash=? AND i.report_id IS NULL ORDER BY q.created_at DESC LIMIT 1",
-            (work_id, frozen["inputHash"]),
-        ).fetchone()
+        row = matching_review(db, work_id, frozen)
         review = None
         if row:
             value = json.loads(row["report_json"])
