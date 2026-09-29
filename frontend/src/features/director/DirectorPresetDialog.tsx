@@ -6,7 +6,7 @@ import { Check, X, Plus, UsersRound, Smile, Theater, KeyRound, Image, Film, Slid
 import assets from './assets/reference-assets.json';
 import templates from './assets/preset-templates.json';
 
-import type { DirectorPreset } from '@/api/director';
+import type { DirectorPreset, DirectorModelOption } from '@/api/director';
 
 export interface DirectorWorkDraft {
   title: string;
@@ -146,10 +146,11 @@ interface Props {
   onConfirm: (value: DirectorWorkDraft) => void;
   readOnly?: boolean;
   fixedModel?: string;
+  modelOptions?: DirectorModelOption[];
   sourceLocked?: boolean;
 }
 
-export function DirectorPresetDialog({ draft: initial, onClose, onConfirm, readOnly = false, fixedModel, sourceLocked = false }: Props) {
+export function DirectorPresetDialog({ draft: initial, onClose, onConfirm, readOnly = false, fixedModel, modelOptions, sourceLocked = false }: Props) {
   const { t } = useTranslation();
   // A modal's edits are provisional. Closing must not mutate the composer or
   // the stored spec; only its explicit confirmation transfers this snapshot.
@@ -386,7 +387,10 @@ export function DirectorPresetDialog({ draft: initial, onClose, onConfirm, readO
                 {!['zh-CN', 'en', 'vi'].includes(preset.output_language ?? '') && <option value={preset.output_language}>{preset.output_language}</option>}
               </select></label>
               <label>{t('director.spec.market')}<input value={preset.market} maxLength={100} onChange={(event) => setPreset({ market: event.target.value })} /></label>
-              <label>{t('director.textModel')}<input value={fixedModel ?? preset.model_name ?? ''} disabled={Boolean(fixedModel)} onChange={(event) => setPreset({ model_name: event.target.value })} placeholder={t('director.systemModel')} />{fixedModel && <small>{t('director.fixedModel')}</small>}</label>
+              <label>{t('director.textModel')}{modelOptions ? <select value={preset.model_name} onChange={event => setPreset({ model_name: event.target.value })}>
+                {!modelOptions.some(option => option.id === preset.model_name) && <option value={preset.model_name} disabled>{preset.model_name || t('director.modelUnavailable')}</option>}
+                {modelOptions.map(option => <option key={option.id} value={option.id}>{option.label} · {option.providerLabel}</option>)}
+              </select> : <input value={fixedModel ?? preset.model_name ?? ''} disabled={Boolean(fixedModel)} onChange={(event) => setPreset({ model_name: event.target.value })} placeholder={t('director.systemModel')} />}{fixedModel && <small>{t('director.fixedModel')}</small>}</label>
               <label>{t('director.structure.label')}<select value={preset.structure} onChange={(event) => setPreset({ structure: event.target.value })}>
                 {STRUCTURES.map((value) => <option key={value} value={value}>{t(`director.spec.structures.${value}`)}</option>)}
                 {!STRUCTURES.includes(preset.structure as typeof STRUCTURES[number]) && <option value={preset.structure}>{t('director.spec.legacyStructure', { value: preset.structure })}</option>}

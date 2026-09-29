@@ -10,12 +10,6 @@ export function saveDirectorPreference(key: string, value: unknown): boolean {
   try { localStorage.setItem(`director:ui:${key}`, JSON.stringify(value)); return true; }
   catch { return false; }
 }
-export const TOKEN_LIMITS = [1024, 2048, 4096, 8192, 16384];
-export function directorTokenLimit(): number {
-  const value = readDirectorPreference('outputTokens', 4096);
-  return TOKEN_LIMITS.includes(value) ? value : 4096;
-}
-
 /** Observe transitions only: opening old history must not produce new notifications. */
 export function notifyDirectorTask(body: string): void {
   if (!readDirectorPreference<boolean>('notifications', false) || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;

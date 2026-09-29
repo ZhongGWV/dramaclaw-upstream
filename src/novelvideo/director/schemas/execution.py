@@ -19,16 +19,25 @@ class ExecutionExpected(WireContract):
     capability_version: Sha256
 
 
+class OutlineReviewTarget(WireContract):
+    change_id: Identifier
+    change_revision: PositiveInt
+    accept_group_ids: list[Identifier] = Field(min_length=1)
+
+
 class QuoteWriting(WireContract):
     type: Literal["cost.quote"]
     kind: Literal["outline", "characters", "scenes", "props", "episode"]
     episode_ordinal: Annotated[int, Field(ge=1, le=100)] | None = None
     instruction: str = Field(default="", max_length=10000)
-    max_output_tokens: Annotated[int, Field(ge=256, le=16384)]
+    max_output_tokens: Annotated[int, Field(ge=256, le=32768)] | None = None
     purpose: Literal["draft", "review"] = "draft"
+    review_target: OutlineReviewTarget | None = None
 
     @model_validator(mode="after")
     def episode_only(self) -> QuoteWriting:
+        if self.review_target and (self.purpose != "review" or self.kind != "outline"):
+            raise ValueError("OUTLINE_REVIEW_TARGET_ONLY")
         if self.purpose == "review" and (
             self.kind not in {"episode", "outline"} or self.instruction
         ):

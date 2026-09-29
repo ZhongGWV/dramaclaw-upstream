@@ -17,6 +17,17 @@ export function ConversationScroll({ children, revision }: { children: ReactNode
     if (follow.current) root.current.scrollTop = root.current.scrollHeight;
     else setUnread(true);
   }, [revision]);
+  useEffect(() => {
+    const node = root.current;
+    if (!node) return;
+    // Quote cards and questions change without an execution-stream revision.
+    const observer = new MutationObserver(() => {
+      if (follow.current) node.scrollTop = node.scrollHeight;
+      else setUnread(true);
+    });
+    observer.observe(node, { childList: true, characterData: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
   return <div className="dc-conversation-scroll">
     <div className="dc-messages" ref={root} onScroll={() => {
       if (!root.current) return;
@@ -35,6 +46,13 @@ export function DirectorConversation({ runs, previews, busy, onAction, onViewRes
   onViewResult: (run: ExecutionRun) => void; onRefine: (run: ExecutionRun) => void;
 }) {
   const { t } = useTranslation();
+  const sectionLabel = (key: string) => {
+    const option = /^options\.(\d+)\.(logline|goal|obstacle|stakes|tone|difference|productionRisks)(?:\.\d+)?$/.exec(key);
+    if (option) return `${t('director.stream.directionNumber', { number: Number(option[1]) + 1 })} · ${t(`director.stream.directionFields.${option[2]}`)}`;
+    const question = /^specQuestions\.(\d+)\.(question|choices)(?:\.\d+)?$/.exec(key);
+    if (question) return `${t('director.stream.questionNumber', { number: Number(question[1]) + 1 })} · ${t(`director.stream.questionFields.${question[2]}`)}`;
+    return '';
+  };
   return <>{[...runs].sort((a, b) => a.createdAt - b.createdAt).map(run => {
     const preview = previews[run.id];
     return <div className="dc-conversation-turn" key={run.id}>
@@ -49,6 +67,11 @@ export function DirectorConversation({ runs, previews, busy, onAction, onViewRes
         <ReactMarkdown skipHtml components={{ img: () => null, a: ({ children }) => <span>{children}</span> }}>{preview.text}</ReactMarkdown>
         <small>{t(['dispatching', 'queued'].includes(run.status) ? 'director.stream.writing' : 'director.stream.retained')}</small>
       </div>}
+      {preview?.sections && <details className="dc-stream-answer" open={['dispatching', 'queued'].includes(run.status)}>
+        <summary>{t(run.parameters.stage === 'M03' ? 'director.stream.directionPreview' : 'director.stream.outlinePreview')}</summary>
+        {Object.entries(preview.sections).map(([key, part]) => <p key={key}>{sectionLabel(key) && <strong>{sectionLabel(key)} · </strong>}{part.text}</p>)}
+        <small>{t(['dispatching', 'queued'].includes(run.status) ? 'director.stream.writing' : 'director.stream.retained')}</small>
+      </details>}
       {run.response.episodeFormat && <div className="dc-format-notice" role="status">
         {t('director.stream.structure', { count: run.response.episodeFormat.sceneCount })}
         {run.response.episodeFormat.missing.length > 0 && <p>{t('director.stream.missing')}: {run.response.episodeFormat.missing.map(key => t(`director.stream.fields.${key}`)).join(' · ')}</p>}

@@ -118,6 +118,9 @@ class DirectorStore:
             from .revisions import initialize_revisions
 
             initialize_revisions(db)
+            from .outline_changes import initialize as initialize_outline_changes
+
+            initialize_outline_changes(db)
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -427,6 +430,8 @@ class DirectorStore:
         content: str,
         expected_version: int,
         origin: str,
+        *,
+        verified_ast=None,
     ) -> dict[str, Any]:
         current = self._version(db, work_id, doc_key)
         if current != expected_version:
@@ -435,10 +440,19 @@ class DirectorStore:
             )
         version = current + 1
         now = time.time()
-        from .repository import is_canonical, write_ast
+        from .repository import is_canonical, write_ast, write_verified_ast
 
         if is_canonical(db, work_id):
-            content = write_ast(db, work_id, doc_key, version, content, origin)
+            if verified_ast is not None:
+                from .documents import render_markdown
+
+                if render_markdown(verified_ast) != content:
+                    raise DirectorInvalidState("candidate AST does not match its projection")
+                content = write_verified_ast(db, work_id, doc_key, version, verified_ast, origin)
+            else:
+                content = write_ast(db, work_id, doc_key, version, content, origin)
+        elif verified_ast is not None:
+            raise DirectorInvalidState("reviewed AST requires canonical storage")
         db.execute(
             "INSERT INTO document_versions VALUES (?, ?, ?, ?, ?, ?)",
             (work_id, doc_key, version, content, origin, now),
@@ -537,13 +551,16 @@ class DirectorStore:
         row = db.execute("SELECT * FROM changes WHERE id = ?", (change_id,)).fetchone()
         if row is None:
             raise DirectorNotFound("change not found")
-        return dict(row)
+        from .outline_changes import projection
+
+        patch = projection(db, change_id)
+        return {**dict(row), **({"outlinePatch": patch} if patch else {})}
 
     def list_changes(self, work_id: str) -> list[dict[str, Any]]:
         with self._connect() as db:
             self._work(db, work_id)
             return [
-                dict(row)
+                self._change_data(db, row["id"])
                 for row in db.execute(
                     "SELECT * FROM changes WHERE work_id = ? ORDER BY created_at DESC",
                     (work_id,),
@@ -558,6 +575,10 @@ class DirectorStore:
             change = self._change_data(db, change_id)
             if change["work_id"] != work_id:
                 raise DirectorNotFound("change not found")
+            if change.get("outlinePatch"):
+                from .schemas.execution import ExecutionFault
+
+                raise ExecutionFault("OUTLINE_GROUP_DECISION_REQUIRED")
             if change["status"] != "pending":
                 raise DirectorConflict("change already decided")
             document = None

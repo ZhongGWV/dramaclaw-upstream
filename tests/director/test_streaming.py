@@ -82,6 +82,8 @@ async def test_durable_deltas_and_terminal_safety(runtime, monkeypatch, outcome)
     assert "secret" not in json.dumps(repo.events(work["id"]))
     if outcome == "success":
         assert result["response"]["episodeFormat"]["qualityVerified"] is False
+    if outcome == "length":
+        assert result["errorCode"] == "MODEL_OUTPUT_TRUNCATED"
 
 
 def test_progress_requires_lease_and_stops_after_terminal(runtime):
@@ -94,7 +96,8 @@ def test_progress_requires_lease_and_stops_after_terminal(runtime):
     assert repo.progress(work["id"], run["id"], token, "text.delta", {"text": "late"}) == 0
 
 
-async def test_sdk_wire_stream_and_usage(monkeypatch):
+@pytest.mark.parametrize("model_name", ["test-model", "ark::doubao-seed-evolving", "ark::deepseek-v4.1-flash"])
+async def test_sdk_wire_stream_and_usage(monkeypatch, model_name):
     requests = []
 
     class Body(httpx.AsyncByteStream):
@@ -115,17 +118,20 @@ async def test_sdk_wire_stream_and_usage(monkeypatch):
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as http:
         client = AsyncOpenAI(api_key="synthetic", base_url="https://synthetic.invalid/v1", http_client=http, max_retries=0)
-        model = OpenAIChatModel("test-model", provider=OpenAIProvider(openai_client=client))
+        model = OpenAIChatModel(model_name, provider=OpenAIProvider(openai_client=client))
         monkeypatch.setattr(writing, "get_newapi_text_pydantic_model", lambda *a, **k: model)
         deltas = []
 
         async def collect(text):
             deltas.append(text)
 
-        result = await writing.run_bounded_writing_model("write", "test-model", 512, on_delta=collect)
+        result = await writing.run_bounded_writing_model("write", model_name, 512, on_delta=collect)
     assert len(requests) == 1 and requests[0]["stream"] is True
     assert requests[0]["stream_options"]["continuous_usage_stats"] is True
-    assert requests[0]["max_completion_tokens"] == 512
+    if model_name.startswith("ark::"):
+        assert "max_completion_tokens" not in requests[0]
+    else:
+        assert requests[0]["max_completion_tokens"] == 512
     assert requests[0]["max_tokens"] == 512
     assert result.text == "".join(deltas) == "# Episode\nVisible action."
     assert (result.input_tokens, result.output_tokens, result.requests) == (120, 18, 1)

@@ -32,14 +32,13 @@ from novelvideo.director.schemas.planning import OutlineMethodContext
 from novelvideo.director.outline import OUTLINE_CONTRACT
 from novelvideo.director.documents import object_hash
 
-METHOD_VERSION = "studio/short-drama-compiler@2.6.0"
+METHOD_VERSION = "studio/short-drama-compiler@2.6.2"
 MODEL_ALIAS = "DC-content-rewriter-LLM"
 MAX_MODEL_INPUT_CHARS = 60000
 
 
-def director_model_contract() -> dict[str, str | bool]:
-    """Expose the wire model because the local router replaces request.model."""
-    configured = get_newapi_text_model_name("DIRECTOR_TEXT_MODEL", MODEL_ALIAS)
+def _director_catalog():
+    """Only the bundled gateway owns the local catalog; remote gateways do not."""
     gateway = get_effective_newapi_gateway_config()
     endpoint = urlsplit(str(gateway.base_url or ""))
     if (
@@ -50,14 +49,48 @@ def director_model_contract() -> dict[str, str | bool]:
 
         router = router_config()
         if endpoint.port == router.port:
-            return {"model_name": router.text_model, "locked": True}
-    return {"model_name": configured, "locked": False}
+            from novelvideo.local_model_catalog import LocalModelCatalog
+
+            return LocalModelCatalog(router.root)
+    return None
+
+
+def director_model_contract() -> dict[str, Any]:
+    """Expose catalog identities so a displayed provider cannot silently change."""
+    catalog = _director_catalog()
+    if catalog is not None:
+        snapshot = catalog.snapshot()
+        configured = {p["id"] for p in snapshot["providers"] if p["configured"]}
+        options = [
+            {key: item[key] for key in ("id", "label", "providerLabel", "upstreamModel")}
+            for item in snapshot["models"]
+            if item["kind"] == "text" and item["enabled"]
+            and not item["blockedReason"] and item["provider"] in configured
+        ]
+        return {
+            "model_name": catalog.setting("default:text"),
+            "locked": False,
+            "source": "local_catalog",
+            "options": options,
+        }
+    return {
+        "model_name": get_newapi_text_model_name("DIRECTOR_TEXT_MODEL", MODEL_ALIAS),
+        "locked": False,
+    }
 
 
 def resolve_director_model(requested: str) -> str:
     contract = director_model_contract()
     actual = str(contract["model_name"])
     selected = requested.strip()
+    if contract.get("source") == "local_catalog":
+        # Revalidate at compilation, not only when the menu was opened. Legacy
+        # SiliconFlow IDs are normalized by the same resolver as the gateway.
+        catalog = _director_catalog()
+        item = catalog.resolve(selected or actual, kind="text")
+        if item["id"] not in {option["id"] for option in contract["options"]}:
+            raise ValueError("selected model provider is not configured")
+        return item["id"]
     if contract["locked"] and selected and selected != actual:
         raise ValueError(
             f"selected model {selected!r} differs from fixed local gateway model {actual!r}"
@@ -103,6 +136,12 @@ def compile_generation(
         from novelvideo.director.store import DirectorConflict
 
         raise DirectorConflict("document changed before generation")
+    if command.kind == "outline":
+        from .outline_changes import compile_patch
+
+        patch = compile_patch(store, work_id, command.instruction, max_output_tokens)
+        if patch is not None:
+            return patch
     outline = store.get_document(work_id, "outline")
     prior = None
     if (
@@ -262,6 +301,7 @@ def compile_generation(
         )
 
         is_outline = command.kind == "outline"
+        from .structured_output import response_format
         response_schema = (
             output_schema("M07")
             if is_outline
@@ -278,7 +318,7 @@ def compile_generation(
                 "scenes": SCENE_CONTRACT,
                 "props": PROP_CONTRACT,
             }[command.kind],
-            response_format={"type": "json_object"},
+            response_format=response_format(parameter_map["model_name"], response_schema, name="director_m07") if is_outline else {"type": "json_object"},
             responseSchema=response_schema,
             responseSchemaHash=object_hash(response_schema),
         )
@@ -423,6 +463,7 @@ async def run_bounded_writing_model(
     *,
     system_prompt: str = SYSTEM_PROMPT,
     json_object: bool = False,
+    response_format: dict | None = None,
     on_delta: Callable[[str], Awaitable[None]] | None = None,
 ) -> WritingResult:
     """One authorized request, with the approved output ceiling and no repair retries."""
@@ -437,20 +478,23 @@ async def run_bounded_writing_model(
         system_prompt=system_prompt,
         output_retries=0,
         model_settings={
-            "max_tokens": max_output_tokens,
+            # PydanticAI serializes this setting as max_completion_tokens.
+            # Ark rejects it alongside max_tokens; its documented ceiling is
+            # sent once via extra_body below, for streaming and normal calls.
+            **({} if model_name.startswith("ark::") else {"max_tokens": max_output_tokens}),
             # Compatible gateways can report cumulative totals on every delta.
             # Tell the SDK to replace those totals, not add them per chunk.
             **({"openai_continuous_usage_stats": True} if on_delta else {}),
             **(
                 {
                     "extra_body": {
-                        "response_format": {"type": "json_object"},
+                        "response_format": response_format or {"type": "json_object"},
                         # SiliconFlow documents max_tokens; the SDK emits
                         # max_completion_tokens. Keep both ceilings identical.
                         "max_tokens": max_output_tokens,
                     }
                 }
-                if json_object
+                if json_object or response_format
                 else {"extra_body": {"max_tokens": max_output_tokens}}
             ),
         },
@@ -531,7 +575,8 @@ async def run_bounded_outline_review_model(
 
 
 async def run_bounded_outline_model(
-    prompt: str, model_name: str, max_output_tokens: int
+    prompt: str, model_name: str, max_output_tokens: int, *, response_format: dict | None = None,
+    on_delta: Callable[[str], Awaitable[None]] | None = None,
 ) -> WritingResult:
     from .planning import PLANNING_SYSTEM
 
@@ -543,4 +588,6 @@ async def run_bounded_outline_model(
         max_output_tokens,
         system_prompt=PLANNING_SYSTEM,
         json_object=True,
+        response_format=response_format,
+        on_delta=on_delta,
     )

@@ -20,6 +20,17 @@ from .schemas.planning import (
     WorkflowCommand,
 )
 from .writing import resolve_director_model
+from .documents import content_hash
+
+
+def preparation_group(row: sqlite3.Row) -> str:
+    from .outline_compiler import is_pipeline
+
+    if is_pipeline(json.loads(row["root_json"])):
+        return "adaptation_outline" if row["direction_json"] else "adaptation_direction"
+    if not row["direction_json"]:
+        return "direction"
+    return json.loads(row["root_json"]).get("targetScope", "preparation")
 
 
 def initialize_workflow(db: sqlite3.Connection) -> None:
@@ -98,6 +109,10 @@ def record_planning_output(
         json.loads(workflow["root_json"]),
         artifacts_for(db, work_id),
     )
+    from .outline_compiler import is_pipeline
+
+    if is_pipeline(json.loads(workflow["root_json"])):
+        artifact["operationId"] = run_id
     db.execute(
         "INSERT INTO director_planning_artifacts VALUES (?,?,?,?,?)",
         (work_id, child["stage"], run_id, digest(artifact), canonical(artifact)),
@@ -151,7 +166,12 @@ class WorkflowService:
     ) -> sqlite3.Row:
         work = self.repo.store._work(db, command.work_id)
         preset = json.loads(work["preset_json"])
-        if preset["mode"] != "original" or work["source_text"]:
+        if preset["mode"] == "adaptation":
+            if not work["source_text"].strip():
+                raise ExecutionFault("SOURCE_REQUIRED", status=422)
+            if command.payload.target_scope != "outline":
+                raise ExecutionFault("PLANNING_ADAPTATION_OUTLINE_ONLY", status=422)
+        elif preset["mode"] != "original" or work["source_text"]:
             raise ExecutionFault("PLANNING_ORIGINAL_ONLY", status=422)
         versions = {
             r["doc_key"]: r["current_version"]
@@ -178,7 +198,16 @@ class WorkflowService:
             "episodes": episodes,
             "documentVersions": versions,
             "model": resolve_director_model(preset["model_name"]),
+            "targetScope": command.payload.target_scope,
+            "sourceText": work["source_text"],
+            "sourceHash": content_hash(work["source_text"]),
         }
+        from .outline_compiler import enabled
+        from .schemas.outline_delivery import DELIVERY_CONTRACT
+
+        if preset["mode"] == "adaptation" and enabled():
+            root.update(outlineContract=DELIVERY_CONTRACT,
+                        sourceKind=command.payload.source_kind, sourceLabel=work["title"])
         db.execute(
             "INSERT INTO director_workflows VALUES (?,?,?,1,'WAIT_COST',?,NULL,NULL,NULL,NULL)",
             (command.work_id, actor, command.session_id, canonical(root)),
@@ -235,6 +264,9 @@ class WorkflowService:
             elif isinstance(command.payload, PlanningDecision):
                 self._decide(db, row, command.payload, actor)
                 result = self._projection(db, command.work_id)
+            elif command.payload.type == "planning.revalidate":
+                self._revalidate(db, row)
+                result = self._projection(db, command.work_id)
             else:
                 self._control(db, row, command.payload.type == "planning.cancel")
                 result = self._projection(db, command.work_id)
@@ -254,6 +286,70 @@ class WorkflowService:
                 },
             )
 
+    def _revalidate(self, db: sqlite3.Connection, row: sqlite3.Row) -> None:
+        from .execution import ExecutionService
+        from .outline_compiler import PIPELINE_VERSION, is_pipeline
+
+        root = json.loads(row["root_json"])
+        if row["phase"] != "FAILED_RECOVERABLE" or not is_pipeline(root):
+            raise ExecutionFault("PLANNING_CHECKPOINT_REQUIRED")
+        self._root_current(db, row)
+        ExecutionService._no_active(db, row["work_id"])
+        artifacts = artifacts_for(db, row["work_id"])
+        stages = [s for s in GROUPS[preparation_group(row)] if s not in artifacts]
+        failed = db.execute(
+            "SELECT o.* FROM director_planning_children c JOIN director_operations o "
+            "ON o.id=c.operation_id WHERE c.work_id=? AND c.stage=? ORDER BY o.created_at DESC LIMIT 1",
+            (row["work_id"], stages[0] if stages else ""),
+        ).fetchone()
+        if failed is None or failed["status"] != "failed" or not failed["output_text"]:
+            raise ExecutionFault("PLANNING_STAGE_FAILED")
+        receipt = json.loads(failed["response_json"])
+        snapshot = self.repo.snapshot(db, failed["id"])
+        direction = json.loads(row["direction_json"]) if row["direction_json"] else None
+        if (not receipt.get("validation") or receipt.get("usage", {}).get("finishReason") in {"length", "content_filter"}
+                or snapshot["parameters"].get("workflowRootHash") != digest(root)
+                or snapshot["parameters"].get("directionHash") != digest(direction)
+                or receipt.get("output_sha256") != content_hash(failed["output_text"])):
+            raise ExecutionFault("PLANNING_RESULT_STALE")
+        artifact = validate_planning(stages[0], failed["output_text"], root, artifacts)
+        artifact.update(operationId=failed["id"], revalidated={
+            "outputHash": receipt["output_sha256"], "validatorVersion": PIPELINE_VERSION,
+        })
+        db.execute("INSERT INTO director_planning_artifacts VALUES (?,?,?,?,?)",
+                   (row["work_id"], stages[0], failed["id"], digest(artifact), canonical(artifact)))
+        self.repo.event(db, row["work_id"], row["session_id"], "planning.output_revalidated",
+                        {"operationId": failed["id"], "stage": stages[0], **artifact["revalidated"]})
+        artifacts[stages[0]] = artifact
+        group = preparation_group(row)
+        if all(stage in artifacts for stage in GROUPS[group]):
+            self._group_checkpoint(db, row, group, artifacts)
+        else:
+            self._phase(db, row, "WAIT_COST")
+
+    def _group_checkpoint(self, db: sqlite3.Connection, row: sqlite3.Row, group: str, artifacts: dict) -> None:
+        """Normal completion and zero-cost revalidation must resume identically."""
+        kind = "WAIT_DIRECTION" if group in {"direction", "adaptation_direction"} else "WAIT_OUTLINE"
+        value = artifacts["M03"] if kind == "WAIT_DIRECTION" else {
+            "artifacts": {key: artifacts[key] for key in GROUPS[group]},
+            "documents": planning_documents(artifacts, json.loads(row["root_json"])),
+        }
+        if group == "direction":
+            # The observed original flow asks about the already configured
+            # count and duration after direction selection. Model questions are
+            # retained with M03, but cannot silently become extra required pages.
+            preset = json.loads(row["root_json"])["preset"]
+            value = {**value, "specQuestions": [],
+                     "suggestedQuestions": value["specQuestions"],
+                     "confirmedPreset": {
+                         "episodeCount": preset["episode_count"],
+                         "durationSeconds": preset["duration_seconds"],
+                     }}
+        if kind == "WAIT_OUTLINE" and "M12" in artifacts and group == "adaptation_outline":
+            value["quality"] = {key: artifacts["M12"][key] for key in (
+                "status", "violatedPaths", "uncertainPaths", "literaryNotes")}
+        self._checkpoint(db, row, kind, value)
+
     def _quote(
         self,
         db: sqlite3.Connection,
@@ -264,10 +360,47 @@ class WorkflowService:
         if row["phase"] not in {"WAIT_COST", "FAILED_RECOVERABLE", "CANCELLED"}:
             raise ExecutionFault("PLANNING_CHECKPOINT_REQUIRED")
         artifacts = artifacts_for(db, row["work_id"])
-        group = "preparation" if row["direction_json"] else "direction"
+        if payload.target_scope != json.loads(row["root_json"]).get("targetScope", "preparation"):
+            raise ExecutionFault("PLANNING_INPUT_CHANGED")
+        group = preparation_group(row)
         stages = [stage for stage in GROUPS[group] if stage not in artifacts]
         if not stages:
             raise ExecutionFault("PLANNING_CHECKPOINT_REQUIRED")
+        root = json.loads(row["root_json"])
+        recoveries = {}
+        for stage in stages:
+            failed = db.execute(
+                "SELECT o.* FROM director_planning_children c JOIN director_operations o "
+                "ON o.id=c.operation_id WHERE c.work_id=? AND c.stage=? "
+                "ORDER BY o.created_at DESC LIMIT 1", (row["work_id"], stage),
+            ).fetchone()
+            if failed is None or failed["status"] != "failed" or not failed["output_text"]:
+                continue
+            receipt = json.loads(failed["response_json"])
+            snapshot = self.repo.snapshot(db, failed["id"])
+            direction = json.loads(row["direction_json"]) if row["direction_json"] else None
+            if direction and direction.get("revision") and snapshot["parameters"].get("directionHash") != digest(direction):
+                continue
+            if receipt.get("validation") and failed["output_text"]:
+                # Re-evaluate retained bytes with current host validators; a
+                # diagnostic upgrade need not buy another invalid response.
+                from .planning import validate_planning
+                from .output_validation import validation_receipt
+
+                try:
+                    validate_planning(stage, failed["output_text"], root, artifacts)
+                except (ValueError, KeyError, TypeError) as exc:
+                    receipt["validation"] = validation_receipt(exc)
+            if receipt.get("validation") and snapshot["parameters"].get("workflowRootHash") == digest(root):
+                recoveries[stage] = {"operationId": failed["id"],
+                    "outputHash": receipt["output_sha256"], "output": failed["output_text"],
+                    "validation": receipt["validation"]}
+        from .output_budget import output_budget
+
+        budgets = [output_budget(stage, root["preset"], source_chars=len(root.get("sourceText", "")), explicit=payload.max_output_tokens) for stage in stages]
+        if any(budget.get("requiresSectionPlan") for budget in budgets):
+            raise ExecutionFault("SECTION_PLAN_REQUIRED", status=422)
+        max_tokens = max(budget["maxOutputTokens"] for budget in budgets)
         plan = {
             "schemaVersion": 2,
             "group": group,
@@ -281,23 +414,27 @@ class WorkflowService:
             if row["direction_json"]
             else None,
             "model": json.loads(row["root_json"])["model"],
+            "validationRecoveries": recoveries,
+            "outputBudgets": dict(zip(stages, budgets, strict=True)),
             "limits": {
                 "maxCalls": len(stages),
-                "maxOutputTokensPerCall": payload.max_output_tokens,
-                "maxTotalOutputTokens": len(stages) * payload.max_output_tokens,
+                "maxOutputTokensPerCall": max_tokens,
+                "maxTotalOutputTokens": sum(budget["maxOutputTokens"] for budget in budgets),
                 "maxAttemptsPerStage": 1,
                 "automaticRevisions": 0,
             },
         }
         # Check method/context validity before asking for money. Later children
         # compile only after their declared, validated prerequisites exist.
-        compile_planning(
+        from .planning import with_validation_recovery
+
+        with_validation_recovery(compile_planning(
             json.loads(row["root_json"]),
             stages[0],
             artifacts,
             json.loads(row["direction_json"]) if row["direction_json"] else None,
-            payload.max_output_tokens,
-        )
+            budgets[0]["maxOutputTokens"],
+        ), recoveries.get(stages[0]))
         quote_id, expiry = identifier(), self.repo.clock() + 600
         db.execute(
             "INSERT INTO director_planning_quotes VALUES (?,?,?,?,?,?,?,'pending')",
@@ -416,18 +553,7 @@ class WorkflowService:
             raise ExecutionFault("PLANNING_DEPENDENCY_MISSING")
         stages = [stage for stage in plan["stages"] if stage not in artifacts]
         if not stages:
-            kind = "WAIT_DIRECTION" if plan["group"] == "direction" else "WAIT_OUTLINE"
-            value = (
-                artifacts["M03"]
-                if kind == "WAIT_DIRECTION"
-                else {
-                    "artifacts": {key: artifacts[key] for key in GROUPS["preparation"]},
-                    "documents": planning_documents(
-                        artifacts, json.loads(row["root_json"])
-                    ),
-                }
-            )
-            self._checkpoint(db, row, kind, value)
+            self._group_checkpoint(db, row, plan["group"], artifacts)
             db.execute(
                 "UPDATE director_planning_budgets SET status='consumed' WHERE id=?",
                 (budget["id"],),
@@ -449,9 +575,11 @@ class WorkflowService:
                 else "PLANNING_STAGE_FAILED"
             )
         limits = plan["limits"]
+        stage_budget = plan.get("outputBudgets", {}).get(stage)
+        stage_tokens = stage_budget["maxOutputTokens"] if stage_budget else limits["maxOutputTokensPerCall"]
         if (
             budget["calls_reserved"] >= limits["maxCalls"]
-            or budget["output_tokens_reserved"] + limits["maxOutputTokensPerCall"]
+            or budget["output_tokens_reserved"] + stage_tokens
             > limits["maxTotalOutputTokens"]
         ):
             raise ExecutionFault("PLANNING_BUDGET_EXHAUSTED")
@@ -460,9 +588,14 @@ class WorkflowService:
             stage,
             artifacts,
             json.loads(row["direction_json"]) if row["direction_json"] else None,
-            limits["maxOutputTokensPerCall"],
+            stage_tokens,
         )
+        from .planning import with_validation_recovery
+
+        compiled = with_validation_recovery(compiled, plan.get("validationRecoveries", {}).get(stage))
         root = json.loads(row["root_json"])
+        if stage_budget:
+            compiled["parameters"]["outputBudget"] = stage_budget
         snapshot = {
             **compiled,
             "schemaVersion": 2,
@@ -475,9 +608,9 @@ class WorkflowService:
             "parentBudgetId": budget["id"],
             "limits": {
                 "maxAttempts": 1,
-                "maxOutputTokens": limits["maxOutputTokensPerCall"],
+                "maxOutputTokens": stage_tokens,
                 "inputChars": len(compiled["prompt"]),
-                "timeoutSeconds": 300,
+                "timeoutSeconds": 600 if stage == "M12" else 300,
             },
         }
         quote_id, now = identifier(), self.repo.clock()
@@ -521,7 +654,7 @@ class WorkflowService:
         )
         db.execute(
             "UPDATE director_planning_budgets SET calls_reserved=calls_reserved+1,output_tokens_reserved=output_tokens_reserved+? WHERE id=?",
-            (limits["maxOutputTokensPerCall"], budget["id"]),
+            (stage_tokens, budget["id"]),
         )
         self.repo.event(
             db,
@@ -585,6 +718,10 @@ class WorkflowService:
             or cp["payload_hash"] != payload.payload_hash
         ):
             raise ExecutionFault("PLANNING_CHECKPOINT_STALE")
+        if payload.decision != "select" and (
+            payload.episode_count is not None or payload.duration_seconds is not None
+        ):
+            raise ExecutionFault("INVALID_COMMAND_TYPE", status=422)
         if payload.decision == "return":
             if row["phase"] != "WAIT_INPUT" or cp["status"] != "skipped":
                 raise ExecutionFault("PLANNING_CHECKPOINT_STALE")
@@ -601,6 +738,24 @@ class WorkflowService:
             raise ExecutionFault("SNAPSHOT_CORRUPT")
         if payload.decision == "skip":
             status, phase = "skipped", "WAIT_INPUT"
+        elif payload.decision == "revise" and cp["kind"] == "WAIT_OUTLINE":
+            from .outline_compiler import is_pipeline
+
+            if not is_pipeline(json.loads(row["root_json"])) or not payload.free_text.strip():
+                raise ExecutionFault("PLANNING_ANSWER_REQUIRED", status=422)
+            if payload.option_id or payload.answers:
+                raise ExecutionFault("INVALID_COMMAND_TYPE", status=422)
+            artifacts = artifacts_for(db, row["work_id"])
+            direction = json.loads(row["direction_json"])
+            direction["revision"] = {"instruction": payload.free_text, "checkpointId": cp["id"],
+                "previousDelivery": artifacts["M07"]["delivery"], "review": artifacts["M12"],
+                "authority": "Revise requested defects only; do not add source events."}
+            db.execute("UPDATE director_workflows SET direction_json=? WHERE work_id=?",
+                       (canonical(direction), row["work_id"]))
+            # Immutable checkpoints, operation outputs and cost entries retain
+            # old candidates; only the current stage pointers are invalidated.
+            db.execute("DELETE FROM director_planning_artifacts WHERE work_id=? AND stage IN ('M07','M12')", (row["work_id"],))
+            status, phase = "superseded", "WAIT_COST"
         elif payload.decision == "select" and cp["kind"] == "WAIT_DIRECTION":
             selected = next(
                 (item for item in value["options"] if item["id"] == payload.option_id),
@@ -612,10 +767,49 @@ class WorkflowService:
                 raise ExecutionFault("PLANNING_ANSWER_REQUIRED", status=422)
             if set(payload.answers) != {item["id"] for item in value["specQuestions"]}:
                 raise ExecutionFault("PLANNING_ANSWER_REQUIRED", status=422)
+            confirmed = value.get("confirmedPreset")
+            if confirmed is not None:
+                if payload.episode_count is None or payload.duration_seconds is None:
+                    raise ExecutionFault("PLANNING_ANSWER_REQUIRED", status=422)
+                root = json.loads(row["root_json"])
+                preset = {**root["preset"], "episode_count": payload.episode_count,
+                          "duration_seconds": payload.duration_seconds}
+                from .models import DirectorPreset
+
+                DirectorPreset.model_validate(preset)
+                if preset != root["preset"]:
+                    from .repository import allocate_documents
+
+                    db.execute(
+                        "UPDATE works SET preset_json=?,revision=revision+1,updated_at=? WHERE id=?",
+                        (canonical(preset), self.repo.clock(), row["work_id"]),
+                    )
+                    updated = self.repo.store._work(db, row["work_id"])
+                    allocate_documents(db, updated)
+                    root.update(workRevision=updated["revision"], preset=preset,
+                                episodes=[dict(id=episode["id"], orderKey=episode["order_key"],
+                                               deliveryLabel=episode["delivery_label"])
+                                          for episode in db.execute(
+                                              "SELECT * FROM director_episodes WHERE work_id=? AND archived=0 ORDER BY order_key",
+                                              (row["work_id"],))])
+                    db.execute("UPDATE director_workflows SET root_json=? WHERE work_id=?",
+                               (canonical(root), row["work_id"]))
+                    self.repo.event(db, row["work_id"], row["session_id"],
+                                    "planning.spec_confirmed", {
+                                        "episodeCount": payload.episode_count,
+                                        "durationSeconds": payload.duration_seconds,
+                                        "workRevision": updated["revision"],
+                                    })
+            elif payload.episode_count is not None or payload.duration_seconds is not None:
+                raise ExecutionFault("INVALID_COMMAND_TYPE", status=422)
             decision = {
                 "option": selected,
                 "freeText": payload.free_text,
                 "answers": payload.answers,
+                "confirmedSpec": {
+                    "episodeCount": payload.episode_count,
+                    "durationSeconds": payload.duration_seconds,
+                } if confirmed is not None else None,
                 "provenance": "explicit_user_decision",
                 "checkpointId": cp["id"],
                 "actor": actor,
@@ -627,6 +821,20 @@ class WorkflowService:
             status, phase = "answered", "WAIT_COST"
         elif payload.decision == "adopt" and cp["kind"] == "WAIT_OUTLINE":
             root = json.loads(row["root_json"])
+            from .outline_compiler import is_pipeline
+
+            if is_pipeline(root):
+                from .documents import object_hash
+                from .outline_candidate_review import AUDIT_VALIDATOR_VERSION
+
+                artifacts = artifacts_for(db, row["work_id"])
+                report, candidate = artifacts["M12"], artifacts["M07"]["candidate"]
+                if (report["status"] != "reviewed"
+                        or report.get("validatorVersion") != AUDIT_VALIDATOR_VERSION
+                        or report["candidateHash"] != object_hash(candidate)
+                        or report["sourceHash"] != root["sourceHash"]
+                        or report["operationId"] == artifacts["M07"]["operationId"]):
+                    raise ExecutionFault("OUTLINE_FACT_CONFLICT")
             if payload.option_id or payload.free_text or payload.answers:
                 raise ExecutionFault("INVALID_COMMAND_TYPE", status=422)
             for key in value["documents"]:
@@ -634,6 +842,8 @@ class WorkflowService:
                     db, self.repo.store._work(db, row["work_id"]), key
                 )
             for key, content in value["documents"].items():
+                from .schemas.documents import DocumentAST
+
                 self.repo.store._put_document(
                     db,
                     row["work_id"],
@@ -641,6 +851,7 @@ class WorkflowService:
                     content,
                     root["documentVersions"].get(key, 0),
                     "planning-human-adopted",
+                    **({"verified_ast": DocumentAST.from_wire(candidate["ast"])} if is_pipeline(root) else {}),
                 )
             status, phase = "answered", "READY"
         else:
@@ -673,7 +884,7 @@ class WorkflowService:
         if cancel:
             if row["phase"] != "EXEC":
                 raise ExecutionFault("PLANNING_CHECKPOINT_REQUIRED")
-            group = "preparation" if row["direction_json"] else "direction"
+            group = preparation_group(row)
             if not active and all(
                 stage in artifacts_for(db, row["work_id"]) for stage in GROUPS[group]
             ):
@@ -729,9 +940,11 @@ class WorkflowService:
 
     def _projection(self, db: sqlite3.Connection, work_id: str) -> dict:
         row = workflow_row(db, work_id)
+        work_revision = self.repo.store._work(db, work_id)["revision"]
         if row is None:
             return {
                 "workId": work_id,
+                "workRevision": work_revision,
                 "revision": 0,
                 "phase": "NOT_STARTED",
                 "checkpoint": None,
@@ -766,6 +979,7 @@ class WorkflowService:
         ]
         return {
             "workId": work_id,
+            "workRevision": work_revision,
             "revision": row["revision"],
             "phase": row["phase"],
             "checkpoint": {

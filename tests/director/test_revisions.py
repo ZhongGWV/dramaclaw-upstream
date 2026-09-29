@@ -149,6 +149,26 @@ def test_title_only_does_not_invalidate_content_or_completed_state(revisions):
         assert valid_finalization(store, db, wid, 2)
 
 
+def test_model_switch_preserves_review_and_finalization_but_changes_work_revision(revisions):
+    store, wid, service = revisions
+    before = store.get_work(wid)
+    reports = [QualityService(store).report(wid, n)["review"] for n in (1, 2)]
+    preview = service.preview("actor", preview_command(store, wid, modelName="ark::doubao-seed-evolving"))
+    assert preview["restartEpisode"] is None
+    assert preview["invalidatedReportIds"] == []
+    assert preview["invalidatedFinalizationIds"] == []
+    result = service.commit("actor", commit_command(preview))
+    assert result["work"]["revision"] == before["revision"] + 1
+    assert result["work"]["status"] == "completed"
+    assert result["work"]["preset"]["model_name"] == "ark::doubao-seed-evolving"
+    assert [QualityService(store).report(wid, n)["review"] for n in (1, 2)] == reports
+    with store._connect() as db:
+        assert all(valid_finalization(store, db, wid, n) for n in (1, 2))
+    changed_story = service.preview("actor", preview_command(store, wid, modelName="ark::deepseek-v4.1-flash", narrativeTone="Unsettling"))
+    assert changed_story["restartEpisode"] == 1
+    assert len(changed_story["invalidatedFinalizationIds"]) == 2
+
+
 def test_shrink_requires_exact_ack_preserves_text_and_expand_restores_ids(revisions):
     store, wid, service = revisions
     before = DocumentRepository(store).projection(wid)

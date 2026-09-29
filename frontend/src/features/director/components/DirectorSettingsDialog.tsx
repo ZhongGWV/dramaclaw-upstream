@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from './DirectorReferenceIcon';
-import { readDirectorPreference, saveDirectorPreference, TOKEN_LIMITS } from '../director-ui-state';
+import { readDirectorPreference, saveDirectorPreference } from '../director-ui-state';
 
-export function DirectorSettingsDialog({ maxOutputTokens, onSave, onClose, onMethods }: {
-  maxOutputTokens: number; onSave: (value: number) => void; onClose: () => void; onMethods: () => void;
+export function DirectorSettingsDialog({ onClose, onMethods }: {
+  onClose: () => void; onMethods: () => void;
 }) {
   const { t } = useTranslation();
-  const [tokens, setTokens] = useState(maxOutputTokens);
   const [notifications, setNotifications] = useState<boolean>(() => typeof Notification !== 'undefined' && Notification.permission === 'granted' && readDirectorPreference<boolean>('notifications', false));
   const [sound, setSound] = useState(() => readDirectorPreference('sound', true));
   const [error, setError] = useState('');
@@ -50,11 +49,11 @@ export function DirectorSettingsDialog({ maxOutputTokens, onSave, onClose, onMet
         <div className="dc-setting-row"><div><p>{t('director.surface.sound')}</p><small>{t('director.surface.soundHint')}</small></div>{toggle(t('director.surface.sound'), sound, () => setSound(!sound), !notifications)}</div>
       </section>
       {error && <p className="dc-settings-error" role="alert">{error}</p>}
-      {advanced && <section><label className="dc-field-label">{t('director.execution.maxOutputTokens')}<select value={tokens} onChange={(e) => setTokens(Number(e.target.value))}>{TOKEN_LIMITS.map(value => <option key={value}>{value}</option>)}</select></label><p className="dc-planning-hint">{t('director.surface.deviceSettings')}</p><button type="button" onClick={onMethods}>{t('director.methods')}</button></section>}
+      {advanced && <section><p className="dc-planning-hint">{t('director.execution.automaticBudgetHint')}</p><button type="button" onClick={onMethods}>{t('director.methods')}</button></section>}
       <footer><button type="button" onClick={() => setAdvanced(!advanced)} aria-expanded={advanced}>{t('director.ui.advanced')}</button><button type="button" className="dc-primary-button" onClick={() => {
-        const success = [saveDirectorPreference('notifications', notifications), saveDirectorPreference('sound', sound), saveDirectorPreference('outputTokens', tokens)].every(Boolean);
+        const success = [saveDirectorPreference('notifications', notifications), saveDirectorPreference('sound', sound)].every(Boolean);
         if (!success) { setError(t('director.surface.storageError')); return; }
-        onSave(tokens); onClose();
+        onClose();
       }}>{t('director.ui.done')}</button></footer>
     </div>
   </div>;

@@ -2,7 +2,7 @@
 // Copyright (c) 2026 ClaymoreLab
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExecutionHistory } from '@/features/director/components/ExecutionHistory';
+import { ExecutionHistory, RequestParameters } from '@/features/director/components/ExecutionHistory';
 import { DirectorStudio } from '@/features/director/DirectorStudio';
 import { DirectorPresetDialog } from '@/features/director/DirectorPresetDialog';
 import { DocumentVersionPanel } from '@/features/director/components/DocumentVersionPanel';
@@ -11,6 +11,7 @@ import { OutlineReviewDialog } from '@/features/director/components/OutlineRevie
 import { RevisionImpactDialog } from '@/features/director/components/RevisionImpactDialog';
 import { DirectorDocumentEditor } from '@/features/director/components/DirectorDocumentEditor';
 import { PlanningWorkflow } from '@/features/director/components/PlanningWorkflow';
+import { ConversationScroll } from '@/features/director/components/DirectorConversation';
 import { executionCommand, isExecutionActive, type ExecutionRun } from '@/api/director-execution';
 import * as executionApi from '@/api/director-execution';
 import * as directorApi from '@/api/director';
@@ -18,6 +19,7 @@ import * as directorApi from '@/api/director';
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@/api/director', async (original) => ({
   ...await original<typeof import('@/api/director')>(),
+  createDirectorWork: vi.fn(),
   getDirectorModelContract: vi.fn(), listDirectorWorks: vi.fn(), getDirectorWork: vi.fn(), getDirectorDocument: vi.fn(),
   getCanonicalDocuments: vi.fn(), previewLegacyImport: vi.fn(), commitLegacyImport: vi.fn(),
   previewSettingsRevision: vi.fn(), previewEpisodeReopen: vi.fn(), commitDirectorRevision: vi.fn(),
@@ -80,11 +82,131 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+it('keeps model and duration visible while nested immutable snapshots are expandable', () => {
+  const parameters = { model_name: 'seed-example', duration_seconds: 600, patchContext: { baseVersion: 3, baseAst: { text: 'Preserved technical content' } } };
+  render(<RequestParameters parameters={parameters} />);
+  expect(screen.getByText('seed-example')).toBeVisible();
+  expect(screen.getByText('600')).toBeVisible();
+  const snapshot = screen.getByText('patchContext').closest('details')!;
+  expect(snapshot).not.toHaveAttribute('open');
+  expect(snapshot.textContent).toContain('Preserved technical content');
+  expect(parameters.patchContext.baseVersion).toBe(3);
+});
+
 describe('durable original planning controls', () => {
   const initial: executionApi.PlanningState = { workId: work.id, revision: 0, phase: 'NOT_STARTED', checkpoint: null, budgets: [], artifacts: {}, errorCode: null };
   const stageQuote: executionApi.PlanningQuote = { quoteId: 'pq-1', planHash: 'f'.repeat(64), workflowRevision: 1, expiresAt: Date.now() / 1000 + 600, estimateMinor: null, currency: null,
     plan: { group: 'direction', stages: ['M03'], model: 'test-model', limits: { maxCalls: 1, maxOutputTokensPerCall: 4096, maxTotalOutputTokens: 4096, maxAttemptsPerStage: 1, automaticRevisions: 0 } } };
-  const props = { project: 'synthetic', work, capability: capabilities, maxOutputTokens: 4096, hasDocuments: false, onChanged: vi.fn(), onState: vi.fn(), quoteAction: { current: null } };
+  const props = { project: 'synthetic', work, capability: capabilities, hasDocuments: false, onChanged: vi.fn(), onState: vi.fn(), quoteAction: { current: null } };
+
+  it('the first Send creates a work and starts exactly one bounded stage without a second Send', async () => {
+    vi.mocked(directorApi.listDirectorWorks).mockResolvedValue([]);
+    vi.mocked(directorApi.createDirectorWork).mockResolvedValue(work);
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue(initial);
+    vi.mocked(executionApi.sendPlanningCommand).mockResolvedValueOnce(stageQuote).mockResolvedValueOnce({ ...initial, revision: 2, phase: 'EXEC' });
+    render(<DirectorStudio project="synthetic" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'director.inputPlaceholder' }), { target: { value: '写关于曹操的故事' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'director.send' }));
+    await screen.findByText('director.planning.phase.EXEC');
+    expect(directorApi.createDirectorWork).toHaveBeenCalledWith('synthetic', expect.objectContaining({ brief: '写关于曹操的故事' }));
+    expect(executionApi.sendPlanningCommand).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[0][1].payload).toEqual({ type: 'planning.quote', targetScope: 'preparation' });
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[1][1].payload).toEqual({ type: 'planning.grant', quoteId: stageQuote.quoteId, planHash: stageQuote.planHash, unknownCostConsent: true });
+    expect(screen.queryByRole('button', { name: 'director.planning.grant' })).not.toBeInTheDocument();
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[1][1].expected.workflowRevision).toBe(stageQuote.workflowRevision);
+    expect(executionApi.sendExecutionCommand).not.toHaveBeenCalled();
+  });
+
+  it('reopening a created work never quotes or grants automatically', async () => {
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue(initial);
+    render(<DirectorStudio project="synthetic" />);
+    await screen.findByText('director.planning.phase.NOT_STARTED');
+    expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
+    expect(screen.getByText('director.workStatus.created', { exact: false })).toBeInTheDocument();
+  });
+
+  it('a lost first quote is not replayed until the user retries the same intent', async () => {
+    vi.mocked(directorApi.listDirectorWorks).mockResolvedValue([]);
+    vi.mocked(directorApi.createDirectorWork).mockResolvedValue(work);
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue(initial);
+    vi.mocked(executionApi.sendPlanningCommand).mockRejectedValueOnce(new Error('quote transport lost')).mockResolvedValueOnce(stageQuote).mockResolvedValueOnce({ ...initial, revision: 2, phase: 'EXEC' });
+    render(<DirectorStudio project="synthetic" />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'director.inputPlaceholder' }), { target: { value: '写关于曹操的故事' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'director.send' }));
+    expect(await screen.findByText('quote transport lost')).toBeInTheDocument();
+    expect(executionApi.sendPlanningCommand).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.retryIntent' }));
+    await screen.findByText('director.planning.phase.EXEC');
+    const calls = vi.mocked(executionApi.sendPlanningCommand).mock.calls;
+    expect(calls).toHaveLength(3);
+    expect(calls[1][1]).toEqual(calls[0][1]);
+    expect(calls[2][1].payload.type).toBe('planning.grant');
+    expect(executionApi.sendExecutionCommand).not.toHaveBeenCalled();
+  });
+
+  it('submitting a direction starts only the next budget group without another fee click', async () => {
+    const direction: executionApi.PlanningState = { ...initial, revision: 3, phase: 'WAIT_DIRECTION', checkpoint: {
+      id: 'cp-direction', kind: 'WAIT_DIRECTION', status: 'open', resumeToken: 'resume', payloadHash: 'a'.repeat(64),
+      payload: { options: [{ id: 'd1', logline: 'Chronological', goal: 'Return', obstacle: 'Gate', stakes: 'Freedom', tone: 'Tense', difference: 'One night', productionRisks: [] }],
+        confirmedPreset: { episodeCount: 1, durationSeconds: 30 }, specQuestions: [] },
+    } };
+    const nextQuote = { ...stageQuote, quoteId: 'pq-next', workflowRevision: 5,
+      plan: { ...stageQuote.plan, group: 'preparation' as const, stages: ['M07', 'M08', 'M09'] } };
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue(direction);
+    vi.mocked(executionApi.sendPlanningCommand).mockResolvedValueOnce({ ...initial, revision: 4, workRevision: 2, phase: 'WAIT_COST' })
+      .mockResolvedValueOnce(nextQuote).mockResolvedValueOnce({ ...initial, revision: 6, phase: 'EXEC' });
+    render(<PlanningWorkflow {...props} automatic />);
+    fireEvent.click(await screen.findByRole('radio', { name: 'Chronological' }));
+    expect(screen.getByText('2 / 3')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.keepEpisodeCount' }));
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.keepDuration' }));
+    expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.confirmDirection' }));
+    await screen.findByText('director.planning.phase.EXEC');
+    const calls = vi.mocked(executionApi.sendPlanningCommand).mock.calls;
+    expect(calls.map(([, command]) => command.payload.type)).toEqual(['planning.decide', 'planning.quote', 'planning.grant']);
+    expect(calls[1][1].expected.workflowRevision).toBe(4);
+    expect(calls[1][1].expected.workRevision).toBe(2);
+    expect(calls[2][1].expected.workflowRevision).toBe(5);
+    expect(calls[2][1].expected.workRevision).toBe(2);
+    expect(calls[0][1].payload).toMatchObject({ episodeCount: 1, durationSeconds: 30, answers: {} });
+    expect(screen.queryByRole('button', { name: 'director.planning.grant' })).not.toBeInTheDocument();
+  });
+
+  it('keeps custom count and duration through three pages and submits them only once', async () => {
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue({ ...initial, revision: 3, phase: 'WAIT_DIRECTION', checkpoint: {
+      id: 'cp-three-pages', kind: 'WAIT_DIRECTION', status: 'open', resumeToken: 'resume', payloadHash: 'a'.repeat(64),
+      payload: { options: [{ id: 'd1', logline: 'Chronological', goal: 'Read', obstacle: 'Box', stakes: 'Missed message', tone: 'Warm', difference: 'One night', productionRisks: [] }],
+        confirmedPreset: { episodeCount: 1, durationSeconds: 30 }, specQuestions: [] },
+    } });
+    vi.mocked(executionApi.sendPlanningCommand).mockResolvedValue({ ...initial, revision: 4, workRevision: 2, phase: 'WAIT_COST' });
+    render(<PlanningWorkflow {...props} />);
+    fireEvent.click(await screen.findByRole('radio', { name: 'Chronological' }));
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.changeEpisodeCount' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'director.episodeCount' }), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.continueQuestion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.changeDuration' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'director.durationSeconds' }), { target: { value: '45' } });
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.previousQuestion' }));
+    expect(screen.getByRole('spinbutton', { name: 'director.episodeCount' })).toHaveValue(3);
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.nextQuestion' }));
+    expect(screen.getByRole('spinbutton', { name: 'director.durationSeconds' })).toHaveValue(45);
+    expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.confirmDirection' }));
+    await screen.findByText('director.planning.phase.WAIT_COST');
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[0][1].payload).toMatchObject({
+      decision: 'select', optionId: 'd1', episodeCount: 3, durationSeconds: 45, answers: {},
+    });
+    expect(executionApi.sendPlanningCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows a newly inserted quote card even without an execution-stream revision', async () => {
+    const view = render(<ConversationScroll revision="unchanged"><p>Start</p></ConversationScroll>);
+    const messages = view.container.querySelector('.dc-messages') as HTMLDivElement;
+    Object.defineProperty(messages, 'scrollHeight', { configurable: true, value: 500 });
+    view.rerender(<ConversationScroll revision="unchanged"><p>Start</p><p>Quote ready</p></ConversationScroll>);
+    await waitFor(() => expect(messages.scrollTop).toBe(500));
+  });
 
   it('GET does not send; explicit grant uses revision from quote without waiting for polling', async () => {
     vi.mocked(executionApi.getPlanningState).mockResolvedValue(initial);
@@ -121,11 +243,11 @@ describe('durable original planning controls', () => {
     } } });
     vi.mocked(executionApi.sendPlanningCommand).mockResolvedValue({ ...initial, revision: 4, phase: 'WAIT_COST' });
     render(<PlanningWorkflow {...props} />);
-    const confirm = await screen.findByRole('button', { name: 'director.planning.confirmDirection' });
-    expect(confirm).toBeDisabled();
+    const next = await screen.findByRole('button', { name: 'director.planning.continueQuestion' });
+    expect(next).toBeDisabled();
     expect(screen.getByRole('radio')).not.toBeChecked();
     fireEvent.change(screen.getByRole('textbox', { name: 'director.planning.freeText' }), { target: { value: 'My own silent direction' } });
-    expect(confirm).toBeDisabled();
+    expect(next).toBeEnabled();
     expect(screen.getByRole('button', { name: 'director.planning.previousQuestion' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'director.planning.nextQuestion' }));
     expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
@@ -135,7 +257,7 @@ describe('durable original planning controls', () => {
     expect(screen.getByRole('textbox', { name: 'director.planning.freeText' })).toHaveValue('My own silent direction');
     fireEvent.click(screen.getByRole('button', { name: 'director.planning.nextQuestion' }));
     expect(screen.getByRole('textbox', { name: 'Who holds the key?' })).toHaveValue('Lin');
-    fireEvent.click(confirm);
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.confirmDirection' }));
     await screen.findByText('director.planning.phase.WAIT_COST');
     expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[0][1].payload).toMatchObject({ decision: 'select', optionId: null, freeText: 'My own silent direction', answers: { q1: 'Lin' } });
     expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls).toHaveLength(1);
@@ -147,6 +269,75 @@ describe('durable original planning controls', () => {
     await screen.findByText('director.planning.phase.UNKNOWN');
     expect(screen.queryByRole('button', { name: 'director.planning.quote' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'director.planning.resume' })).not.toBeInTheDocument();
+    expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
+  });
+
+  it('adaptation requests an outline-only budget rather than four preparation stages', async () => {
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue(initial);
+    vi.mocked(executionApi.sendPlanningCommand).mockResolvedValue(stageQuote);
+    render(<PlanningWorkflow {...props} work={{ ...work, mode: 'adaptation', preset: { ...preset, mode: 'adaptation' } }} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'director.planning.quote' }));
+    await screen.findByRole('checkbox');
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[0][1].payload).toEqual({ type: 'planning.quote', targetScope: 'outline' });
+    expect(screen.getByText('director.planning.adaptationScopeHint')).toBeInTheDocument();
+  });
+
+  it('suggested choices advance pages but final answer waits for explicit submission', async () => {
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue({ ...initial, revision: 3, phase: 'WAIT_DIRECTION', checkpoint: { id: 'cp', kind: 'WAIT_DIRECTION', status: 'open', resumeToken: 'resume', payloadHash: 'a'.repeat(64), payload: {
+      options: [{ id: 'd1', logline: 'Chronological', goal: 'Read', obstacle: 'Box', stakes: 'Missed message', tone: 'Warm', difference: 'Retrieve glasses', productionRisks: [] }],
+      specQuestions: [{ id: 'q1', question: 'Keep the gap?', choices: ['Preserve uncertainty', 'Propose a bridge'] }, { id: 'q2', question: 'Which ending?', choices: ['Original ending'] }],
+    } } });
+    vi.mocked(executionApi.sendPlanningCommand).mockResolvedValue({ ...initial, revision: 4, phase: 'WAIT_COST' });
+    render(<PlanningWorkflow {...props} />);
+    fireEvent.click(await screen.findByRole('radio', { name: 'Chronological' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preserve uncertainty' }));
+    expect(screen.getByRole('textbox', { name: 'Which ending?' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Original ending' }));
+    expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Which ending?' }), { target: { value: 'Keep ending without new actions' } });
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.previousQuestion' }));
+    expect(screen.getByRole('button', { name: 'Preserve uncertainty' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.continueQuestion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.confirmDirection' }));
+    await screen.findByText('director.planning.phase.WAIT_COST');
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[0][1].payload).toMatchObject({ optionId: 'd1', answers: { q1: 'Preserve uncertainty', q2: 'Keep ending without new actions' } });
+  });
+
+  it('an outline-only checkpoint has no empty character or asset document tabs', async () => {
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue({ ...initial, revision: 9, phase: 'WAIT_OUTLINE', checkpoint: {
+      id: 'cp-outline', kind: 'WAIT_OUTLINE', status: 'open', resumeToken: 'resume-outline', payloadHash: 'a'.repeat(64), payload: { documents: { outline: '# Proposed outline' } },
+    } });
+    render(<div className="dc-studio"><PlanningWorkflow {...props} /></div>);
+    fireEvent.click(await screen.findByRole('button', { name: 'director.openDraft' }));
+    await screen.findByRole('heading', { name: 'Proposed outline' });
+    fireEvent.click(screen.getByRole('button', { name: 'director.close' }));
+    expect(screen.queryByText('director.section.characters')).not.toBeInTheDocument();
+    expect(screen.queryByText('director.section.scenes')).not.toBeInTheDocument();
+    expect(screen.queryByText('director.section.props')).not.toBeInTheDocument();
+    expect(screen.getByText('director.planning.outlineWait')).toBeInTheDocument();
+    expect(screen.getByText('director.planning.outlineAdoptHint')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'director.planning.adopt' })).not.toBeInTheDocument();
+    expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
+    vi.mocked(executionApi.sendPlanningCommand).mockResolvedValue({ ...initial, revision: 10, phase: 'READY' });
+    fireEvent.click(screen.getByRole('button', { name: 'director.planning.outlineAdopt' }));
+    await screen.findByText('director.planning.phase.READY');
+    expect(vi.mocked(executionApi.sendPlanningCommand).mock.calls[0][1].payload).toMatchObject({ type: 'planning.decide', decision: 'adopt' });
+    expect(executionApi.sendExecutionCommand).not.toHaveBeenCalled();
+  });
+
+  it('retains a blocked outline but does not offer adoption as success', async () => {
+    vi.mocked(executionApi.getPlanningState).mockResolvedValue({ ...initial, revision: 9, phase: 'WAIT_OUTLINE', checkpoint: {
+      id: 'cp-outline', kind: 'WAIT_OUTLINE', status: 'open', resumeToken: 'resume-outline', payloadHash: 'a'.repeat(64),
+      payload: { documents: { outline: '# Retained candidate' }, quality: { status: 'blocked',
+        violatedPaths: ['overview.synopsis.0'], uncertainPaths: [], literaryNotes: [] } },
+    } });
+    render(<div className="dc-studio"><PlanningWorkflow {...props} /></div>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('director.planning.auditBlocked');
+    expect(screen.getByRole('button', { name: 'director.planning.outlineAdopt' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'director.openDraft' }));
+    expect(await screen.findByRole('heading', { name: 'Retained candidate' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'director.close' }));
+    expect(screen.getByRole('button', { name: 'director.planning.skip' })).toBeEnabled();
     expect(executionApi.sendPlanningCommand).not.toHaveBeenCalled();
   });
 
@@ -447,7 +638,7 @@ describe('studio uses durable authorization', () => {
     fireEvent.click(screen.getByRole('button', { name: 'director.review.run' }));
     await screen.findByRole('dialog', { name: 'director.parameterReview' });
     expect(vi.mocked(executionApi.sendExecutionCommand).mock.calls[0][1].payload).toEqual({
-      type: 'cost.quote', kind: 'outline', instruction: '', maxOutputTokens: 4096, purpose: 'review',
+      type: 'cost.quote', kind: 'outline', instruction: '', purpose: 'review',
     });
     expect(screen.getByRole('button', { name: 'director.review.confirm' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'director.cancel' }));
@@ -483,6 +674,21 @@ describe('studio uses durable authorization', () => {
     expect(executionApi.sendExecutionCommand).not.toHaveBeenCalled();
     expect(executionApi.getRetainedResult).toHaveBeenCalledWith('synthetic', work.id, retained.id);
   });
+
+  it('explains structural failures without offering adoption or automatic re-dispatch', () => {
+    const failed = run('failed');
+    failed.errorCode = 'PLANNING_OUTPUT_INVALID';
+    failed.response.validation = { kind: 'schema', issueCount: 2, issues: [
+      { path: 'segments.2.carryIn', code: 'missing' },
+      { path: 'whyWatch.0.reasonId', code: 'extra_forbidden' },
+    ] };
+    const action = vi.fn();
+    render(<ExecutionHistory runs={[failed]} busy={false} onAction={action} />);
+    expect(screen.getByText('segments.2.carryIn')).toBeInTheDocument();
+    expect(screen.getByText('extra_forbidden')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'director.execution.resumeQueued' })).not.toBeInTheDocument();
+    expect(action).not.toHaveBeenCalled();
+  });
   it('shows nested scene parameters literally and cancels without granting approval', async () => {
     const root = { episodes: [{ id: 'episode-a', deliveryLabel: 'EP02' }] };
     vi.mocked(executionApi.sendExecutionCommand).mockResolvedValueOnce({ ...quoted, docKey: 'scenes', parameters: { ...quoted.parameters, sceneRoot: root, response_format: { type: 'json_object' } } });
@@ -491,14 +697,18 @@ describe('studio uses durable authorization', () => {
     await waitFor(() => expect(button).not.toBeDisabled());
     fireEvent.click(button);
     await screen.findByRole('dialog', { name: 'director.parameterReview' });
-    expect(screen.getByText(JSON.stringify(root))).toBeVisible();
-    expect(screen.getByText('{"type":"json_object"}')).toBeVisible();
+    const technical = screen.getByText('sceneRoot').closest('details')!;
+    expect(technical).not.toHaveAttribute('open');
+    expect(JSON.parse(technical.querySelector('pre')!.textContent!)).toEqual(root);
+    expect(JSON.parse(screen.getByText('response_format').closest('details')!.querySelector('pre')!.textContent!)).toEqual({ type: 'json_object' });
     expect(screen.queryByText('[object Object]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'director.cancel' }));
     expect(executionApi.sendExecutionCommand).toHaveBeenCalledTimes(1);
   });
 
   it('previews the actual limit and requires consent; failed transport reuses the same approval intent', async () => {
+    // An obsolete browser preference must never silently truncate new writing.
+    localStorage.setItem('director:ui:outputTokens', '1024');
     const send = vi.mocked(executionApi.sendExecutionCommand);
     send.mockResolvedValueOnce(quoted).mockRejectedValueOnce(new Error('Temporary connection loss')).mockResolvedValueOnce(run('queued'));
     render(<DirectorStudio project="synthetic" />);
@@ -506,7 +716,7 @@ describe('studio uses durable authorization', () => {
     await waitFor(() => expect(button.hasAttribute('disabled')).toBe(false));
     fireEvent.click(button);
     await screen.findByRole('dialog', { name: 'director.parameterReview' });
-    expect(send.mock.calls[0][1].payload).toEqual({ type: 'cost.quote', kind: 'outline', instruction: '', maxOutputTokens: 4096, purpose: 'draft' });
+    expect(send.mock.calls[0][1].payload).toEqual({ type: 'cost.quote', kind: 'outline', instruction: '', purpose: 'draft' });
     const confirm = screen.getByRole('button', { name: 'director.confirmGeneration' });
     expect(confirm.hasAttribute('disabled')).toBe(true);
     fireEvent.click(screen.getByRole('checkbox'));

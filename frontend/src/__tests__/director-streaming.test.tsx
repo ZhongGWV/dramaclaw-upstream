@@ -3,8 +3,8 @@
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { emptyStream, reduceExecutionEvents, useExecutionStream } from '@/features/director/useExecutionStream';
-import { ConversationScroll } from '@/features/director/components/DirectorConversation';
-import { getExecutionEvents, type ExecutionEvent } from '@/api/director-execution';
+import { ConversationScroll, DirectorConversation } from '@/features/director/components/DirectorConversation';
+import { getExecutionEvents, type ExecutionEvent, type ExecutionRun } from '@/api/director-execution';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@/api/director-execution', () => ({ getExecutionEvents: vi.fn() }));
@@ -17,6 +17,58 @@ it('replays ordered deltas once, separating runs and preserving Unicode', () => 
   expect(next.runs.r1.text).toBe('世界!');
   expect(next.runs.r2.text).toBe('Other');
   expect(next.cursor).toBe(4);
+});
+
+it('replaces provisional structured fields on replay without exposing raw JSON', () => {
+  const part = (seq: number, text: string): ExecutionEvent => ({ ...delta(seq, text), type: 'outline.section.preview',
+    payload: { text, provisional: true, blockKey: 'overview.logline.text', sectionKey: 'overview' } });
+  const first = reduceExecutionEvents(emptyStream(), [part(1, '草稿'), part(2, '草稿内容')]);
+  const next = reduceExecutionEvents(first, [part(2, '草稿内容'), part(3, '草稿内容。')]);
+  expect(next.runs.r1.text).toBe('');
+  expect(next.runs.r1.sections).toEqual({ 'overview.logline.text': { section: 'overview', text: '草稿内容。' } });
+});
+
+it('shows first direction and question fields as provisional stream, excluding private ids', () => {
+  const run: ExecutionRun = { id: 'r1', workId: 'w', sessionId: 's', revision: 1,
+    status: 'dispatching', requestHash: 'a'.repeat(64), docKey: 'outline', parameters: { stage: 'M03' },
+    limits: { maxAttempts: 1, maxOutputTokens: 4096, inputChars: 10, timeoutSeconds: 300 },
+    errorCode: null, changeId: null, createdAt: 0, updatedAt: 0, response: {},
+    cost: { status: 'unknown', estimateMinor: null, reservedMinor: null, actualMinor: null,
+      currency: null, maxOutputTokens: 4096, actualOutputTokens: null },
+    canResume: false, canCancel: true, requiresReconciliation: false };
+  const event = (seq: number, blockKey: string, sectionKey: string, text: string): ExecutionEvent => ({
+    ...delta(seq, text), type: 'outline.section.preview',
+    payload: { blockKey, sectionKey, text, provisional: true },
+  });
+  const stream = reduceExecutionEvents(emptyStream(), [
+    event(1, 'options.0.logline', 'direction', '曹操在盟约和生存间抉择'),
+    event(2, 'specQuestions.0.question', 'questions', '史实边界？'),
+    event(3, 'options.0.id', 'private', 'secret-id'),
+  ]);
+  expect(stream.runs.r1.sections?.['options.0.id']).toBeUndefined();
+  render(<DirectorConversation runs={[run]} previews={stream.runs} busy={false}
+    onAction={vi.fn()} onViewResult={vi.fn()} onRefine={vi.fn()} />);
+  expect(screen.getByText('director.stream.directionPreview')).toBeVisible();
+  expect(screen.getByText('曹操在盟约和生存间抉择')).toBeVisible();
+  expect(screen.getByText('史实边界？')).toBeVisible();
+  expect(screen.queryByText('secret-id')).not.toBeInTheDocument();
+});
+
+it('labels outline streams separately from episode streams', () => {
+  const run: ExecutionRun = { id: 'r1', workId: 'w', sessionId: 's', revision: 1,
+    status: 'dispatching', requestHash: 'a'.repeat(64), docKey: 'outline', parameters: { stage: 'M14' },
+    limits: { maxAttempts: 1, maxOutputTokens: 4096, inputChars: 10, timeoutSeconds: 300 },
+    errorCode: null, changeId: null, createdAt: 0, updatedAt: 0, response: {},
+    cost: { status: 'unknown', estimateMinor: null, reservedMinor: null, actualMinor: null,
+      currency: null, maxOutputTokens: 4096, actualOutputTokens: null },
+    canResume: false, canCancel: true, requiresReconciliation: false };
+  const stream = reduceExecutionEvents(emptyStream(), [{ ...delta(1, 'Draft'), type: 'outline.section.preview',
+    payload: { text: 'Draft', provisional: true, blockKey: 'overview.logline.text', sectionKey: 'overview' } }]);
+  render(<DirectorConversation runs={[run]} previews={stream.runs} busy={false}
+    onAction={vi.fn()} onViewResult={vi.fn()} onRefine={vi.fn()} />);
+  expect(screen.getByText('director.stream.outlinePreview')).toBeVisible();
+  expect(screen.queryByText('director.stream.preview')).not.toBeInTheDocument();
+  expect(screen.getByText('Draft')).toBeVisible();
 });
 
 it('ignores a late response after switching works and aborts the old read', async () => {

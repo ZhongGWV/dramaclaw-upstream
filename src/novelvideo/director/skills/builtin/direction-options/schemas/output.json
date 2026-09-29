@@ -92,6 +92,17 @@
           "pattern": "\\S",
           "title": "Question",
           "type": "string"
+        },
+        "choices": {
+          "items": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Choices",
+          "type": "array"
         }
       },
       "required": [

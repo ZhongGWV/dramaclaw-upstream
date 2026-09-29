@@ -308,6 +308,42 @@ def validate_review(raw: str, frozen: dict, *, truncated: bool = False) -> dict:
         }
 
 
+def review_content_hash(frozen: dict) -> str:
+    """Changing the next writer cannot change facts already independently read."""
+    return object_hash({
+        **{key: value for key, value in frozen.items() if key not in {"inputHash", "parameters"}},
+        "parameters": {key: value for key, value in frozen["parameters"].items() if key != "model_name"},
+    })
+
+
+def review_matches(db: sqlite3.Connection, row, frozen: dict) -> bool:
+    report = json.loads(row["report_json"])
+    if object_hash(report) != row["report_hash"]:
+        raise ExecutionFault("REVIEW_CORRUPT")
+    if row["input_hash"] == frozen["inputHash"]:
+        return True
+    prior_hash = report.get("contentInputHash")
+    if not prior_hash and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='director_operations'").fetchone():
+        # Old reports need their original request, not a guessed model or a
+        # database rewrite. Missing provenance conservatively requires review.
+        from .execution_repository import ExecutionRepository
+        try:
+            previous = ExecutionRepository.snapshot(db, row["reviewer_run_id"]).get("reviewInputs", {})
+            if previous.get("inputHash") == row["input_hash"]:
+                prior_hash = review_content_hash(previous)
+        except ExecutionFault:
+            pass
+    return prior_hash == review_content_hash(frozen)
+
+
+def matching_review(db: sqlite3.Connection, work_id: str, frozen: dict):
+    rows = db.execute(
+        "SELECT q.* FROM director_quality_reports q LEFT JOIN director_review_invalidations i ON i.report_id=q.id WHERE q.work_id=? AND q.doc_key=? AND i.report_id IS NULL ORDER BY q.created_at DESC",
+        (work_id, frozen["docKey"]),
+    )
+    return next((row for row in rows if review_matches(db, row, frozen)), None)
+
+
 def save_review(
     db: sqlite3.Connection,
     work_id: str,
@@ -336,6 +372,7 @@ def save_review(
         "documentVersion": frozen["documentVersion"],
         "contentHash": frozen["contentHash"],
         "inputHash": frozen["inputHash"],
+        "contentInputHash": review_content_hash(frozen),
         "reviewerRunId": run_id,
         "methodVersion": frozen["methodVersion"],
     }
@@ -371,10 +408,7 @@ class QualityService:
                 return self.report(work_id, ordinal, db=connection)
         base = self.store._quality_report(db, self.store._work(db, work_id), ordinal)
         frozen = review_inputs(self.store, db, work_id, ordinal)
-        row = db.execute(
-            "SELECT q.* FROM director_quality_reports q LEFT JOIN director_review_invalidations i ON i.report_id=q.id WHERE q.work_id=? AND q.doc_key=? AND q.input_hash=? AND i.report_id IS NULL ORDER BY q.created_at DESC LIMIT 1",
-            (work_id, frozen["docKey"], frozen["inputHash"]),
-        ).fetchone()
+        row = matching_review(db, work_id, frozen)
         review = None
         retained_validation = None
         blockers = list(base["blockers"])
@@ -544,7 +578,7 @@ def valid_finalization(
     store: "DirectorStore", db: sqlite3.Connection, work_id: str, ordinal: int
 ) -> bool:
     row = db.execute(
-        """SELECT f.*,q.input_hash FROM director_finalizations_v2 f
+        """SELECT f.*,q.input_hash,q.report_json,q.report_hash,q.reviewer_run_id FROM director_finalizations_v2 f
       JOIN director_episodes e ON e.id=f.episode_id
       JOIN director_quality_reports q ON q.id=f.report_id AND q.work_id=f.work_id
       LEFT JOIN director_finalization_invalidations i ON i.finalization_id=f.id
@@ -558,5 +592,5 @@ def valid_finalization(
     return (
         row["document_version"] == frozen["documentVersion"]
         and row["content_hash"] == frozen["contentHash"]
-        and row["input_hash"] == frozen["inputHash"]
+        and review_matches(db, row, frozen)
     )

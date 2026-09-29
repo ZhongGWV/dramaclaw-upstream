@@ -1,5 +1,6 @@
 {
   "additionalProperties": false,
+  "description": "Adaptation directions change the telling, not the supplied story facts.",
   "properties": {
     "schemaVersion": {
       "const": 2,
@@ -7,17 +8,15 @@
       "type": "integer"
     },
     "stage": {
-      "enum": [
-        "M03",
-        "M07",
-        "M08",
-        "M09"
-      ],
+      "const": "M03",
       "title": "Stage",
       "type": "string"
     },
     "mode": {
-      "const": "original",
+      "enum": [
+        "original",
+        "adaptation"
+      ],
       "title": "Mode",
       "type": "string"
     },
@@ -57,6 +56,6 @@
     "endingType",
     "parametersHash"
   ],
-  "title": "PlanningMethodContext",
+  "title": "DirectionMethodContext",
   "type": "object"
 }

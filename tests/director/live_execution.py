@@ -488,6 +488,10 @@ async def validate_preparation(root: Path) -> None:
                     "payloadHash": checkpoint["payloadHash"],
                     "decision": "select",
                     "optionId": payload["options"][0]["id"],
+                    **({
+                        "episodeCount": payload["confirmedPreset"]["episodeCount"],
+                        "durationSeconds": payload["confirmedPreset"]["durationSeconds"],
+                    } if "confirmedPreset" in payload else {}),
                     "freeText": "只在表情、镜头强调和动作节奏上变化，严格保留原创意所有事实；不要扩充剧情。",
                     "answers": {
                         q[
@@ -500,11 +504,86 @@ async def validate_preparation(root: Path) -> None:
     summary()
 
 
+async def resume_failed_preparation(root: Path) -> None:
+    """Explicitly buy only the failed M09 child; keep the three successful receipts."""
+    from novelvideo.director.schemas.planning import WorkflowCommand
+    from novelvideo.director.workflow import WorkflowService
+
+    summary_path = root / "summary.json"
+    retry_path = root / "M09-resume-01.json"
+    if not summary_path.is_file() or retry_path.exists():
+        raise ValueError("RESUME_RECEIPT_MISSING_OR_ALREADY_USED")
+    previous = json.loads(summary_path.read_text(encoding="utf-8"))
+    if [(item["stage"], item["status"]) for item in previous["results"]] != [
+        ("M03", "succeeded"), ("M07", "succeeded"), ("M08", "succeeded"),
+        ("M09", "failed"),
+    ]:
+        raise ValueError("ONLY_FAILED_M09_CAN_RESUME")
+    store = DirectorStore(root / "isolated-project")
+    repo = ExecutionRepository(store)
+    service = WorkflowService(repo)
+    work_id = previous["planning"]["workId"]
+    work = store.get_work(work_id)
+    state = service.projection(work_id)
+    if work["title"] != "Synthetic real preparation validation" or state["phase"] != "FAILED_RECOVERABLE":
+        raise ValueError("RESUME_WORK_MISMATCH")
+    intents = []
+
+    def send(payload):
+        current = service.projection(work_id)
+        key = identifier()
+        command = WorkflowCommand.from_wire({
+            "schemaVersion": 2, "commandId": key, "clientRequestId": key,
+            "sessionId": "bounded-planning-validation", "workId": work_id,
+            "expected": {"workRevision": store.get_work(work_id)["revision"],
+                         "workflowRevision": current["revision"],
+                         "capabilityVersion": execution_capability()["version"]},
+            "payload": payload,
+        })
+        result = service.execute("authorized-live-validation", command)["result"]
+        intents.append({"command": command.model_dump(by_alias=True), "result": result})
+        save(root / "resume-commands.json", {"commands": intents})
+        return result
+
+    quote = send({"type": "planning.quote", "maxOutputTokens": 4096})
+    if quote["plan"]["stages"] != ["M09"]:
+        raise ValueError("RESUME_WOULD_REBUY_SUCCESSFUL_STAGE")
+    send({"type": "planning.grant", "quoteId": quote["quoteId"],
+          "planHash": quote["planHash"], "unknownCostConsent": True})
+    operation_id = service.advance(work_id)
+    with store._connect() as db:
+        frozen = repo.snapshot(db, operation_id)
+    if frozen["parameters"]["stage"] != "M09":
+        raise ValueError("RESUME_STAGE_MISMATCH")
+    evidence = {"stage": "M09", "snapshot": frozen, "quote": quote,
+                "startedAt": time.time(), "status": "queued"}
+    save(retry_path, evidence)
+    result = await dispatch_writing(repo, work_id, operation_id)
+    evidence.update({"finishedAt": time.time(), "result": result,
+                     "output": repo.retained_result(work_id, operation_id)["output"],
+                     "status": result["status"]})
+    save(retry_path, evidence)
+    if result["status"] == "succeeded":
+        service.advance(work_id)
+    save(root / "resume-summary.json", {
+        "results": [{"stage": "M09", "status": result["status"],
+                     "elapsedSeconds": round(evidence["finishedAt"] - evidence["startedAt"], 2),
+                     "usage": result["response"].get("usage")}],
+        "planning": service.projection(work_id), "actualAmount": None,
+        "noAutomaticRetries": True, "formalAdoptionPerformed": False,
+        "qualityAcceptance": "not-certified",
+    })
+    print(json.dumps({"stage": "M09", "status": result["status"],
+                      "elapsedSeconds": round(evidence["finishedAt"] - evidence["startedAt"], 2),
+                      "usage": result["response"].get("usage")}, ensure_ascii=False), flush=True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--accept-bounded-cost", action="store_true")
     parser.add_argument("--review-existing", type=Path)
     parser.add_argument("--planning", action="store_true")
+    parser.add_argument("--resume-planning", type=Path)
     parser.add_argument("--case", choices=("original", "adaptation", "revision"))
     parser.add_argument(
         "--output", type=Path, default=Path("output/playwright/director-live-20260926")
@@ -514,10 +593,14 @@ if __name__ == "__main__":
         parser.error(
             "explicit --accept-bounded-cost required: at most 4 planning or 3 writing/review requests, 4096 output tokens each"
         )
-    if args.planning and (args.review_existing or args.case):
+    if args.planning and (args.review_existing or args.case or args.resume_planning):
         parser.error("--planning cannot be combined with --review-existing or --case")
+    if args.resume_planning and (args.review_existing or args.case):
+        parser.error("--resume-planning cannot be combined with other cases")
     asyncio.run(
-        validate_preparation(args.output)
+        resume_failed_preparation(args.resume_planning)
+        if args.resume_planning
+        else validate_preparation(args.output)
         if args.planning
         else validate_reviews(args.output, args.review_existing, args.case)
         if args.review_existing

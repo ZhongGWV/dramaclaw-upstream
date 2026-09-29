@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "key": "studio/story-plan",
   "stage": "M07",
-  "version": "2.2.0",
+  "version": "2.3.2",
   "purpose": "story-plan",
   "applicable": [
     "original",
@@ -39,6 +39,13 @@
       "originalPath": "references/satisfaction-matrix.md",
       "sha256": "1eba44d3d2701bb14073e55c6a563cf0a013d76e503da33b3dfacf02b80a46c6",
       "when": "always"
+    },
+    {
+      "path": "references/source-grounding.md",
+      "sourceId": "user-short-drama",
+      "originalPath": "references/adaptation-core.md + event-coverage.md (adapted)",
+      "sha256": "89388a99412cba521ed62ab619c4d9a027b6dd4ac56ada69914380a24936c2d0",
+      "when": "adaptation"
     }
   ],
   "ruleIds": [
@@ -64,7 +71,7 @@
   "maxAutomaticRevisionAttempts": 0,
   "compatibility": "New complete story outlines use schema 2; existing stored drafts are not silently migrated. Original planning and direct original/adaptation edits share the contract; source-audit parity is not claimed.",
   "files": {
-    "method.md": "4c391e6c44e380c505ad1a7c69b85a570d41cd365a564050e21ce10984c839a3",
+    "method.md": "fc77beac32378237c1de00df652a61892e2aa2d24ee6dcaf3ae5592923b33cd0",
     "templates/request.md": "347ef66d733321822f914511c5e7d35d511cd9cb8f03fe4d38793a535c385554",
     "schemas/input.json": "30d5e1db7558a36c191c052531ec1fc46b470f528a2d99920fc25892c004aa11",
     "schemas/output.json": "d4b5796a635598bd3a2b94360525559cc904e4c789f6fe0fd1cfb111ddb96cc0",
@@ -73,7 +80,8 @@
     "references/opening-rules.md": "72b43ff9ca3d6eaaf91ad1a47f3328de010a8e9c06eb2a6e5819732a94b1b971",
     "references/rhythm-curve.md": "c462669c3224020604e627aa3d6a0c9fb72a5fd41ca730759232dfc073eaea98",
     "references/satisfaction-matrix.md": "1eba44d3d2701bb14073e55c6a563cf0a013d76e503da33b3dfacf02b80a46c6",
-    "provenance.json": "f9e9da703c0760877162d4d5e6fc16f8e8ad5d8119a9dbf977fae138d1c7d759",
-    "SKILL.md": "83c03f9dfbce04f825eed20519b19b370edbffd3380d34de28d342744b36c195"
+    "provenance.json": "41504d17a312988a4e8dee71482a1e882e98e28fb783ea3b2cc3adc89e8c9dea",
+    "SKILL.md": "cecf5ebb4b9cb4ca2e29aed17d696247f1f1f7fd9ab8732f3e781b544b6b92fd",
+    "references/source-grounding.md": "89388a99412cba521ed62ab619c4d9a027b6dd4ac56ada69914380a24936c2d0"
   }
 }

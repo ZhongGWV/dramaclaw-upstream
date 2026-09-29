@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { getExecutionEvents, type ExecutionEvent } from '@/api/director-execution';
 
-export interface RunPreview { text: string; method?: ExecutionEvent['payload']; model?: ExecutionEvent['payload'] }
+export interface RunPreview { text: string; method?: ExecutionEvent['payload']; model?: ExecutionEvent['payload'];
+  sections?: Record<string, { section: string; text: string }> }
 export interface StreamState { cursor: number; runs: Record<string, RunPreview> }
 export const emptyStream = (): StreamState => ({ cursor: 0, runs: {} });
 
@@ -13,11 +14,16 @@ export function reduceExecutionEvents(state: StreamState, events: ExecutionEvent
   for (const event of [...events].sort((a, b) => a.seq - b.seq)) {
     if (event.seq <= next.cursor) continue;
     next.cursor = event.seq;
-    if (!event.runId || !['text.delta', 'method.loaded', 'model.started'].includes(event.type)) continue;
+    if (!event.runId || !['text.delta', 'method.loaded', 'model.started', 'outline.section.preview'].includes(event.type)) continue;
     const run = { ...(next.runs[event.runId] ?? { text: '' }) };
     if (event.type === 'text.delta' && typeof event.payload.text === 'string') run.text += event.payload.text;
     if (event.type === 'method.loaded') run.method = event.payload;
     if (event.type === 'model.started') run.model = event.payload;
+    if (event.type === 'outline.section.preview' && event.payload.provisional === true &&
+      typeof event.payload.blockKey === 'string' && typeof event.payload.text === 'string' &&
+      ['direction', 'questions', 'overview', 'adaptation', 'chapters', 'hooks', 'boundaries'].includes(event.payload.sectionKey ?? '')) {
+      run.sections = { ...run.sections, [event.payload.blockKey]: { section: event.payload.sectionKey!, text: event.payload.text } };
+    }
     next.runs[event.runId] = run;
   }
   return next;

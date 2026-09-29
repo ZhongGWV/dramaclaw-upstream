@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 
 import {
   createDirectorWork, decideDirectorChange, directorDocumentKey,
+  decideOutlineGroups, outlineDecisionCommand,
   finalizeDirectorV2, getDirectorDocument,
   getDirectorModelContract,
   getDirectorQualityReport,
@@ -34,17 +35,19 @@ import { DirectorPopover } from './components/DirectorPopover';
 import { DirectorCanvas } from './components/DirectorCanvas';
 import { DirectorMediaNodes } from './components/DirectorMediaNodes';
 import { DirectorRichText } from './components/DirectorRichText';
-import { directorTokenLimit, readDirectorPreference, saveDirectorPreference, notifyDirectorTask } from './director-ui-state';
+import { readDirectorPreference, saveDirectorPreference, notifyDirectorTask } from './director-ui-state';
 import { DirectorWindow } from './components/DirectorWindow';
 import { executionCommand, getExecutionCapability, getRetainedResult, isExecutionActive, listExecutionRuns, sendExecutionCommand,
   type ExecutionCapability, type ExecutionCommand, type ExecutionQuote, type ExecutionRun, type RetainedResult } from '@/api/director-execution';
 import { DirectorConversation, ConversationScroll } from './components/DirectorConversation';
+import { RequestParameters } from './components/ExecutionHistory';
 import { useExecutionStream } from './useExecutionStream';
 import { PlanningWorkflow } from './components/PlanningWorkflow';
 import type { PlanningState } from '@/api/director-execution';
 import { DocumentVersionPanel } from './components/DocumentVersionPanel';
 import { QualityReviewDialog } from './components/QualityReviewDialog';
 import { OutlineReviewDialog } from './components/OutlineReviewDialog';
+import { OutlinePatchReview } from './components/OutlinePatchReview';
 import { RevisionImpactDialog } from './components/RevisionImpactDialog';
 import { DirectorDocumentEditor } from './components/DirectorDocumentEditor';
 import { DirectorMediaPanel } from './components/DirectorMediaPanel';
@@ -90,6 +93,8 @@ export function DirectorStudio({ project }: { project: string }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<DirectorWorkDraft>(initialDraft);
   const [modelContract, setModelContract] = useState<DirectorModelContract | null>(null);
+  const selectedModelId = modelContract?.locked ? modelContract.model_name : draft.preset.model_name || modelContract?.model_name || '';
+  const selectedModel = modelContract?.options?.find(option => option.id === selectedModelId || (option.id.startsWith('siliconflow::') && option.upstreamModel === selectedModelId));
   const [works, setWorks] = useState<DirectorWork[]>([]);
   const [detail, setDetail] = useState<DirectorWorkDetail | null>(null);
   const [document, setDocument] = useState<DirectorDocument | null>(null);
@@ -106,6 +111,7 @@ export function DirectorStudio({ project }: { project: string }) {
   const [methodsOpen, setMethodsOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [planningDraftOpen, setPlanningDraftOpen] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [mediaKind, setMediaKind] = useState<DirectorMediaKind | null>(null);
   const [mediaAnchor, setMediaAnchor] = useState<HTMLElement | null>(null);
@@ -116,6 +122,7 @@ export function DirectorStudio({ project }: { project: string }) {
   const [reviewBaseVersion, setReviewBaseVersion] = useState(0);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [preview, setPreview] = useState<ExecutionQuote | null>(null);
+  const patchDecisionIntent = useRef<ReturnType<typeof outlineDecisionCommand> | null>(null);
   const [retainedResult, setRetainedResult] = useState<RetainedResult | null>(null);
   const [capability, setCapability] = useState<ExecutionCapability | null>(null);
   const [executions, setExecutions] = useState<ExecutionRun[]>([]);
@@ -128,8 +135,9 @@ export function DirectorStudio({ project }: { project: string }) {
     }
     if (changed) notifyDirectorTask(t('director.surface.taskUpdate'));
   }, [executions, t]);
-  const [maxOutputTokens, setMaxOutputTokens] = useState(directorTokenLimit);
   const [planningPhase, setPlanningPhase] = useState<PlanningState['phase'] | null>(null);
+  const [initialQuoteWorkId, setInitialQuoteWorkId] = useState<string | null>(null);
+  const [sourceBoundOutline, setSourceBoundOutline] = useState(false);
   const planningQuoteAction = useRef<(() => void) | null>(null);
   const approvalIntent = useRef<ExecutionCommand | null>(null);
   const visibleWork = useRef<string | null>(null);
@@ -147,12 +155,12 @@ export function DirectorStudio({ project }: { project: string }) {
   useEffect(() => { saveDirectorPreference(`composer:${project}`, composer); }, [project, composer]);
 
   const work = detail?.work ?? null;
-  const planningMain = Boolean(work?.mode === 'original' && planningPhase !== 'READY' &&
+  const planningMain = Boolean(work && ['original', 'adaptation'].includes(work.mode) && planningPhase !== 'READY' &&
     (planningPhase !== 'NOT_STARTED' || !detail?.documents.length));
   useEffect(() => { visibleWork.current = work?.id ?? null; }, [work?.id]);
   const hasActiveExecution = executions.some(isExecutionActive);
   const stream = useExecutionStream(project, work?.id, hasActiveExecution);
-  const stoppable = executions.find(item => item.canCancel && !item.parameters.stage);
+  const stoppable = executions.find(item => item.canCancel && (item.purpose ? item.purpose !== 'planning' : !item.parameters.stage));
   const ordinal = selectedEpisode ?? work?.current_episode ?? 1;
   const episodeReadOnly = Boolean(selectedKind === 'episode' && work &&
     (ordinal !== work.current_episode || ordinal > work.preset.episode_count));
@@ -171,6 +179,7 @@ export function DirectorStudio({ project }: { project: string }) {
 
   const openWork = useCallback(async (workId: string) => {
     if (editorFlush.current && !await editorFlush.current()) return;
+    setInitialQuoteWorkId(null);
     const reopeningCurrent = visibleWork.current === workId;
     visibleWork.current = workId;
     setPreview(null);
@@ -220,10 +229,17 @@ export function DirectorStudio({ project }: { project: string }) {
 
   useEffect(() => {
     let active = true;
-    void getExecutionCapability(project).then((value) => {
-      if (active) setCapability(value);
-    }).catch((reason) => { if (active) setError(describeError(reason)); });
-    return () => { active = false; };
+    let request = 0;
+    const refresh = () => {
+      const current = ++request;
+      void getExecutionCapability(project).then((value) => {
+        if (active && current === request) setCapability(value);
+      }).catch((reason) => { if (active && current === request) setError(describeError(reason)); });
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener('media-model-catalog-updated', refresh);
+    return () => { active = false; window.removeEventListener('focus', refresh); window.removeEventListener('media-model-catalog-updated', refresh); };
   }, [project]);
 
   useEffect(() => {
@@ -256,14 +272,21 @@ export function DirectorStudio({ project }: { project: string }) {
 
   useEffect(() => {
     let active = true;
-    void getDirectorModelContract(project).then((contract) => {
-      if (!active) return;
-      setModelContract(contract);
-      setDraft((current) => current.preset.model_name ? current : {
-        ...current, preset: { ...current.preset, model_name: contract.model_name },
-      });
-    }).catch((reason) => { if (active) setError(describeError(reason)); });
-    return () => { active = false; };
+    let request = 0;
+    const refresh = () => {
+      const currentRequest = ++request;
+      void getDirectorModelContract(project).then((contract) => {
+        if (!active || currentRequest !== request) return;
+        setModelContract(contract);
+        setDraft((current) => current.preset.model_name ? current : {
+          ...current, preset: { ...current.preset, model_name: contract.model_name },
+        });
+      }).catch((reason) => { if (active && currentRequest === request) setError(describeError(reason)); });
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener('media-model-catalog-updated', refresh);
+    return () => { active = false; window.removeEventListener('focus', refresh); window.removeEventListener('media-model-catalog-updated', refresh); };
   }, [project]);
 
   useEffect(() => {
@@ -323,6 +346,9 @@ export function DirectorStudio({ project }: { project: string }) {
       });
       await refreshList();
       await openWork(created.id);
+      // The first Send is the user's request to start the conversation. Quote
+      // this work once after its workflow state loads, without granting cost.
+      if (visibleWork.current === created.id) setInitialQuoteWorkId(created.id);
       setComposer('');
     });
   };
@@ -336,6 +362,20 @@ export function DirectorStudio({ project }: { project: string }) {
           preset: { ...confirmed.preset, model_name: modelContract?.locked ? modelContract.model_name : confirmed.preset.model_name },
         });
         if (visibleWork.current !== work.id) return;
+        if (impact.changedFields.length === 1 && impact.changedFields[0].field === 'model_name' && impact.restartEpisode == null) {
+          const id = crypto.randomUUID();
+          await commitDirectorRevision(project, {
+            schemaVersion: 2, commandId: id, clientRequestId: id, workId: work.id,
+            previewId: impact.previewId, previewHash: impact.previewHash, archiveEpisodeIds: [],
+            reason: 'User explicitly selected the model for subsequent executions.',
+          });
+          const updated = await refreshDetail(work.id);
+          setDraft(draftFromWork(updated.work));
+          setPreview(null); approvalIntent.current = null;
+          await refreshList();
+          setPresetOpen(false);
+          return;
+        }
         setPresetOpen(false);
         setRevisionImpact(impact);
         return;
@@ -349,6 +389,7 @@ export function DirectorStudio({ project }: { project: string }) {
       });
       const updated = await refreshDetail(work.id);
       setDraft(draftFromWork(updated.work));
+      setPreview(null); approvalIntent.current = null;
       await refreshList();
       setPresetOpen(false);
     });
@@ -377,7 +418,7 @@ export function DirectorStudio({ project }: { project: string }) {
     });
   };
 
-  const startGeneration = async (purpose: 'draft' | 'review' = 'draft') => {
+  const startGeneration = async (purpose: 'draft' | 'review' = 'draft', reviewTarget?: { changeId: string; changeRevision: number; acceptGroupIds: string[] }) => {
     if (!work || !document || document.doc_key !== docKey || !capability || hasActiveExecution || documentReadOnly || editorDirty) return;
     const instruction = purpose === 'review' ? '' : composer.trim();
     await run('preview', async () => {
@@ -385,7 +426,7 @@ export function DirectorStudio({ project }: { project: string }) {
         executionCommand(work.id, work.revision, docKey, document.version, capability.version, {
           type: 'cost.quote', kind: selectedKind,
           ...(selectedKind === 'episode' ? { episodeOrdinal: ordinal } : {}),
-          instruction, maxOutputTokens, purpose,
+          instruction, purpose, ...(reviewTarget ? { reviewTarget } : {}),
         }));
       if (visibleWork.current !== work.id) return;
       setPreview(result);
@@ -438,6 +479,25 @@ export function DirectorStudio({ project }: { project: string }) {
       await refreshDetail(work.id);
       setEditorOpen(false);
       setProposalPreview(false);
+    });
+  };
+
+  const decidePatch = async (groupIds: string[], accept: boolean, reportId: string | null = null) => {
+    if (!work || !document?.document_id || !pending?.outlinePatch) return;
+    if (patchDecisionIntent.current && patchDecisionIntent.current.workId !== work.id) patchDecisionIntent.current = null;
+    patchDecisionIntent.current ??= outlineDecisionCommand(work, document, pending, groupIds, accept ? 'accept' : 'reject', reportId);
+    await run('review', async () => {
+      try {
+        await decideOutlineGroups(project, patchDecisionIntent.current!);
+        patchDecisionIntent.current = null;
+        const fresh = await refreshDetail(work.id);
+        if (visibleWork.current !== work.id) return;
+        setDocument(await getDirectorDocument(project, work.id, docKey));
+        if (!fresh?.changes.some(c => c.id === pending.id && c.status === 'pending')) { setProposalPreview(false); setEditorOpen(false); }
+      } catch (reason) {
+        if (reason instanceof ApiError && reason.status >= 400 && reason.status < 500) patchDecisionIntent.current = null;
+        throw reason;
+      }
     });
   };
 
@@ -538,7 +598,7 @@ export function DirectorStudio({ project }: { project: string }) {
   };
 
   return (
-    <div className={`dc-studio${editorOpen ? ' dc-editor-active' : ''}`}>
+    <div className={`dc-studio${editorOpen || planningDraftOpen ? ' dc-editor-active' : ''}`}>
       <header className="dc-canvas-topbar">
         <span className="dc-brand"><Sparkles size={16} /> {t('director.title')}</span>
         <span className="dc-topbar-project">{title}</span>
@@ -626,14 +686,16 @@ export function DirectorStudio({ project }: { project: string }) {
             {work && <>
               <div className="dc-message dc-message-user"><strong>{t('director.createdWork')}</strong><p>{work.brief}</p></div>
               <div className="dc-work-status">{t('director.status')} · {t(`director.workStatus.${work.status}`, { defaultValue: work.status })} · {t('director.episodeNumber', { number: work.current_episode })}</div>
-              {work.mode === 'original' && <PlanningWorkflow key={work.id} project={project} work={work} capability={capability}
-                maxOutputTokens={maxOutputTokens} hasDocuments={Boolean(detail?.documents.length)}
-                onChanged={refreshDetail} onState={setPlanningPhase} quoteAction={planningQuoteAction} />}
+              {['original', 'adaptation'].includes(work.mode) && <PlanningWorkflow key={work.id} project={project} work={work} capability={capability}
+                hasDocuments={Boolean(detail?.documents.length)}
+                onChanged={refreshDetail} onState={setPlanningPhase} quoteAction={planningQuoteAction}
+                automatic autoQuote={initialQuoteWorkId === work.id} onAutoQuoteStarted={() => setInitialQuoteWorkId(null)}
+                onPreviewState={setPlanningDraftOpen} onPipeline={setSourceBoundOutline} onConversation={() => setPanelOpen(value => !value)} />}
               {detail?.runs.filter((item) => !executions.some((execution) => execution.id === item.id)).map((item) => <div className="dc-message" key={item.id}><strong>{t('director.run')} · {item.action}</strong><p>{item.status === 'failed' ? item.error : t(`director.runStatus.${item.status}`)}</p></div>)}
               <DirectorConversation runs={executions} previews={stream.state.runs} busy={Boolean(busy)} onAction={(item, type) => void controlExecution(item, type)} onViewResult={(item) => void viewExecutionResult(item)}
                 onRefine={async item => { if (!await selectDocument('episode', Number(item.docKey.slice(8)))) return; setComposer(t('director.stream.refinePrompt')); setPanelOpen(true); }} />
-              {pending && <div className="dc-message dc-change-card"><strong>{t('director.reviewRequired')}</strong><p>{pending.reason}</p><div className="dc-change-excerpt">{pending.content.slice(0, 240)}</div>
-                <div className="dc-card-actions"><button type="button" onClick={() => { setProposalPreview(true); setEditorText(pending.content); setEditorOpen(true); }}>{t('director.openDraft')}</button><button type="button" onClick={() => void decide(pending, false)}>{t('director.reject')}</button><button type="button" className="dc-primary-button" onClick={() => void decide(pending, true)}>{t('director.accept')}</button></div>
+              {pending && <div className="dc-message dc-change-card"><strong>{t('director.reviewRequired')}</strong><p>{pending.reason}</p>{pending.outlinePatch ? <ul>{pending.outlinePatch.changeSummary.map((item, index) => <li key={index}>{item.text}</li>)}</ul> : <div className="dc-change-excerpt">{pending.content.slice(0, 240)}</div>}
+                <div className="dc-card-actions"><button type="button" onClick={() => { setProposalPreview(true); setEditorText(pending.content); setEditorOpen(true); }}>{t('director.openDraft')}</button>{!pending.outlinePatch && <><button type="button" onClick={() => void decide(pending, false)}>{t('director.reject')}</button><button type="button" className="dc-primary-button" onClick={() => void decide(pending, true)}>{t('director.accept')}</button></>}</div>
               </div>}
               {selectedKind === 'episode' && document && document.version > 0 && !pending && !documentReadOnly && <button type="button" disabled={hasActiveExecution || editorDirty || Boolean(busy)} className="dc-finalize-entry" onClick={() => void openFinalization()}>{t('director.finalizeEpisode')}</button>}
             </>}
@@ -648,7 +710,7 @@ export function DirectorStudio({ project }: { project: string }) {
             {draft.sourceFileName && !work && <div className="dc-source-chip"><FileText size={14} />{draft.sourceFileName}<button type="button" aria-label={t('director.surface.removeSource')} onClick={() => setDraft(value => ({ ...value, sourceFileName: '', sourceText: '' }))}><X size={12} /></button></div>}
             {!work && draft.preset.primary_genre && <button type="button" className="dc-preset-chip" onClick={() => setPresetOpen(true)}>{draft.preset.primary_genre} · {draft.preset.episode_count} {t('director.episodeUnit')}</button>}
             <textarea value={composer} onChange={(event) => { setComposer(event.target.value); if (event.target.value.endsWith('@')) { setPopoverAnchor(event.currentTarget); setComposerMenu('reference'); } }} placeholder={t('director.inputPlaceholder')} aria-label={t('director.inputPlaceholder')} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && (event.metaKey || event.ctrlKey)) { event.preventDefault(); event.currentTarget.closest('.dc-composer')?.querySelector<HTMLButtonElement>('.dc-send:not(:disabled)')?.click(); } }} />
-            {work && <p className="dc-planning-hint">{t(planningMain ? 'director.planning.composerHint' : 'director.planning.compatibilityHint')}</p>}
+            {work && <p className="dc-planning-hint">{t(planningMain ? 'director.planning.composerHint' : sourceBoundOutline ? 'director.planning.outlineReady' : 'director.planning.compatibilityHint')}</p>}
             <div className="dc-composer-footer">
               <input type="file" ref={fileInput} hidden accept=".md,.txt,text/plain,text/markdown" onChange={event => { void attachSource(event.target.files?.[0]); event.target.value = ''; }} />
               <button type="button" className="dc-icon-button" onClick={event => showMenu('attachment', event.currentTarget)} aria-label={t('director.surface.addAttachment')}><Plus size={18} /></button>
@@ -660,7 +722,7 @@ export function DirectorStudio({ project }: { project: string }) {
                   {scriptModesOpen && <div className="dc-mode-submenu">{(['original', 'adaptation'] as const).map((mode) => <button type="button" key={mode} aria-pressed={draft.preset.mode === mode} onClick={() => { setDraft({ ...draft, preset: { ...draft.preset, mode, adapt_direction: mode === 'adaptation' ? 'condense' : null } }); setModeOpen(false); setPresetOpen(true); }}>{t(`director.${mode}`)}</button>)}</div>}
                 </div>}
               </div>
-              <button type="button" className="dc-model-name" onClick={event => showMenu('model', event.currentTarget)} aria-label={t('director.surface.chooseModel')} title={modelContract?.locked ? t('director.fixedModel') : t('director.textModel')}>{modelContract?.locked ? modelContract.model_name : draft.preset.model_name || modelContract?.model_name || t('director.modelUnavailable')}<ChevronDown size={12} /></button>
+              <button type="button" className="dc-model-name" onClick={event => showMenu('model', event.currentTarget)} aria-label={t('director.surface.chooseModel')} aria-expanded={composerMenu === 'model'} title={selectedModel ? `${selectedModel.providerLabel} · ${selectedModel.upstreamModel}` : t('director.textModel')}>{selectedModel?.label || selectedModelId || t('director.modelUnavailable')}<ChevronDown size={12} /></button>
               <span className="dc-composer-spacer" />
               {work && <select aria-label={t('director.sections')} value={selectedKind} onChange={(event) => void selectDocument(event.target.value as DirectorDocumentKind)}>{SECTIONS.map((section) => <option value={section.kind} key={section.kind}>{t(`director.section.${section.kind}`)}</option>)}</select>}
               <button type="button" className="dc-icon-button dc-manual" onClick={event => showMenu('manual', event.currentTarget)} title={t('director.manualApprovalOnly')} aria-label={t('director.ui.manual')}><Hand size={18} /></button>
@@ -675,7 +737,7 @@ export function DirectorStudio({ project }: { project: string }) {
         <div className="dc-menu-rows" role="menu">{(['characters', 'scenes', 'props'] as const).map(kind => <button key={kind} type="button" role="menuitem" onClick={() => void openMedia(kind)}>{t(`director.media.${kind}`)}</button>)}</div>
       </DirectorPopover>}
 
-      {presetOpen && <DirectorPresetDialog draft={draft} onClose={() => setPresetOpen(false)} onConfirm={(confirmed) => void savePreset(confirmed)} readOnly={hasActiveExecution || Boolean(busy)} sourceLocked={settingsFrozen} fixedModel={modelContract?.locked ? modelContract.model_name : undefined} />}
+      {presetOpen && <DirectorPresetDialog draft={draft} onClose={() => setPresetOpen(false)} onConfirm={(confirmed) => void savePreset(confirmed)} readOnly={hasActiveExecution || Boolean(busy)} sourceLocked={settingsFrozen} fixedModel={modelContract?.locked ? modelContract.model_name : undefined} modelOptions={modelContract?.options} />}
 
       {revisionImpact && <RevisionImpactDialog key={revisionImpact.previewId} impact={revisionImpact} busy={Boolean(busy)} error={error}
         onClose={() => setRevisionImpact(null)} onCommit={(command) => void commitRevision(command)} />}
@@ -685,7 +747,12 @@ export function DirectorStudio({ project }: { project: string }) {
       }} />}
       {composerMenu && <DirectorPopover anchor={popoverAnchor} label={t(`director.surface.${composerMenu}`)} width={composerMenu === 'attachment' ? 153 : 300} onClose={() => setComposerMenu(null)}>
         {composerMenu === 'attachment' && <div className="dc-menu-rows dc-attachment-menu"><button type="button" title={t('director.surface.documentTypes')} onClick={() => fileInput.current?.click()}><Plus size={16} />{t('director.surface.localUpload')}</button><button type="button" onClick={() => setComposerMenu('reference')}><DirectorReferenceIcon name="Library" size={16} />{t('director.surface.fromLibrary')}</button></div>}
-        {composerMenu === 'model' && <div className="dc-model-picker"><h3>{t('director.surface.chooseModel')}</h3><button type="button" aria-pressed="true" onClick={() => setComposerMenu(null)}><span>{modelContract?.locked ? modelContract.model_name : draft.preset.model_name || modelContract?.model_name}<small>{t(modelContract?.locked ? 'director.fixedModel' : 'director.modelAlias')}</small></span><Check size={16} /></button>{!modelContract?.locked && <button type="button" onClick={() => { setComposerMenu(null); setPresetOpen(true); }}>{t('director.ui.advanced')}</button>}</div>}
+        {composerMenu === 'model' && <div className="dc-model-picker"><h3>{t('director.surface.chooseModel')}</h3>
+          {modelContract?.options ? <>
+            {!selectedModel && <button type="button" disabled><span>{selectedModelId}<small>{t('director.modelUnavailable')}</small></span></button>}
+            {modelContract.options.map(option => <button type="button" key={option.id} aria-pressed={selectedModel?.id === option.id} disabled={hasActiveExecution || Boolean(busy) || Boolean(pending)} title={option.upstreamModel} onClick={() => { setComposerMenu(null); if (selectedModel?.id !== option.id) void savePreset({ ...draft, preset: { ...draft.preset, model_name: option.id } }); }}><span>{option.label}<small>{option.providerLabel}</small></span>{selectedModel?.id === option.id && <Check size={16} />}</button>)}
+          </> : <><button type="button" aria-pressed="true" onClick={() => setComposerMenu(null)}><span>{selectedModelId}<small>{t(modelContract?.locked ? 'director.fixedModel' : 'director.modelAlias')}</small></span><Check size={16} /></button>{!modelContract?.locked && <button type="button" onClick={() => { setComposerMenu(null); setPresetOpen(true); }}>{t('director.ui.advanced')}</button>}</>}
+        </div>}
         {composerMenu === 'manual' && <div className="dc-menu-rows"><button type="button" aria-pressed="true" onClick={() => setComposerMenu(null)}><Hand size={18} />{t('director.ui.manual')}<Check size={14} /></button><button type="button" disabled>{t('director.surface.autoGenerate')}</button><p>{t('director.manualApprovalOnly')}</p></div>}
         {composerMenu === 'reference' && <div className="dc-menu-rows"><h3>{t('director.surface.reference')}</h3>{document?.content ? <button type="button" onClick={() => { const value = `${composer.replace(/@$/, '')}\n${t('director.surface.referenceLabel', { label: currentLabel, version: document.version })}\n${document.content}`; if ([...value].length > 10000) { setError(t('director.surface.referenceTooLong')); return; } setComposer(value); setComposerMenu(null); }}><FileText size={16} />{currentLabel} · v{document.version}</button> : <p>{t('director.surface.noReference')}</p>}<small>{t('director.surface.referenceHint')}</small></div>}
       </DirectorPopover>}
@@ -708,8 +775,13 @@ export function DirectorStudio({ project }: { project: string }) {
 
       {editorOpen && proposalPreview && <div className="dc-editor-overlay dc-screenplay-editor" role="dialog" aria-modal={!panelOpen} aria-label={t('director.editor')} onKeyDown={event => { if (event.key === 'Escape') setEditorOpen(false); }}>
         <header><strong>{title} · {currentLabel}{proposalPreview ? ` · ${t('director.reviewRequired')}` : ''}</strong><span>{t('director.version', { number: document?.version ?? 0 })}</span><button type="button" className="dc-editor-chat-toggle" aria-pressed={panelOpen} onClick={() => setPanelOpen(value => !value)}>{t('director.openPanel')}</button><button type="button" onClick={() => setEditorOpen(false)} aria-label={t('director.close')}><X size={20} /></button></header>
-        <DirectorRichText value={editorText} onChange={() => {}} readOnly label={currentLabel} screenplay={selectedKind === 'episode'} />
-        <div className="dc-editor-safety"><div className="dc-editor-actions">{pending && <><button type="button" disabled={Boolean(busy)} onClick={() => void decide(pending, false)}>{t('director.reject')}</button><button type="button" className="dc-primary-button" disabled={Boolean(busy)} onClick={() => void decide(pending, true)}>{t('director.accept')}</button></>}</div></div>
+        {pending?.outlinePatch ? <OutlinePatchReview change={pending} busy={Boolean(busy) || hasActiveExecution} label={currentLabel}
+          sections={SECTIONS.map(section => ({ id: section.kind, label: t(`director.section.${section.kind}`), selected: selectedKind === section.kind }))}
+          onSection={id => { setProposalPreview(false); setSelectedKind(id as DirectorDocumentKind); }}
+          onAccept={(groups, report) => void decidePatch(groups, true, report)} onReject={groups => void decidePatch(groups, false)}
+          onReview={groups => void startGeneration('review', { changeId: pending.id, changeRevision: pending.outlinePatch!.revision, acceptGroupIds: groups })} />
+          : <><DirectorRichText value={editorText} onChange={() => {}} readOnly label={currentLabel} screenplay={selectedKind === 'episode'} />
+            <div className="dc-editor-safety"><div className="dc-editor-actions">{pending && <><button type="button" disabled={Boolean(busy)} onClick={() => void decide(pending, false)}>{t('director.reject')}</button><button type="button" className="dc-primary-button" disabled={Boolean(busy)} onClick={() => void decide(pending, true)}>{t('director.accept')}</button></>}</div></div></>}
       </div>}
 
       {reviewOpen && <div className="dc-overlay"><div className="dc-small-modal" role="dialog" aria-modal="true" aria-label={t('director.proposeRevision')}><h2>{t('director.proposeRevision')}</h2><p>{t('director.revisionHint')}</p><textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} /><footer><button type="button" onClick={() => setReviewOpen(false)}>{t('director.cancel')}</button><button type="button" className="dc-primary-button" onClick={() => void proposeEditorChange()}>{t('director.submitForReview')}</button></footer></div></div>}
@@ -729,13 +801,14 @@ export function DirectorStudio({ project }: { project: string }) {
           <h2>{t('director.parameterReview')}</h2>
           <p>{t('director.parameterReviewHint')}</p>
           {error && <div className="dc-error" role="alert">{error}</div>}
+          <RequestParameters parameters={preview.parameters} />
           <div className="dc-parameter-list">
-            {Object.entries(preview.parameters).map(([key, value]) => <div key={key}><span>{key}</span><strong>{value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value)}</strong></div>)}
-            <div><span>{t('director.execution.maxOutputTokens')}</span><strong>{preview.limits.maxOutputTokens}</strong></div>
+            <div><span>{t('director.execution.outputBudget')}</span><strong>{t('director.execution.automaticBudget')}</strong></div>
             <div><span>{t('director.execution.attempts')}</span><strong>{preview.limits.maxAttempts}</strong></div>
             <div><span>{t('director.execution.expires')}</span><strong>{new Date(preview.expiresAt * 1000).toLocaleTimeString()}</strong></div>
             <div><span>{t('director.execution.requestHash')}</span><code>{preview.requestHash}</code></div>
           </div>
+          <details><summary>{t('director.execution.requestDetails')}</summary><p>{t('director.execution.maxOutputTokens')} · {preview.limits.maxOutputTokens}</p></details>
           <p className="dc-cost-warning">{t('director.execution.boundedUnknownCost')}</p>
           <label className="dc-checkbox"><input type="checkbox" checked={modelCostAcknowledged} onChange={(event) => setModelCostAcknowledged(event.target.checked)} />{t('director.costAcknowledgement')}</label>
           <footer>
@@ -753,7 +826,7 @@ export function DirectorStudio({ project }: { project: string }) {
         canRun={!busy && !hasActiveExecution && !documentReadOnly && !pending && !planningMain}
         onClose={() => setOutlineReport(null)} onReview={() => { setOutlineReport(null); void startGeneration('review'); }} />}
 
-      {settingsOpen && <DirectorSettingsDialog maxOutputTokens={maxOutputTokens} onSave={setMaxOutputTokens} onClose={() => setSettingsOpen(false)} onMethods={() => { setSettingsOpen(false); setMethodsOpen(true); }} />}
+      {settingsOpen && <DirectorSettingsDialog onClose={() => setSettingsOpen(false)} onMethods={() => { setSettingsOpen(false); setMethodsOpen(true); }} />}
 
       {methodsOpen && <div className="dc-overlay"><div className="dc-small-modal" role="dialog" aria-modal="true" aria-label={t('director.methods')}><header><h2>{t('director.methods')}</h2><button type="button" onClick={() => setMethodsOpen(false)} aria-label={t('director.close')}><X size={18} /></button></header><p>{t('director.methodVersion', { version: capability?.methodVersion ?? '—' })}</p><p>{t('director.methodsHint')}</p><footer><button type="button" className="dc-primary-button" onClick={() => setMethodsOpen(false)}>{t('director.confirm')}</button></footer></div></div>}
     </div>
