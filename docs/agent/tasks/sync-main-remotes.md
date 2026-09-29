@@ -1,9 +1,9 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：执行中
+**状态**：待验收
 **最后更新**：2026-09-29
 **基线**：`86462f4c`；私有同步分支已包含main的`9741c622`，现只需安全快进主目录。
-**认领者**：`codex/merge-sync-main-20260929`
+**认领者**：`codex/merge-sync-main-main-20260929`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
@@ -170,6 +170,12 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-29 · 私有两分支快进合回并核验
+
+主目录`main`在只有受保护未跟踪`_to_delete/`、`曹操.md`且目标树无同名路径的前提下，严格快进`9741c622 → dd49ecedf523c9ecb00d01c91761f0b4153a614a`；无合并冲突、无业务手改，原两份资料仍在。`git diff --exit-code codex/sync-main-remotes -- . ':!docs/agent/**'`通过。主目录实际复测：后端Director/浏览器视频812通过，前端Director/画布预览/边线/三语27文件313通过，`pnpm build`通过；Ruff、前后端i18n、CE端口闭合、DCO、guard与diff检查均通过。仅有既有依赖弃用、Node本地存储与大chunk警告，未运行付费模型或重启服务。
+
+普通推送私有`zhonggwv/main`与`zhonggwv/codex/sync-main-remotes`后，`ls-remote`两端均为`dd49eced`。公开`origin/main`和PR #717未动；此次私有两分支的代码同步完成，不代表TV Director文学质量或像素级验收完成。最终交接提交和两端SHA以Git再次核验为准；历史公开同步须单独授权。
 
 ### 2026-09-29 · 私有main快进方案门
 
@@ -401,8 +407,8 @@ placement-free 白名单。首次修复后完整套件只剩 2 个顺序相关�
 
 ## 交接摘要
 
-- **最后完成到**：最新同步分支3fbd16e6已在主目录正常合并，非agent树完全一致；原交接分线保存，82路径提交检查和健康复核通过。应用已就绪、原6项目可读取；最终DCO提交与私有main推送结果以Git核对。
-- **下一步唯一动作**：恢复时先核对main与私有远端SHA及3fbd16e6祖先关系；若一致，本轮同步已交付，不重复合并。历史公开同步必须重新获授权，不改正在运行的服务。
+- **最后完成到**：最新同步分支已严格快进合入主目录main，两个私有分支远端先复核同为`dd49eced`；812后端/313前端/build及门禁通过，主目录两份未跟踪资料仍在。后续交接提交的最终两端SHA以Git为准。
+- **下一步唯一动作**：恢复时只读核对私有main与同名分支是否同SHA；若一致不重复合并。历史公开同步须另行授权，不重复实现或改正在运行的服务。
 - **先读这些文件**：本台账、`docs/agent/STATE.md`、PR #717 状态。
 - **不要动这些文件 / 决策**：不强推、不rebase、不推公开fork或origin/main；仅本轮获准普通推私有main。不重启既有服务，不公开本地凭据/素材许可未确认的新增资产；保留主工作区受保护资料。
 

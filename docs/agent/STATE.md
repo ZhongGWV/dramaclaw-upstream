@@ -3,14 +3,14 @@
 > **新会话的第一件事是读这份文件。** 它只回答三个问题：现在有哪几条线在做、各自卡在哪、
 > 下一步做什么。取证与方案不在这里——在 `docs/guides/`；每条线的逐步记录在 `docs/agent/tasks/`。
 >
-> 最后更新：2026-09-28 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
+> 最后更新：2026-09-29 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
 > [`docs/agent/README.md`](README.md)
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 当前主检出 main 的 Director 研究方案`0a1d4fac`与实现代码`0d7b609f`已普通推送至私有`zhonggwv/main`并核验远端SHA；本轮交接状态另有后续提交，以Git为准。未部署。2026-09-28首功能代码808后端/77定向前端/build通过，但研究方案源码追踪因后续代码变化已过期；完整S1、文学/全页像素仍未通过，新链默认开关未发布。公开origin/PR不动。
+- 当前主检出`main`与私有同步分支均已快进到`dd49eced`，两条私有远端复核同SHA；包含此前Director与画布/HEVC双方提交。主目录合回后812后端/313前端/build及门禁通过，未部署；完整S1、文学/全页像素仍未通过，新链默认开关未发布。公开origin/PR不动。
 - 应用已按用户选择从945baa9f业务版本启动，复用原配置/数据；四端与前端代理HTTP200、原6项目可读取，重启记录3fbd16e6已推同步分支。工作区/远端最终提交以Git为准。
-- 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
+- 两条 TV Director 线和同步分支画布/H3提交均已在私有main与同名分支，但功能和文学质量仍未全验收。
   研究与实现边界、失败模型实验照原台账保留。主检出的 `_to_delete/` 与 `曹操.md` 仍受保护，
   `.playwright-cli/`、本地配置与付费回包继续忽略。备份与逐组验证见 `docs/agent/archive/git-sync-preparation.md`。
   会话开始时 hook 注入的摘要是实时值，不能用条目总数反推某条业务线又新增了多少文件。
@@ -35,7 +35,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 将最新私有同步分支快进合回main；历史公开同步另行处理 | 执行中 | 用户授权把`86462f4c`合回main；当前main`9741c622`是其祖先、两端远端SHA均已核验。先保护主目录两份未跟踪资料，再正常快进、聚焦验证并仅推私有main，同名分支同步最终交接提交。 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 已将最新私有同步分支快进合回main；历史公开同步另行处理 | 待验收 | main严格快进并普通推私有远端，同名分支亦普通推送；两端已复核同为`dd49eced`。受保护未跟踪资料未动，812后端/313前端/build及门禁通过；历史公开PR和产品质量仍独立待验。 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 首功能代码/技能/测试与方案已分线提交并推私有main；808后端、77定向前端/build通过。原创三页问卷和五节改编链已接，旧快照、原站同屏像素、文学质量、常规入口和过期方案映射仍待核；不进第二功能、不视为产品验收。历史Seed失败/成功证据保留。 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 待验收 | 研究方案与规格`0a1d4fac`已推私有main；157项审计的源码哈希/行号因后续代码变更过期，须逐项重审并复跑verify-spec，不能视为产品通过。 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
