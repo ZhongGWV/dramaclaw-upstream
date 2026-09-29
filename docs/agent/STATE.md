@@ -36,7 +36,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 待验收 | `9d2e486` 保留本地画布三提交与远端六提交并已正常推送、远端 SHA 核对一致；主检出目录 HEVC 未提交工作原样保留 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 当前同名分支 pull/push；历史双 main 同步另行处理 | 执行中 | 本分支已快进到私有远端`7ce6b78d`，正在正常合入私有main`9741c622`；画布/HEVC及Director双方提交均须保留，当前仅三份协调文件预演冲突。 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。b5883b8f已推私有main，本轮合入同步分支；未部署 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |

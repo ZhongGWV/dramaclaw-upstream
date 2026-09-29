@@ -1,13 +1,19 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：待验收
+**状态**：执行中
 **最后更新**：2026-09-29
-**基线**：`af8fdc1`；本地三个画布提交与远端 `e4877e4` 六个提交在隔离 worktree 集成。
+**基线**：`7ce6b78d`；本地同步分支已快进到私有同名远端最新提交，待合入main的`9741c622`。
 **认领者**：`codex/push-all-20260929`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 2026-09-29 · 将最新私有main完整同步到同名分支
+
+用户要求把已提交并推送的Director代码/方案也同步到`codex/sync-main-remotes`。本工作树开工无跟踪或未跟踪改动、无活动锁；先获取同名远端，再将本地分支从`3fbd16e6`安全快进到远端`7ce6b78d`。当前`main=9741c622`与目标从`3fbd16e6`分叉，独有提交6/10；目标含画布预览、LibTV修复和HEVC播放，全部保留。只读`merge-tree`预演仅`docs/agent/STATE.md`、本台账及同名claim三处协调文本冲突，DESIGN和三语由Git自动合并；绝不取一边整树覆盖。
+
+本轮只手工解决上述三份协调文件；main的业务/测试/方法包/方案由正常merge导入，目标已有画布/视频业务保持。先登记本方案、精确scope和锁，再以远端同步分支为第一父正常merge main；逐文件核对两边独有代码的blob、三语键值及合并的DESIGN。运行Director和画布/HEVC定向测试、前端build、ruff、i18n、diff/guard、DCO及定向密钥扫描；不买模型、不部署。若发现自动合并语义冲突，先记录分叉与窄改范围再动代码。完成后带DCO合并提交并仅普通推私有`zhonggwv/codex/sync-main-remotes`，只读核验远端SHA与两个父提交祖先；私有main和公开origin不动。非快进拒绝就重新fetch审计，绝不force、rebase或stash。目标工作树没有用户未提交资料，主目录`_to_delete/`/`曹操.md`原样保留；未验收的文学/像素结论不因Git同步改变。
 
 ### 2026-09-29 · 推送剩余画布提交
 
