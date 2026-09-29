@@ -8,7 +8,7 @@
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 当前主检出 main 已将 Director 研究方案保存为本地提交`0a1d4fac`，后续实现代码亦按本线单独提交（最终SHA以Git为准）；尚未推送或部署。2026-09-28首功能代码808后端/77定向前端/build通过，但研究方案源码追踪因后续代码变化已过期；完整S1、文学/全页像素仍未通过，新链默认开关未发布。公开origin/PR不动。
+- 当前主检出 main 的 Director 研究方案`0a1d4fac`与实现代码`0d7b609f`已普通推送至私有`zhonggwv/main`并核验远端SHA；本轮交接状态另有后续提交，以Git为准。未部署。2026-09-28首功能代码808后端/77定向前端/build通过，但研究方案源码追踪因后续代码变化已过期；完整S1、文学/全页像素仍未通过，新链默认开关未发布。公开origin/PR不动。
 - 应用已按用户选择从945baa9f业务版本启动，复用原配置/数据；四端与前端代理HTTP200、原6项目可读取，重启记录3fbd16e6已推同步分支。工作区/远端最终提交以Git为准。
 - 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
   研究与实现边界、失败模型实验照原台账保留。主检出的 `_to_delete/` 与 `曹操.md` 仍受保护，
@@ -34,8 +34,8 @@
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
 | [sync-main-remotes](tasks/sync-main-remotes.md) | 最新同步分支合回主目录main；历史公开同步另行处理 | 待验收 | 原5份协调diff已分线保存，3fbd16e6正常合入且非agent树完全一致；82文件提交检查/密钥扫描、guard和服务健康复核通过。按授权仅推私有main，最终SHA见Git；历史公开PR及产品验收独立保留 |
-| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 首功能代码/技能/测试与方案分线本地提交；808后端、77定向前端/build通过。原创三页问卷和五节改编链已接，旧快照、原站同屏像素、文学质量、常规入口和过期方案映射仍待核；不进第二功能、不视为产品验收。历史Seed失败/成功证据保留。 |
-| [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 待验收 | 研究方案与规格已本地提交`0a1d4fac`；157项审计的源码哈希/行号因后续代码变更过期，须逐项重审并复跑verify-spec，不能视为产品通过。 |
+| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 首功能代码/技能/测试与方案已分线提交并推私有main；808后端、77定向前端/build通过。原创三页问卷和五节改编链已接，旧快照、原站同屏像素、文学质量、常规入口和过期方案映射仍待核；不进第二功能、不视为产品验收。历史Seed失败/成功证据保留。 |
+| [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 待验收 | 研究方案与规格`0a1d4fac`已推私有main；157项审计的源码哈希/行号因后续代码变更过期，须逐项重审并复跑verify-spec，不能视为产品通过。 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
 | [asset-replacement-picker](tasks/asset-replacement-picker.md) | 画布素材替换：拖拽与点选双入口 | 待验收 | 独立实现与 5 项聚焦测试已通过；待真实画布手工走一遍点选替换 |
@@ -85,7 +85,7 @@
 
 ## 四、恢复顺序（不是功能优先级）
 
-用户最新优先级（2026-09-27）：Git同步已完成，当前main为213854b5。用户改为只用本地Seed对原站Seed，不继续DeepSeek横测，允许人工提炼同源概要。真实相同输入已走方向→大纲→同指令修改→刷新；参数回包与失败均留证。下一步先分开short-drama内部规划与原站五节改编交付、版本化段落patch/独立聊天总结、跨段事实核对与逐节diff界面，再Seed复验，不重复堆prompt或盲目买模型。常驻栈仍在同步工作树，主目录修改未部署/未提交；既有文学和整页像素失败保留，详见本线指南§9。
+用户最新优先级（2026-09-28）：Director两笔实现/方案提交已推私有main；用户仍要求只用本地Seed对原站Seed，不继续DeepSeek横测。常驻栈未因Git推送自动部署。下一步按实现线台账先重审过期方案映射和S1旧快照，再核原创三页问卷/同屏状态、文学与全页像素；不重复堆prompt或盲目买模型。既有失败保留。
 
 1. 交接协议与 handoff 回归修复已独立提交并推送。
 2. 只读分类 `legacy-unassigned-diff`，任何未确认归属的文件继续保持隔离。

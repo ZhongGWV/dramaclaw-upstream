@@ -1,7 +1,7 @@
 version = 1
 slug = "tv-director-implementation"
 ledger = "docs/agent/tasks/tv-director-implementation.md"
-baseline = "0a1d4fac"
+baseline = "0d7b609f"
 
 [[claims]]
 path = "tests/director/test_outline_stream.py"

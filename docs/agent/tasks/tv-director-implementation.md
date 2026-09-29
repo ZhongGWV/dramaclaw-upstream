@@ -2,7 +2,7 @@
 
 **状态**：执行中
 **最后更新**：2026-09-28
-**基线**：`0a1d4fac`（main；仅比原213854b5增加研究方案文档提交，无业务源码变更；当前未推送）；历史实现起点e7b1fbce。保留受保护未跟踪资料。
+**基线**：`0d7b609f`（main；两笔Director提交已推送至私有`zhonggwv/main`，待本轮交接状态提交）；历史实现起点e7b1fbce。保留受保护未跟踪资料。
 **认领者**：`codex/director-s1-20260928`
 **相关文档**：`docs/guides/liblib-tv-director-analysis.md`、`docs/guides/liblib-tv-director-development.md`、`docs/guides/tv-director-skill-fusion.md`、`docs/guides/tv-director/character-parity.md`、`docs/guides/tv-director/scene-parity.md`、`docs/guides/tv-director/prop-parity.md`
 **相关分支 / PR**：无
@@ -561,6 +561,11 @@ V4-Flash 联机验收分叉（2026-09-25）：定位到此前的 502 是本机 H
 - [x] 本轮道具`agent_guard.py check`为29线949claims，handoff通过（41归属脏路径）；收尾release再次强制检查。最终ruff、双端i18n、diff、gitleaks增量/相关目录复验通过。两个浏览器会话及三个自建临时服务已关闭，3001/18780/15173无监听；临时preview已删、证据保留。
 
 ## 进展记录
+
+### 2026-09-28 · 私有main拉取核对与推送交接
+
+用户要求pull并push。开工核对本地主检出仅有受保护未跟踪`_to_delete/`和`曹操.md`，无已跟踪diff，guard31线1130claims、无活动锁。`git fetch zhonggwv main`所得远端`213854b5`是本地`0d7b609f`祖先，分叉2/0，因此没有待并入变更，也不在有受保护资料的工作区运行多余的pull/merge/stash/rebase。随后普通`git push zhonggwv HEAD:refs/heads/main`成功；只读`ls-remote`核验私有远端main=`0d7b609fce930c1fba19f54d50b13e9f695f1b7f`，与本地相同。公开origin/PR不动，无强推、无模型/媒体费用或部署。本条仅修正Git交接事实，不改变业务及前述质量欠项；受保护资料仍不提交。最终交接状态提交后再次核验远端SHA，以Git为准。
+
 
 ### 2026-09-28 · 首功能代码、技能包、测试与方案本地提交
 
