@@ -63,13 +63,13 @@ reason = "Mount audio actions without replacing existing video actions."
 [[claims]]
 path = "frontend/src/features/canvas/domain/canvasNodes.ts"
 mode = "shared"
-shared_with = ["depth-motion-da3", "liblib-canvas-parity", "shot-breakdown"]
+shared_with = ["depth-motion-da3", "liblib-canvas-parity", "shot-breakdown", "sync-main-remotes"]
 reason = "Persist typed audio derivation metadata."
 
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models", "sync-main-remotes"]
 reason = "Add the audio transform API client and result task type."
 
 [[claims]]
@@ -98,7 +98,7 @@ reason = "Local ffmpeg audio trim and pitch-preserving speed transform."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models", "project-chinese-names"]
+shared_with = ["canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "multi-provider-models", "project-chinese-names", "sync-main-remotes"]
 reason = "Add the audio transform request schema."
 
 [[claims]]
@@ -110,7 +110,7 @@ reason = "Validate, enqueue, and expose audio transform results."
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "text-node-liblib-visual-parity", "sync-main-remotes"]
 reason = "Register the local audio transform leaf and runner."
 
 [[claims]]
@@ -132,7 +132,7 @@ reason = "Audio transform API and queue tests."
 [[claims]]
 path = "tests/test_p0g4i_freezone_leaf_classification.py"
 mode = "shared"
-shared_with = ["depth-motion-da3", "shot-breakdown"]
+shared_with = ["depth-motion-da3", "shot-breakdown", "sync-main-remotes"]
 reason = "Declare the local-only ffmpeg audio transform leaf in the audited egress table."
 
 [[claims]]

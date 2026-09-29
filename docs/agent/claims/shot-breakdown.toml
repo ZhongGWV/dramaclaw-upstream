@@ -52,7 +52,7 @@ reason = "Breakdown, depth, and LibTV endpoints share the freezone adapter."
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity", "sync-main-remotes"]
 reason = "Breakdown and depth leaf classification share the runner."
 
 [[claims]]
@@ -64,13 +64,13 @@ reason = "Expose breakdown task lifecycle."
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity", "multi-provider-models", "project-chinese-names"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity", "multi-provider-models", "project-chinese-names", "sync-main-remotes"]
 reason = "Breakdown request and result schemas."
 
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity", "multi-provider-models"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "text-node-liblib-visual-parity", "multi-provider-models", "sync-main-remotes"]
 reason = "Breakdown operation endpoint client."
 
 [[claims]]
@@ -88,7 +88,7 @@ reason = "Breakdown entry and LibTV-compatible video actions share the toolbar."
 [[claims]]
 path = "frontend/src/features/canvas/domain/canvasNodes.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "liblib-canvas-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "liblib-canvas-parity", "sync-main-remotes"]
 reason = "Breakdown flags share the canvas node contract with depth and imports."
 
 [[claims]]
@@ -148,7 +148,7 @@ reason = "Shot-breakdown route, billing, and queue contract tests."
 [[claims]]
 path = "tests/test_p0g4i_freezone_leaf_classification.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "sync-main-remotes"]
 reason = "Breakdown local leaves extend the global audited egress table."
 
 [[claims]]

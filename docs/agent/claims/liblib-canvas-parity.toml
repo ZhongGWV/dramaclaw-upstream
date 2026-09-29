@@ -198,7 +198,7 @@ reason = "Toolbar action configuration."
 [[claims]]
 path = "frontend/src/features/canvas/domain/canvasNodes.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown", "sync-main-remotes"]
 reason = "Fields for imported and derived nodes."
 
 [[claims]]

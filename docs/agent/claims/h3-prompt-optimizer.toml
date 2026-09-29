@@ -6,7 +6,7 @@ baseline = "762591d"
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "multi-provider-models", "shot-breakdown", "text-node-liblib-visual-parity", "project-chinese-names"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "multi-provider-models", "shot-breakdown", "text-node-liblib-visual-parity", "project-chinese-names", "sync-main-remotes"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]
@@ -18,7 +18,7 @@ reason = "H3 prompt preview and complete reference images."
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "shot-breakdown", "text-node-liblib-visual-parity", "sync-main-remotes"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]
@@ -35,7 +35,7 @@ reason = "H3 prompt preview and complete reference images."
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "multi-provider-models", "shot-breakdown", "text-node-liblib-visual-parity"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "multi-provider-models", "shot-breakdown", "text-node-liblib-visual-parity", "sync-main-remotes"]
 reason = "H3 prompt preview and complete reference images."
 
 [[claims]]

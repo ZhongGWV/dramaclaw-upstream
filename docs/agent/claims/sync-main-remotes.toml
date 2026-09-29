@@ -1,7 +1,7 @@
 version = 1
 slug = "sync-main-remotes"
 ledger = "docs/agent/tasks/sync-main-remotes.md"
-baseline = "86462f4c"
+baseline = "bc051ed3"
 
 [[claims]]
 path = "docs/agent/STATE.md"
@@ -469,8 +469,9 @@ reason = "Import the exact origin/main result through Git's automatic three-way 
 
 [[claims]]
 path = "frontend/src/api/ops.ts"
-mode = "read-only"
-reason = "Import the exact origin/main result through Git's automatic three-way merge; no manual edits."
+mode = "shared"
+shared_with = ["*"]
+reason = "Resolve the public upstream enhancement API conflict after existing workstream commits."
 
 [[claims]]
 path = "frontend/src/api/referenceMediaLimits.ts"
@@ -529,8 +530,9 @@ reason = "Import the exact origin/main result through Git's automatic three-way 
 
 [[claims]]
 path = "frontend/src/features/canvas/domain/canvasNodes.ts"
-mode = "read-only"
-reason = "Import the exact origin/main result through Git's automatic three-way merge; no manual edits."
+mode = "shared"
+shared_with = ["*"]
+reason = "Resolve the public upstream video enhancement node union while retaining private node contracts."
 
 [[claims]]
 path = "frontend/src/features/canvas/nodes/ImageGenNode.tsx"
@@ -694,8 +696,9 @@ reason = "Import the exact origin/main result through Git's automatic three-way 
 
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
-mode = "read-only"
-reason = "Import the exact origin/main result through Git's automatic three-way merge; no manual edits."
+mode = "shared"
+shared_with = ["*"]
+reason = "Resolve the public upstream video enhancement schema conflict while retaining private routes."
 
 [[claims]]
 path = "src/novelvideo/api/sse_shutdown.py"
@@ -2132,3 +2135,75 @@ reason = "Import existing remote branch changes through normal Git merge only."
 path = "docs/agent/tasks/video-prompt-split.md"
 mode = "coordination"
 reason = "Import existing remote branch changes through normal Git merge only."
+
+[[claims]]
+path = "src/novelvideo/task_backend/runners/freezone.py"
+mode = "shared"
+shared_with = ["*"]
+reason = "Resolve public upstream enhancement task-runner registration after existing shot and H3 commits."
+
+[[claims]]
+path = "tests/test_p0g4i_freezone_leaf_classification.py"
+mode = "shared"
+shared_with = ["*"]
+reason = "Resolve the audited Freezone leaf registry test for the combined task set."
+
+[[claims]]
+path = "docs/agent/claims/canvas-audio-actions.toml"
+mode = "coordination"
+reason = "Record serial public-upstream conflict integration after the existing audio workstream."
+
+[[claims]]
+path = "docs/agent/tasks/canvas-audio-actions.md"
+mode = "coordination"
+reason = "Document the shared-path ordering without changing prior product conclusions."
+
+[[claims]]
+path = "docs/agent/claims/canvas-audio-split.toml"
+mode = "coordination"
+reason = "Record serial public-upstream conflict integration after the existing split workstream."
+
+[[claims]]
+path = "docs/agent/tasks/canvas-audio-split.md"
+mode = "coordination"
+reason = "Document the shared-path ordering without changing prior product conclusions."
+
+[[claims]]
+path = "docs/agent/claims/depth-motion-da3.toml"
+mode = "coordination"
+reason = "Record serial public-upstream conflict integration after the existing depth workstream."
+
+[[claims]]
+path = "docs/agent/tasks/depth-motion-da3.md"
+mode = "coordination"
+reason = "Document the shared-path ordering without changing prior product conclusions."
+
+[[claims]]
+path = "docs/agent/claims/project-chinese-names.toml"
+mode = "coordination"
+reason = "Record serial public-upstream schema integration after the existing project-name workstream."
+
+[[claims]]
+path = "docs/agent/tasks/project-chinese-names.md"
+mode = "coordination"
+reason = "Document the shared-path ordering without changing prior product conclusions."
+
+[[claims]]
+path = "docs/agent/claims/shot-breakdown.toml"
+mode = "coordination"
+reason = "Record serial public-upstream conflict integration after the existing shot workstream."
+
+[[claims]]
+path = "docs/agent/tasks/shot-breakdown.md"
+mode = "coordination"
+reason = "Document the shared-path ordering without changing prior product conclusions."
+
+[[claims]]
+path = "docs/agent/claims/text-node-liblib-visual-parity.toml"
+mode = "coordination"
+reason = "Record serial public-upstream conflict integration after the existing text-node workstream."
+
+[[claims]]
+path = "docs/agent/tasks/text-node-liblib-visual-parity.md"
+mode = "coordination"
+reason = "Document the shared-path ordering without changing prior product conclusions."

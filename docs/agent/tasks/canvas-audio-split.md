@@ -91,6 +91,10 @@
 
 ## 进展记录
 
+### 2026-09-29 · 公开 origin 集成共享路径协调
+
+本线既有已提交实现先于 `sync-main-remotes`；后者在独立 `codex/public-origin-sync` 检出中作为唯一后序集成者，仅对同名 claim 互认的精确路径解决公开上游三方冲突。本线旧产品合同、验证结果和业务所有权不因协调改写；最终合并验证与公开 PR 交付由同步线记录。
+
 ### 2026-09-19 · 独立 DCO 提交已推送
 
 做了什么：将本线 23 个精确 claim 文件作为 `4b578509 feat(canvas): add audio split actions`

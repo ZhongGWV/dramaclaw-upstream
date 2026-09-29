@@ -1,13 +1,25 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：待验收
+**状态**：执行中
 **最后更新**：2026-09-29
-**基线**：`86462f4c`；私有同步分支已包含main的`9741c622`，现只需安全快进主目录。
-**认领者**：`codex/merge-sync-main-main-20260929`
+**基线**：`bc051ed3`；两条私有分支已同SHA，本轮隔离公开PR集成从此提交开始。
+**认领者**：`codex/public-origin-sync-20260929`
 **相关文档**：`docs/agent/README.md`
 **相关分支 / PR**：`codex/sync-main-remotes`；[upstream PR #717](https://github.com/dramaclaw/dramaclaw/pull/717)
 
 ## 目标
+
+### 2026-09-29 · 保留原素材更新公开origin的现有PR
+
+用户明确要求把私有最新代码也提交到公开`origin`，并在被告知素材许可未知后明确选择“用一样的素材提交，不用替换”。本轮保留35张`frontend/public/director-reference/`图片、`libtv-icons.json`与既有`reference-assets.json`原样，不更改其来源或将未知再分发许可标注成已授权。公开上传存在第三方素材权利风险；本轮按用户选项保留可追溯的清单说明，不作许可保证。
+
+只读取证：`origin/main=30ab52c7`、私有`main=bc051ed3`，共同祖先`f51c2e44`，双方独有3/105提交；公开PR #717从`ZhongGWV/dramaclaw-upstream:codex/sync-main-remotes`指向上游main，head`17436a2e`是私有main祖先，当前`CONFLICTING/REVIEW_REQUIRED`。当前账号对`dramaclaw/dramaclaw`只有pull权限，对该fork有push权限。直接推`origin/main`既无权限又非快进；仅通过更新现有公开PR分支交付，最终合并需上游维护者审核。隔离`codex/public-origin-sync`从私有main建立、工作树干净；主目录两份受保护未跟踪资料不在本检出。
+
+精确写入边界为本台账、STATE、同名claim，以及`git merge-tree`预演的六个内容冲突：`frontend/src/api/ops.ts`、`frontend/src/features/canvas/domain/canvasNodes.ts`、`src/novelvideo/api/schemas.py`、`src/novelvideo/task_backend/runners/freezone.py`、`tests/test_freezone_canvas_route_home_node_guard.py`、`tests/test_p0g4i_freezone_leaf_classification.py`。自动合并的三语、工具条、许可证清单、Freezone路由/任务和视频生成器只读取证；若测试暴露语义缺口，先在台账加窄scope并重新preflight。共享文件由本隔离会话在既有工作线提交之后串行集成，不覆盖未归属脏文件，也不重写Director或H3业务。
+
+互认门禁补充：上述共享路径在旧任务仍有精确claim，需仅协调更新`docs/agent/claims/`与`docs/agent/tasks/`下`canvas-audio-actions`、`canvas-audio-split`、`depth-motion-da3`、`h3-prompt-optimizer`、`project-chinese-names`、`shot-breakdown`、`text-node-liblib-visual-parity`及`liblib-canvas-parity`八线的对应文件，逐路径加本线为后序集成者并在台账记先后；`multi-provider-models`已有通配互认，`legacy-unassigned-diff`的测试路径已明确互认，不改其文件。这些协调写入不改变旧业务所有权、旧验收结论或`legacy-unassigned-diff`冻结的未归属脏文件。
+
+步骤：先登记方案与claim、guard/acquire/preflight，再以私有main为第一父正常merge最新`origin/main`；逐冲突保留双方合同，并对自动合并的同名功能做差异审查。验证相关后端/前端回归、生产build、Ruff/i18n/CE/许可证/密钥扫描、DCO、三语键与双祖先；公开前确认原素材文件和来源清单逐blob不变。只有绿灯才用普通非强制push更新现有fork PR分支，复核PR head/冲突状态。不得改私有main、公开origin/main、服务或项目数据；非快进拒绝重新fetch，不rebase/force/stash。公开上游审核为外部条件，若仍阻塞就明确交接，不宣称已合入origin/main。回退需另行批准revert，不重写远端历史。
 
 ### 2026-09-29 · 将已验证同步分支合回私有main
 
@@ -170,6 +182,10 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-29 · 公开PR集成方案门与共享互认
+
+从已推私有main`bc051ed3`建立干净隔离分支，取得公开上游`30ab52c7`与现有PR head`17436a2e`只读证据；预演六个文本冲突。用户明确选择保留36项原参考素材，但来源清单继续标明未获再分发许可，不伪称已授权。先登记目标、非目标、风险和六个精确业务路径；对八条既有工作线仅补共享路径互认/串行顺序，没有改其业务文件。guard通过（33线/1216 claims），本会话独占锁和25条精确路径preflight通过。下一步提交本方案、正常merge最新origin/main并验证，不触碰主目录私有main。
 
 ### 2026-09-29 · 私有两分支快进合回并核验
 

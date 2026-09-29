@@ -33,13 +33,13 @@ reason = "Liblib-style text model trigger and portalled popup with keyboard sele
 [[claims]]
 path = "frontend/src/api/ops.ts"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models", "sync-main-remotes"]
 reason = "Expose text and vision model catalog and send ordered references."
 
 [[claims]]
 path = "src/novelvideo/api/schemas.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models", "project-chinese-names"]
+shared_with = ["canvas-audio-actions", "canvas-audio-split", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "multi-provider-models", "project-chinese-names", "sync-main-remotes"]
 reason = "Validate selected model and bounded text, image, video reference fields."
 
 [[claims]]
@@ -51,7 +51,7 @@ reason = "Text/vision model catalog, media scope validation, and generation subm
 [[claims]]
 path = "src/novelvideo/task_backend/runners/freezone.py"
 mode = "shared"
-shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown"]
+shared_with = ["canvas-audio-actions", "depth-motion-da3", "h3-prompt-optimizer", "shot-breakdown", "sync-main-remotes"]
 reason = "Pass selected model and references to freezone text leaf."
 
 [[claims]]
