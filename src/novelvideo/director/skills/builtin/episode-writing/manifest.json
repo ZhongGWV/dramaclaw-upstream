@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "key": "studio/episode-writing",
   "stage": "M11",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "purpose": "Single-episode literary drafting with explicit runtime-adapter boundaries.",
   "applicable": [
     "original",
@@ -88,7 +88,7 @@
   "maxAutomaticRevisionAttempts": 0,
   "compatibility": "markdown-to-canonical-ast; episode-plan/source-audit pipeline not yet connected",
   "files": {
-    "method.md": "7c0c1ef557bb6e735ce67314a2a59eb75492d51e347a35c162d421b982e5b966",
+    "method.md": "95fee830ebf048f7b7420f5a99ab75d65c5167a8739bafca7e7dccdfe58bf47a",
     "templates/request.md": "2f078b14424349adffdeed296d21e014c2bb624f71f76dd66b9efcbabdf959f9",
     "schemas/input.json": "245bec3439cc8e2f3d6ae9ed7a2aff423c5cd7d6a197f87454d106201493027c",
     "schemas/output.json": "ce596debd59ac86dbaa8b4ad5375a520b09570b7da64b293bdacc0aa7e46f9ae",
@@ -100,6 +100,7 @@
     "references/satisfaction-matrix.md": "1eba44d3d2701bb14073e55c6a563cf0a013d76e503da33b3dfacf02b80a46c6",
     "references/opening-rules.md": "72b43ff9ca3d6eaaf91ad1a47f3328de010a8e9c06eb2a6e5819732a94b1b971",
     "references/hook-design.md": "1f7bf12fe600968ab6ff7fb707ead2020f2fea99232e05d4dc7c012d0cb8cd2a",
-    "provenance.json": "9fe1077236d7e7c1422f4c8f03fc3274854ce70c46ba1f59d83b19df6b8e07eb"
+    "provenance.json": "81478c8909382fa0ba05282d2ddc8d5338d7659e1f7da033f4ec1c5788db2e9a",
+    "SKILL.md": "d42deb0a0019b9a845cc6bdac5601841f5a7bb52ead83b501798155ba7f7b313"
   }
 }
