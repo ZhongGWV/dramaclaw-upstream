@@ -8,7 +8,7 @@
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 当前主检出`main`与私有同步分支均已快进到`dd49eced`，两条私有远端复核同SHA；包含此前Director与画布/HEVC双方提交。主目录合回后812后端/313前端/build及门禁通过，未部署；完整S1、文学/全页像素仍未通过，新链默认开关未发布。公开origin/PR不动。
+- 当前主检出`main`与私有同步分支均为`bc051ed3`，两条私有远端此前复核同SHA；包含Director与画布/HEVC双方提交。公开PR #717已包含合入`origin/main=30ab52c7`的双父提交`66da025f`，原35张参考图与图标目录未替换；公开`origin/main`仍未移动，PR显示可合并但需审核。完整S1、文学/全页像素仍未通过，新链默认开关未发布。
 - 应用已按用户选择从945baa9f业务版本启动，复用原配置/数据；四端与前端代理HTTP200、原6项目可读取，重启记录3fbd16e6已推同步分支。工作区/远端最终提交以Git为准。
 - 两条 TV Director 线和同步分支画布/H3提交均已在私有main与同名分支，但功能和文学质量仍未全验收。
   研究与实现边界、失败模型实验照原台账保留。主检出的 `_to_delete/` 与 `曹操.md` 仍受保护，
@@ -16,8 +16,8 @@
   会话开始时 hook 注入的摘要是实时值，不能用条目总数反推某条业务线又新增了多少文件。
 - 这是当前最大的风险：一次整树 restore / 自动 stash / 强制切分支，就能抹掉三周的工作。
   **接手后第一条命令是 `git status --short --branch`，先和下表对账。**
-- 上游历史已由 `a2418a65` 集成，本轮不追加其他 origin 变更。公开 PR #717 在另一个公开 fork，仍待审核。
-  私有 main 已独立前进；今后双远端同步必须重新审计，不可把旧 origin/main 直接推回私有 main。
+- 最新`origin/main=30ab52c7`已在隔离分支双父合入私有`bc051ed3`，通过现有公开fork更新PR #717，待上游审核；本账号对上游仅pull，不能直接推`origin/main`。
+  私有 main 未因公开PR集成而移动；今后双远端同步仍须重新审计，不可把旧 origin/main 直接推回私有 main。
 - GitHub CLI 已认证为 `ZhongGWV`；Git 的全局 HTTP/HTTPS 代理为 `http://127.0.0.1:7890`。
 
 ## 二、在途工作线
@@ -35,7 +35,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 将私有最新代码交付现有公开PR #717 | 执行中 | 用户明确要求保留原35张LibTV图片和图标目录公开提交；本账号对origin仅pull，fork可push。origin/main`30ab52c7`与私有main`bc051ed3`分叉3/105，预演六处文本冲突；在隔离工作树正常合并并更新现有PR，不强推origin/main，素材清单继续如实标注无再分发许可。 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 将私有最新代码交付现有公开PR #717 | 待验收 | 原35张LibTV图片及图标目录未替换；公开fork的PR已包含双父`66da025f`，GitHub显示MERGEABLE/REVIEW_REQUIRED，origin/main仍`30ab52c7`。合并相关测试/构建通过，全量存量失败与未知再分发许可已如实记台账；下一步由上游审核/合并，不直接推origin/main。 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 首功能代码/技能/测试与方案已分线提交并推私有main；808后端、77定向前端/build通过。原创三页问卷和五节改编链已接，旧快照、原站同屏像素、文学质量、常规入口和过期方案映射仍待核；不进第二功能、不视为产品验收。历史Seed失败/成功证据保留。 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 待验收 | 研究方案与规格`0a1d4fac`已推私有main；157项审计的源码哈希/行号因后续代码变更过期，须逐项重审并复跑verify-spec，不能视为产品通过。 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
@@ -65,7 +65,7 @@
 
 | 路径 / 区域 | 本地工作线 | 外部重叠 | 当前处理规则 |
 |---|---|---|---|
-| 三语翻译、配置文档、协调台账；历史上游集成热点 | sync-main-remotes 最终集成 | 私有main的4个Director提交与目标46个独有提交 | 96bda53c已保留双方历史并推私有分支；公开PR仍在另一个fork，本轮不更新，未来双main同步须重新审计/授权 |
+| 三语翻译、配置文档、协调台账；历史上游集成热点 | sync-main-remotes 最终集成 | 私有main`bc051ed3`与上游`30ab52c7` | 双父`66da025f`已普通推公开fork现有PR #717，尚待审核；私有两分支未被这次公开合并改动，未来双main同步须重新审计/授权 |
 | `Canvas.tsx`、`index.css`、`imageData.ts`、`useCanvasSync.ts` | LOD + LibTV 画布 | 历史 `origin/perf/canvas-pan-lod-culling` | 2026-09-18 来源审计已记录；本轮在 4c9dee4 保留当前外壳与故事板，仅串行改 Canvas/index.css 的平移性能，详见 canvas-lod-perf |
 | `VideoNode.tsx`、`canvasNodes.ts`、`nodeRegistry.ts`、`NodeActionToolbar.tsx` 等 | LibTV + depth / 拉片接入 | `origin/feat/canvas-video-reshoot-breakdown` | 先做行为与测试的三方差异，不按文件新旧直接取舍 |
 | `VideoOperationsPanel.tsx`、`PromptMentionEditor.tsx`、H3 工作台适配器 | MiniMax H3 引用顺序 | `codex/minimax-h3-liblib-parity`、旧 CTA 分支 | H3 已集成；sync-main-remotes 只修候选签名刷新与既有素材替换等待态的 effect 顺序，不改 Mixed 协议 |
@@ -105,6 +105,7 @@
    `OSS media relay config missing`。凡是「视频生成跑不通」，先查这个，别去 debug 业务代码。
 2. **ComfyUI 模型 / 节点需单独安装**；`start-local-stack.sh` 默认负责启动和等待，也可配置为复用现有进程。
 3. **demucs 未装** → 拉片的音乐维度降级成整轨提取（`mode` 字段会如实上报，不是静默降级）。
+4. **公开PR #717 需上游审核** → 已在fork更新并显示可合并，但本账号不能直接推`origin/main`；等维护者审核/合并，不能把PR head当上游main。
 
 ## 六、环境速查
 

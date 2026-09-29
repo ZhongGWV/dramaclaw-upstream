@@ -1,6 +1,6 @@
 # 同步 origin/main 与 zhonggwv/main
 
-**状态**：执行中
+**状态**：待验收
 **最后更新**：2026-09-29
 **基线**：`bc051ed3`；两条私有分支已同SHA，本轮隔离公开PR集成从此提交开始。
 **认领者**：`codex/public-origin-sync-20260929`
@@ -184,6 +184,12 @@ PR API 已确认 #717 的 head 在另一个仓库 `ZhongGWV/dramaclaw-upstream`�
 - [x] 本轮改动全部在写入边界内，无未解释 diff；合并提交带 DCO，diff 格式与 guard 已通过。
 
 ## 进展记录
+
+### 2026-09-29 · 公开fork推送与PR交接
+
+双父DCO合并提交`66da025f0ec69e046223c054803a93766fa5851e`的第一父`56f72231`包含私有`bc051ed3`，第二父为最新公开`origin/main=30ab52c7`；PR旧头`17436a2e`、私有main及公开origin/main均经祖先检查纳入，索引无冲突/格式错误。提交前pre-commit的gitleaks、guard、禁词全部通过，DCO全历史检查通过，35张原图、图标目录及来源清单相对私有main的逐文件diff为零。普通非强制push将公开fork`codex/sync-main-remotes`从`17436a2e`快进到`66da025f`；GitHub PR #717只读复核head同SHA、base`30ab52c7`、`MERGEABLE`、`REVIEW_REQUIRED`、`OPEN`，当时尚无状态检查结果。未直接修改`origin/main`，亦未移动私有main或重启服务。
+
+本工作线代码和公开PR更新已交付；这份交接将作为后续文档提交使PR head再前进一次，最终head以Git复核为准。外部剩余动作是上游审核/合并。下一位接手先`git ls-remote origin refs/heads/main`与`gh pr view 717 --repo dramaclaw/dramaclaw`核对是否新前进，再决定是否需要新的同步；绝不把现有PR head误报为origin/main。已知全量存量失败及素材许可风险详见下条，不得省略或改成全绿；原素材未获明确再分发许可，用户确认原样提交不改变这一事实。
 
 ### 2026-09-29 · 公开PR合并冲突与回归分层验收
 
