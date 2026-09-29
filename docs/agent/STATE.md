@@ -3,12 +3,12 @@
 > **新会话的第一件事是读这份文件。** 它只回答三个问题：现在有哪几条线在做、各自卡在哪、
 > 下一步做什么。取证与方案不在这里——在 `docs/guides/`；每条线的逐步记录在 `docs/agent/tasks/`。
 >
-> 最后更新：2026-09-27 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
+> 最后更新：2026-09-28 · 更新方式见 `AGENTS.md` 的「多模型协作协议」与
 > [`docs/agent/README.md`](README.md)
 
 ## 一、仓库当前形态（接手前必须核对）
 
-- 当前主检出main已按用户新授权合入最新同步分支3fbd16e6；原5份未提交交接已分线保存，非agent树与来源完全一致。同步分支含模型/H3/中文项目名及最新Director，794后端/276前端/build已验证；本轮只推私有main，最终提交/推送以Git为准，公开origin/PR不动。
+- 当前主检出 main 的 Git 基线为 213854b5，Director 后续增量仍未提交。此前同步轮证据不代表最新文学已验收；2026-09-28新改编链已在隔离API接通来源/M07/M12/局改/分组审阅/流，802后端/113前端/build通过。真实Seed与LibTV部分操作已核对，完整S1/全页像素仍未通过，新链默认开关未发布；无提交/推送/常驻部署，公开origin/PR不动。
 - 应用已按用户选择从945baa9f业务版本启动，复用原配置/数据；四端与前端代理HTTP200、原6项目可读取，重启记录3fbd16e6已推同步分支。工作区/远端最终提交以Git为准。
 - 两条 TV Director 线已推送私有 main，但功能和文学质量仍未全验收；画布/H3的新14个提交亦已在目标远端。
   研究与实现边界、失败模型实验照原台账保留。主检出的 `_to_delete/` 与 `曹操.md` 仍受保护，
@@ -34,8 +34,8 @@
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
 | [sync-main-remotes](tasks/sync-main-remotes.md) | 最新同步分支合回主目录main；历史公开同步另行处理 | 待验收 | 原5份协调diff已分线保存，3fbd16e6正常合入且非agent树完全一致；82文件提交检查/密钥扫描、guard和服务健康复核通过。按授权仅推私有main，最终SHA见Git；历史公开PR及产品验收独立保留 |
-| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 批量图片计划/批准集/持久画布节点与拖动恢复；M12全段事实/全部前集/证据及人工核对；620后端/225前端/build。真实正例9/9、负例FAIL6/9，非语义完美；全页像素实测FAIL，聊天局部2.3273%、整页14.6060%。见batch-facts-pixels.md；下一步同内容全态像素基准、长篇分块/原子语义、实际图片质量，旧文学欠项保留。本线连续增量b5883b8f已按后续授权推送私有main并核验；未部署 |
-| [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 执行中 | 授权续轮见补证§13：长稿两集、Skill/节点、分享/OAuth、唯一H3受理后断线均已测；130积分批准/可见差额。用户另允许整体删除合成“连续性清单”，删除code0、刷新私有列表保留另2条、匿名公开重读2次code10051/失效。证据62断言通过，删除轮无新生成。仍待真实第二设备；聊天分享未撤销、独立撤回/未知受理幂等等边界保留。无业务改动 |
+| [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 首功能真实来源→五节→局改→部分/全部采纳及撤回→手编/刷新通过；原创首次三页问卷及确认参数同源已补，隔离Seed M03/M07/M08通过、M09单集闭合首次失败后只重测M09成功并到WAIT_OUTLINE；808后端/相关51前端/build，原本地栈已重启。原站在线登录态失效，三页同屏像素/真实浏览器自定义值、S1旧快照与closure仍待核；不进第二功能。此前正式v4/29次Seed历史证据保留 |
+| [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 待验收 | 研究方案与规格已准备本地提交；157项审计的源码哈希/行号因后续代码变更过期，须逐项重审并复跑verify-spec，不能视为产品通过。 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
 | [legacy-unassigned-diff](tasks/legacy-unassigned-diff.md) | 历史未归属改动隔离区 | 已阻塞 | 只读审计来源；未归属前禁止覆盖或删除 |
 | [asset-replacement-picker](tasks/asset-replacement-picker.md) | 画布素材替换：拖拽与点选双入口 | 待验收 | 独立实现与 5 项聚焦测试已通过；待真实画布手工走一遍点选替换 |
@@ -85,7 +85,7 @@
 
 ## 四、恢复顺序（不是功能优先级）
 
-用户最新优先级（2026-09-27）：已按选定的最新同步版本启动项目，并确认也将主目录main同步、提交到最新集成结果。先保存全部旧交接再合并，不迁移/清空原项目数据、不触发收费生成；short-drama根基和用户决定时长保持。批量图片/M12与三视口检查已落地，但完整文学/全页像素仍有失败，Git同步和服务健康不代替产品验收。
+用户最新优先级（2026-09-27）：Git同步已完成，当前main为213854b5。用户改为只用本地Seed对原站Seed，不继续DeepSeek横测，允许人工提炼同源概要。真实相同输入已走方向→大纲→同指令修改→刷新；参数回包与失败均留证。下一步先分开short-drama内部规划与原站五节改编交付、版本化段落patch/独立聊天总结、跨段事实核对与逐节diff界面，再Seed复验，不重复堆prompt或盲目买模型。常驻栈仍在同步工作树，主目录修改未部署/未提交；既有文学和整页像素失败保留，详见本线指南§9。
 
 1. 交接协议与 handoff 回归修复已独立提交并推送。
 2. 只读分类 `legacy-unassigned-diff`，任何未确认归属的文件继续保持隔离。

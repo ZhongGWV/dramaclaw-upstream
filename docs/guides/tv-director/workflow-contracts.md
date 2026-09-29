@@ -20,9 +20,83 @@
 
 作品语义、草稿/正式文档、选区、依赖和部分采纳的权威细节见[文档合同](document-semantics.md)。Work.completed表示合同内所有必交付集已人工确认；productionReady另算，未试读/未验证媒体不得偷换为“可直接成片”。
 
+### 1.1 四模式上下文与目标解析合同
+
+2026-09-27审核新增，属于**我方确定性设计I**；已证实的模式菜单/引用保留见总案FP02/FP06及CL01–CL09，但以下优先级不冒称源站服务端算法。源站未证子态挂sourceEvidence=unknown并采用此明确设计；不能由模型临时改规则。E08一键续创的自动发送单独按§1.2，不与普通引用入口混用。关联A14–A18/A23、E08/E22、C01/C02/C05。
+
+| 模式 | 默认可读上下文（均需权限/版本） | 允许的主目标与输出 | 无目标或不适用时 |
+|---|---|---|---|
+| original | 当前作品确认Spec、明确引用的文档/素材及完成该阶段必需的最新依赖；新建时为创意/预设 | 新作品方向/大纲候选，或明确当前文档的ChangeSet；筹备/分集只在阶段门后生成 | 有作品先绑定继续/另建意图；无内容问创意；引用故事不会自动切成改编 |
+| adaptation | 固定SourceVersion、用户允许改写范围、Spec及当前阶段必要依赖；非故事媒体仅作为有角色标记的参考 | 改编方向/大纲候选或指定文档ChangeSet；不改SourceVersion | 无可读来源拒绝生成；素材若需文字提取/付费理解先按能力与授权处理，不假称读过 |
+| omni | 用户显式引用或选择的对象；“感知画布”先确认selected/visible/whole范围，whole必须明确授权 | 回答、TaskPlan、文档修改候选、画布候选、媒体任务预览；执行仍受各工具权限/费用门 | 无对象的知识性问题可回答；修改/生成意图目标不明先问；不能默认上传全项目 |
+| directing | 明确文档/选区、选中文本或媒体节点及必需关联资产版本；仅读取该计划范围 | 导演角色绑定、镜头/提示词候选、逐节点优化、媒体计划；默认不改文学文档 | 无对象先选对象；“改剧本”必须明确文档修改意图或引导创编模式，不能默写镜头或改原稿 |
+
+公共上下文不等于可写目标。仅“打开编辑器”“悬停节点”不增加授权；已引用对象也不自动全部可写。只读取模型输入实际需要的内容，所有额外依赖列入frozen input，不能把选中区域以外的整稿默传给外部插件。
+
+```ts
+type TargetRef = {
+  kind: 'document' | 'canvas_node' | 'work'; id: string;
+  revision: number; contentHash: string;
+  intent: 'read' | 'revise' | 'plan' | 'generate';
+  selection?: SelectionRef; // 文档合同中的版本化选区，不是DOM偏移
+};
+type TargetResolution =
+  | { status: 'resolved'; targets: TargetRef[]; contextRefs: VersionRef[]; reason: string }
+  | { status: 'needs_target'; candidates: TargetRef[]; reason: string }
+  | { status: 'blocked'; code: 'stale' | 'forbidden' | 'unsupported'; refIds: string[] };
+```
+
+宿主`resolveTarget(mode, intent, draft, selection, currentView, checkpoint)`在生成报价/调用模型前执行，顺序固定：
+
+接点：DraftCommand只修改未发送`ComposerDraft.targetIntent`（操作意图、显式目标、引用角色与选区）；message.send在sessions用例内验证并解析，resolved才冻结到StageRun snapshot。needs_target产生可恢复的目标选择卡，不派发生成；blocked返回现有DomainError且保留草稿。客户端声明不是服务端判定，不能直接接受客户端传入“已解析”。work/snapshot已有版本集合沿用，不另造第二套正文；实现时扩展同一Pydantic/OpenAPI/生成TS合同。
+
+1. 显式命令目标/“修改此选区”入口为首选；目标或选区版本过期/无权直接拒绝，不退回另一个对象。自由文本仅产待确认候选，重名不用名称猜ID。
+2. 没有显式目标时，唯一标为`role=target`的引用可用；其他`role=context/source/style`只读。多个target只有用户明确批量意图才一起处理，否则返回needs_target。
+3. 再无目标时，带确定目标的按钮（如“修改本大纲”）可以提供当前文档；普通聊天发送不因编辑器打开就默认写当前文档。一个明确选中节点可作导演/全能计划目标；多个节点需批量意图。文档焦点与节点选择冲突且无显式意图时询问，不按最后点击时间决定。
+4. 只有无歧义地回复当前检查点，才绑定CP目标；多CP或新请求不能套用旧卡。没有目标的新原创/改编创建遵照对应入口/确认，不把一次局改误变新作品。
+5. 解析成功后冻结mode、targets、contextRefs、document version set、preset及model；服务端独立复验。新增或变更目标使旧报价/候选失效，不能继续沿用批准hash。
+
+| 操作 | 未发送输入/附件/引用 | 已有作品/进行中任务 | 验收断言 |
+|---|---|---|---|
+| 切模式 | 原文、顺序、ID、上传进度保留；每模式预设草稿隔离，不适用chip标unsupported，可移除或切回，不静默丢弃 | work绑定不变，run冻结模式/目标不变；新模式只作用下次发送 | 来回切换内容hash与顺序不变，unsupported阻止执行但不丢草稿 |
+| 上传中切模式/关闭 | 继续原上传，可取消本次附件；不得另发一次上传 | 不取消生成；上传错误只影响对应chip | 重新打开能看到同asset/错误与重试入口 |
+| 运行中发送新修改 | 保留为新意图；用户选排队或明确停止后重提，不能混入当前run | 队列运行前重验新head/权限/目标；旧版本变动须提示，不盲重放 | 新旧runId/target hash分开；UNKNOWN先核对受理 |
+| 换作品/新对话 | 对未发草稿明确保留/放弃；引用跨项目须重新授权，不自动复制隐私 | 旧run可继续，输出只回原work/session | 晚到结果不覆盖当前作品或输入 |
+
+必测同句“把它改得更紧凑”：创编明确outline target→大纲ChangeSet；导演明确shot node→镜头提示词候选；全能明确episode target→该文档修改计划；引用人物但同时选视频且未指定目标→needs_target。四模式还须各测无目标、多目标、stale、forbidden、unsupported、运行中切换，不只测枚举路由。
+
+### 1.2 文档顶部续创与编辑器关联会话（E08/E22）
+
+CL17–CL20补证纠正旧E08“不自动发送”假设。正常引用chip是修改未发D；顶部全能创作是**带明确续创意图的一键动作**，新建omni会话后自动发送。不能把两入口实现为同一个attach-only回调，也不能把它接到媒体选择弹层。
+
+源站序列：session/create（agentName/libtvMeta）→WS user消息（text/node/context，forwardedProps）→get_node_details→列目录/读五类文本→task_create_v2/update_v2→write_file_v2保存分镜/锚点→create_image_node预览→power/calculator→询问批准。实测消息context.dryRun=true；15个图片节点的回执明确NOT generating，报价225积分；本轮点击取消，不批准。源站还错误调用edit_video_v4/update_video_node/edit_audio处理script节点，三次失败并产生一个dry-run音频预览；这是负例，不复制。
+
+本地组合用例（设计，不声称源站数据库如此实现）：
+
+```ts
+async function continueDocument(node: ScriptNodeRef, actionId: string) {
+  // 不清空旧会话草稿；同一次点击/刷新恢复沿用actionId。
+  const saved = await flushDocumentOrKeepDraft(node); // 失败/409停止，不上传旧稿
+  const context = await resolveCompletedDocumentSet(saved); // 每类独立DV及hash
+  const session = await createSessionOnce(actionId, {
+    mode: 'omni', sourceNodeId: node.id, sourceSessionId: node.sessionId,
+  });
+  const draft = makeContinuationDraft(context, { intent: 'plan', previewOnly: true });
+  return sendOnce(session.id, draft, actionId); // 复用message.send权限/预算/事件账本
+}
+```
+
+此骨架通过已有SessionCommand/ComposerDraft/StageRun扩展落地，不新建旁路生成接口。服务端重验node.kind=screenplay、权限、completed DV集合、来源会话关系、clientMessageId；模型可建议内容但不能更改冻结目标/费用授权。依赖未齐时说明缺项并询问下一步，不声称已经全部完成。文本调用沿现有范围授权；不存在有效授权时显示既有审批卡，不擅自收费。规划可写候选文件和preview节点，run_node必须绑定明确批准的媒体manifest/报价/版本；取消保留候选和待执行状态，不自动重试。
+
+编辑器另有CL11分支“继续在这里对话／切换到关联对话”。前者保留当前会话并建立当前文档目标，后者切换关联session；都先保存未发送草稿，均不因打开编辑器自动发送修改。明确选区后由E22产生版本化SelectionRef；编辑未保存/409时先恢复，不把DOM选区直接当已保存版本。
+
+必测：E08双击/超时重入只建一次续创；旧草稿保留；冻结五类独立版本；文本/媒体成本分离；preview不算completed；媒体取消零run_node；错误节点类型在工具前拒绝；关联会话两选项及刷新恢复分别断言。RUN_FINISHED并不等于任务完成：等待用户的报价检查点仍为WAIT_APPROVAL。
+
 ## 2. 正常路径：后台工作不等于多弹一次确认
 
 原创：创建 → 方向分析 → WAIT_DIRECTION → 总纲/人物/场景/道具/目录 → WAIT_OUTLINE → 每集计划 → 正文/评审/限次修订 → WAIT_EPISODE → 人工定稿 → 下集，或全剧完成。
+
+这里列完整依赖链，不表示每次方向确认都连带生成全部筹备。冻结的`requestedDeliverables`决定本次只交大纲还是明确批准的筹备集合；S1/S2仅大纲范围，不调用M08/M09或分集。确认大纲也不等于批准扩展交付/费用；进入后续阶段时检查实际缺失依赖，明确展示下一步范围，沿已有授权或单独批准，不伪造空文档让状态通过。
 
 改编：创建/源验证 → 全文事件抽取 → 独立漏检/矛盾核验 → 必要时WAIT_FACTS → 方向/改编决策 → WAIT_DIRECTION → 总纲 → 同一逐集链。来源分析与方向可以展示阶段进展，但不能在关键源事实未解决时写骨架/正文。
 
@@ -41,9 +115,9 @@ episode plan是后台校验阶段，**正常路径没有强制 WAIT_EPISODE_PLAN
 | WT03 | WAIT_FACTS | 回答事实/批准删改关键事件 | 每项绑定sourceVersion+factId+旧新值；冲突不得批量默选 | 修正source graph后重审→EXEC(direction) |
 | WT04 | WAIT_FACTS | 忽略 | 不解决事实、不写后续产物 | WAIT_INPUT，显示缺哪项及返回回答入口 |
 | WT05 | EXEC(direction) | schema及约束通过 | 四个方向或缺信息问卷，不提前生成全文 | WAIT_DIRECTION |
-| WT06 | WAIT_DIRECTION | 选择/自由填写并提交 | 方向、集数、时长、结构合成新confirmedSpec；消除auto | EXEC(outline/bible/directory) |
+| WT06 | WAIT_DIRECTION | 选择/自由填写并提交 | 方向、集数、时长、结构合成confirmedSpec；消除auto；按冻结requestedDeliverables执行 | EXEC(outline或明确获准的preparation)，不越范围调用 |
 | WT07 | WAIT_DIRECTION | 要改/返回 | 保留已答草稿；变方向仅重新分析受影响阶段 | WAIT_DIRECTION或EXEC(direction) |
-| WT08 | EXEC(outline) | 筹备产物完成 | 机检、事实/目录/结构检查；形成待审CS | WAIT_OUTLINE，文档交付与总纲决策 |
+| WT08 | EXEC(outline) | 当前交付范围产物完成 | 按requestedDeliverables机检/事实/目录/结构检查，形成待审CS；缺交付不补空文 | WAIT_OUTLINE，展示本次实际产物与总纲决策 |
 | WT09 | WAIT_OUTLINE | 差异采纳 | 原子提交DV，不等于“继续写正文” | 仍WAIT_OUTLINE，显示可“采纳并继续” |
 | WT10 | WAIT_OUTLINE | 确认/采纳并继续 | 无待审CS、关键错误、来源未知；冻结规格与总纲版本 | EXEC(episode_plan)；不足授权插入WAIT_COST |
 | WT11 | WAIT_OUTLINE | 要改 | 明确修改范围→影响计划→CS | WAIT_DIFF（returnTo=WAIT_OUTLINE） |
