@@ -35,7 +35,7 @@
 | [video-node-duplicate](tasks/video-node-duplicate.md) | 视频节点创建副本 | 待验收 | 顶部创建副本保留引用/参数并清运行态，类型检查通过；待页面点击验收 |
 | [liblib-first-import](tasks/liblib-first-import.md) | LibTV 新建首次导入容错 | 待验收 | 27 节点/40 边/51 素材已首次导入；缓存异常中断修复，26 测试与类型检查通过，待历史报错核对 |
 | [storyboard-dual-view](tasks/storyboard-dual-view.md) | 工作流 / 故事板双模式 | 待验收 | 三栏/详情/原生成面板/排序引用已实现，345 项相关测试及 CE 构建通过；Chrome 被其他扩展 UI 阻止操作，待关闭后实站对照 |
-| [sync-main-remotes](tasks/sync-main-remotes.md) | 最新私有main同步到同名分支；历史公开同步另行处理 | 执行中 | 目标分支已快进到私有远端`7ce6b78d`并保存方案提交`2f664127`；与main`9741c622`的三份协调冲突已解决，双方业务blob未改写，812后端/313前端/build及门禁通过，待合并提交和私有分支推送。 |
+| [sync-main-remotes](tasks/sync-main-remotes.md) | 最新私有main同步到同名分支；历史公开同步另行处理 | 待验收 | 正常合并提交`27c474cc`已推私有同名分支且远端复核一致，私有main仍为`9741c622`；双方业务blob保留，812后端/313前端/build及门禁通过。历史公开PR和产品欠项另行验收。 |
 | [tv-director-implementation](tasks/tv-director-implementation.md) | 全新 TV Director 剧本工作台与写作链 | 执行中 | 首功能代码/技能/测试与方案已分线提交并推私有main；808后端、77定向前端/build通过。原创三页问卷和五节改编链已接，旧快照、原站同屏像素、文学质量、常规入口和过期方案映射仍待核；不进第二功能、不视为产品验收。历史Seed失败/成功证据保留。 |
 | [liblib-tv-director-discovery](tasks/liblib-tv-director-discovery.md) | tvDirector 剧本 Agent 按钮级取证与代码级方案 | 待验收 | 研究方案与规格`0a1d4fac`已推私有main；157项审计的源码哈希/行号因后续代码变更过期，须逐项重审并复跑verify-spec，不能视为产品通过。 |
 | [agent-collaboration-protocol](tasks/agent-collaboration-protocol.md) | 多模型协作、方案门与冲突治理 | 已完成 | 独立提交、测试与真实交接闭环已完成；后续变更另开工作线 |
